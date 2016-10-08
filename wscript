@@ -27,13 +27,12 @@ def configure(ctx):
 
 def build(ctx):
     ctx.recurse(modules)
-    ctx(export_includes='src', name='driver-include')
     ctx.program(
         target   = APPNAME,
         source   = ctx.path.ant_glob('src/*.c'),
         use      = ['csp', 'slash', 'satlab', 'param'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION],
-        lib      = 'pthread util')
+        lib      = ['pthread'] + ctx.env.LIBS)
 
 def dist(ctx):
     ctx.algo      = 'tar.xz'

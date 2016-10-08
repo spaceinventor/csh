@@ -12,7 +12,7 @@
 
 #include <slash/slash.h>
 
-#include <param.h>
+#include <param/param.h>
 
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_can.h>
