@@ -63,6 +63,9 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_buffer_init(25, 320) < 0)
 		return -1;
 
+	csp_set_hostname("satctl");
+	csp_set_model("linux");
+
 	if (csp_init(addr) < 0)
 		return -1;
 
