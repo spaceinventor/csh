@@ -12,6 +12,8 @@
 
 #include <slash/slash.h>
 
+#include <param.h>
+
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_can.h>
 
@@ -22,6 +24,9 @@
 
 #define SATCTL_LINE_SIZE		128
 #define SATCTL_HISTORY_SIZE		2048
+
+static uint32_t hest;
+PARAM_DEFINE_STATIC_RAM(param_hest, PARAM_TYPE_UINT32, -1, 0, UINT32_MAX, PARAM_READONLY_FALSE, NULL, "", &hest);
 
 void usage(void)
 {

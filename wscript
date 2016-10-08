@@ -9,7 +9,7 @@ VERSION = '0.3.0'
 top = '.'
 out = 'build'
 
-modules = ['lib/csp', 'lib/slash', 'lib/satlab']
+modules = ['lib/csp', 'lib/slash', 'lib/satlab', 'lib/param']
 
 def options(ctx):
     ctx.load('eclipse')
@@ -27,11 +27,11 @@ def configure(ctx):
 
 def build(ctx):
     ctx.recurse(modules)
-
+    ctx(export_includes='src', name='driver-include')
     ctx.program(
         target   = APPNAME,
         source   = ctx.path.ant_glob('src/*.c'),
-        use      = ['csp', 'slash', 'satlab'],
+        use      = ['csp', 'slash', 'satlab', 'param'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION],
         lib      = 'pthread util')
 
