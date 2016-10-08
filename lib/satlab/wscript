@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
+APPNAME = 'satlab'
+VERSION = '1.7'
+
+top = '.'
+out = 'build'
+
+def options(ctx):
+    pass
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+    ctx(export_includes='include', name='satlab-include')
+    ctx.objects(
+        source   = ctx.path.ant_glob('src/*.c'),
+        includes = 'include',
+        export_includes = 'include',
+        target   = APPNAME,
+        use      = 'csp')
+
+def dist(ctx):
+    ctx.base_name = 'lib' + APPNAME + '-' + VERSION
+    ctx.algo      = 'tar.xz'
+    ctx.excl      = '**/.* wscript'
