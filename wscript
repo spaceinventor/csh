@@ -22,6 +22,8 @@ def configure(ctx):
     ctx.options.disable_stlib = True
     ctx.options.enable_if_can = True
     ctx.options.enable_can_socketcan = True
+    
+    ctx.options.rparam = True
 
     ctx.recurse(modules)
 
@@ -32,7 +34,8 @@ def build(ctx):
         source   = ctx.path.ant_glob('src/*.c'),
         use      = ['csp', 'slash', 'satlab', 'param'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION],
-        lib      = ['pthread'] + ctx.env.LIBS)
+        lib      = ['pthread'] + ctx.env.LIBS,
+        ldflags  = '-Wl,-Map=' + APPNAME + '.map')
 
 def dist(ctx):
     ctx.algo      = 'tar.xz'
