@@ -13,8 +13,10 @@
 #include <slash/slash.h>
 
 #include <param/param.h>
+#include <param/rparam.h>
 
 #include <csp/csp.h>
+#include <csp/arch/csp_thread.h>
 #include <csp/interfaces/csp_if_can.h>
 
 #define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
@@ -73,6 +75,9 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_route_start_task(0, 0) < 0)
 		return -1;
 
+	csp_thread_handle_t server_handle;
+	csp_thread_create(param_server_task, "param", 2000, NULL, 1, &server_handle);
+
 	return 0;
 }
 
@@ -103,7 +108,6 @@ int main(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		}
 	}
-
 
 	remain = argc - optind;
 	index = optind;
