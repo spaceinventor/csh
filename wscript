@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from waftools import eclipse
+
 APPNAME = 'satctl'
 VERSION = '0.3.0'
 
@@ -10,9 +12,11 @@ out = 'build'
 modules = ['lib/csp', 'lib/slash', 'lib/satlab']
 
 def options(ctx):
+    ctx.load('eclipse')
     ctx.recurse(modules)
 
 def configure(ctx):
+    ctx.load('eclipse')
 
     # CSP options
     ctx.options.disable_stlib = True
