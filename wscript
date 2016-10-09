@@ -23,7 +23,8 @@ def configure(ctx):
     ctx.options.enable_if_can = True
     ctx.options.enable_can_socketcan = True
     
-    ctx.options.rparam = True
+    ctx.options.rparam_client = True
+    ctx.options.rparam_server = True
 
     ctx.recurse(modules)
 

@@ -79,7 +79,7 @@ int configure_csp(uint8_t addr, char *ifc)
 		return -1;
 
 	csp_thread_handle_t server_handle;
-	csp_thread_create(param_server_task, "param", 2000, NULL, 1, &server_handle);
+	csp_thread_create(rparam_server_task, "param", 2000, NULL, 1, &server_handle);
 
 	return 0;
 }
