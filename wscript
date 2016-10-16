@@ -22,11 +22,18 @@ def configure(ctx):
     ctx.options.disable_stlib = True
     ctx.options.enable_if_can = True
     ctx.options.enable_can_socketcan = True
+    ctx.options.enable_if_kiss = True
+    ctx.options.with_driver_usart = 'linux'
+    ctx.options.enable_crc32 = True
+    
+    ctx.options.slash_csp = True
     
     ctx.options.rparam_client = True
     ctx.options.rparam_server = True
 
     ctx.recurse(modules)
+    
+    ctx.env.prepend_value('CFLAGS', ['-Os','-Wall', '-g', '-std=gnu99'])
 
 def build(ctx):
     ctx.recurse(modules)

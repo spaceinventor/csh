@@ -18,6 +18,8 @@
 #include <csp/csp.h>
 #include <csp/arch/csp_thread.h>
 #include <csp/interfaces/csp_if_can.h>
+#include <csp/interfaces/csp_if_kiss.h>
+#include <csp/drivers/usart.h>
 
 #define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		"\033[96msatctl \033[31m!\033[0m "
@@ -69,10 +71,28 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_init(addr) < 0)
 		return -1;
 
+	struct usart_conf usart_conf = {
+			.device = "/dev/ttyUSB0",
+			.baudrate = 38400,
+	};
+	usart_init(&usart_conf);
+
+	static csp_iface_t kiss_if;
+	static csp_kiss_handle_t kiss_handle;
+	void kiss_usart_putchar(char c) {
+		usleep(4000);
+		usart_putc(c);
+	}
+	void kiss_usart_callback(uint8_t *buf, int len, void *pxTaskWoken) {
+		csp_kiss_rx(&kiss_if, buf, len, pxTaskWoken);
+	}
+	usart_set_callback(kiss_usart_callback);
+	csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, NULL, "KISS");
+
 	if (csp_can_init(CSP_CAN_MASKED, &can_conf) < 0)
 		;/* return -1; */
 
-	if (csp_route_set(CSP_DEFAULT_ROUTE, &csp_if_can, CSP_NODE_MAC) < 0)
+	if (csp_route_set(CSP_DEFAULT_ROUTE, &kiss_if, CSP_NODE_MAC) < 0)
 		return -1;
 
 	if (csp_route_start_task(0, 0) < 0)
