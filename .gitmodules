@@ -7,3 +7,6 @@
 [submodule "lib/slash"]
 	path = lib/slash
 	url = https://github.com/spaceinventor/slash
+[submodule "lib/si"]
+	path = lib/si
+	url = https://github.com/spaceinventor/libsi

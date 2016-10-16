@@ -9,7 +9,7 @@ VERSION = '0.3.0'
 top = '.'
 out = 'build'
 
-modules = ['lib/csp', 'lib/slash', 'lib/satlab', 'lib/param']
+modules = ['lib/csp', 'lib/slash', 'lib/satlab', 'lib/param', 'lib/si']
 
 def options(ctx):
     ctx.load('eclipse')
@@ -25,11 +25,16 @@ def configure(ctx):
     ctx.options.enable_if_kiss = True
     ctx.options.with_driver_usart = 'linux'
     ctx.options.enable_crc32 = True
+    ctx.options.enable_rdp = True
     
     ctx.options.slash_csp = True
     
     ctx.options.rparam_client = True
     ctx.options.rparam_server = True
+    
+    # libsi
+    ctx.options.btldr_client = True
+    ctx.options.btldr_client_slash = True
 
     ctx.recurse(modules)
     
