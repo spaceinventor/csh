@@ -71,6 +71,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_init(addr) < 0)
 		return -1;
 
+#if 0
 	struct usart_conf usart_conf = {
 			.device = "/dev/ttyUSB0",
 			.baudrate = 38400,
@@ -88,6 +89,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	}
 	usart_set_callback(kiss_usart_callback);
 	csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, NULL, "KISS");
+#endif
 
 	if (csp_can_init(CSP_CAN_MASKED, &can_conf) < 0)
 		;/* return -1; */

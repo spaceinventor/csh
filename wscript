@@ -13,6 +13,9 @@ modules = ['lib/csp', 'lib/slash', 'lib/satlab', 'lib/param', 'lib/si']
 
 def options(ctx):
     ctx.load('eclipse')
+    
+    ctx.add_option('--chip', action='store', default='')
+    
     ctx.recurse(modules)
 
 def configure(ctx):
