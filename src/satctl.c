@@ -33,13 +33,13 @@ static uint32_t u32_data;
 static int32_t i32_data;
 static uint8_t u8_data;
 static float flt_data;
-static char str_data[100] = "hest";
+static char str_data[16] = "hest";
 
 PARAM_DEFINE_STATIC_RAM(u32, PARAM_TYPE_UINT32, -1, 0, UINT32_MAX, PARAM_READONLY_FALSE, NULL, "", &u32_data);
 PARAM_DEFINE_STATIC_RAM(i32, PARAM_TYPE_INT32, -1, INT32_MIN, INT32_MAX, PARAM_READONLY_FALSE, NULL, "", &i32_data);
 PARAM_DEFINE_STATIC_RAM(u8, PARAM_TYPE_UINT8, -1, 0, UINT8_MAX, PARAM_READONLY_FALSE, NULL, "", &u8_data);
 PARAM_DEFINE_STATIC_RAM(flt, PARAM_TYPE_FLOAT, -1, -1, -1, PARAM_READONLY_FALSE, NULL, "", &flt_data);
-PARAM_DEFINE_STATIC_RAM(str, PARAM_TYPE_STRING, 100, -1, -1, PARAM_READONLY_FALSE, NULL, "", str_data);
+PARAM_DEFINE_STATIC_RAM(str, PARAM_TYPE_STRING, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", str_data);
 
 
 void usage(void)
@@ -62,7 +62,7 @@ int configure_csp(uint8_t addr, char *ifc)
 		.ifc = ifc
 	};
 
-	if (csp_buffer_init(25, 320) < 0)
+	if (csp_buffer_init(100, 320) < 0)
 		return -1;
 
 	csp_set_hostname("satctl");
