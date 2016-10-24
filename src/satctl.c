@@ -92,7 +92,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_can_init(CSP_CAN_MASKED, &can_conf) < 0)
 		;/* return -1; */
 
-	if (csp_route_set(CSP_DEFAULT_ROUTE, &kiss_if, CSP_NODE_MAC) < 0)
+	if (csp_route_set(CSP_DEFAULT_ROUTE, &csp_if_can, CSP_NODE_MAC) < 0)
 		return -1;
 
 	if (csp_route_start_task(0, 0) < 0)
