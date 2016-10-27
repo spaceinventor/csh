@@ -71,7 +71,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	csp_set_hostname("satctl");
 	csp_set_model("linux");
 
-	//csp_debug_set_level(5, 1);
+	csp_debug_set_level(5, 1);
 
 	if (csp_init(addr) < 0)
 		return -1;
@@ -104,6 +104,8 @@ int configure_csp(uint8_t addr, char *ifc)
 
 	if (csp_route_start_task(0, 0) < 0)
 		return -1;
+
+	csp_rdp_set_opt(2, 10000, 1000, 1, 1000, 2);
 
 	csp_thread_handle_t server_handle;
 	csp_thread_create(rparam_server_task, "param", 2000, NULL, 1, &server_handle);
