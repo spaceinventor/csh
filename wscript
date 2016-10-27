@@ -34,6 +34,10 @@ def configure(ctx):
     
     ctx.options.rparam_client = True
     ctx.options.rparam_server = True
+    ctx.options.vmem_client = True
+    ctx.options.vmem_server = True
+    ctx.options.vmem_ram = True
+    ctx.options.vmem = True
     
     # libsi
     ctx.options.btldr_client = True
@@ -48,7 +52,7 @@ def build(ctx):
     ctx.program(
         target   = APPNAME,
         source   = ctx.path.ant_glob('src/*.c'),
-        use      = ['csp', 'slash', 'satlab', 'param'],
+        use      = ['csp', 'slash', 'satlab', 'param', 'vmem'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION],
         lib      = ['pthread'] + ctx.env.LIBS,
         ldflags  = '-Wl,-Map=' + APPNAME + '.map')
@@ -56,3 +60,5 @@ def build(ctx):
 def dist(ctx):
     ctx.algo      = 'tar.xz'
     ctx.excl      = '**/.* build'
+
+    

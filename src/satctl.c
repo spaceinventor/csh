@@ -14,6 +14,8 @@
 
 #include <param/param.h>
 #include <param/rparam.h>
+#include <vmem/vmem_server.h>
+#include <vmem/vmem_ram.h>
 
 #include <csp/csp.h>
 #include <csp/arch/csp_thread.h>
@@ -41,6 +43,7 @@ PARAM_DEFINE_STATIC_RAM(u8, PARAM_TYPE_UINT8, -1, 0, UINT8_MAX, PARAM_READONLY_F
 PARAM_DEFINE_STATIC_RAM(flt, PARAM_TYPE_FLOAT, -1, -1, -1, PARAM_READONLY_FALSE, NULL, "", &flt_data);
 PARAM_DEFINE_STATIC_RAM(str, PARAM_TYPE_STRING, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", str_data);
 
+VMEM_DEFINE_STATIC_RAM(ram, "ram", 1000000);
 
 void usage(void)
 {
@@ -102,6 +105,9 @@ int configure_csp(uint8_t addr, char *ifc)
 
 	csp_thread_handle_t server_handle;
 	csp_thread_create(rparam_server_task, "param", 2000, NULL, 1, &server_handle);
+
+	csp_thread_handle_t vmem_handle;
+	csp_thread_create(vmem_server_task, "vmem", 2000, NULL, 1, &vmem_handle);
 
 	return 0;
 }
