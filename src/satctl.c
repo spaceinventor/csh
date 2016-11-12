@@ -108,7 +108,9 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_route_start_task(0, 0) < 0)
 		return -1;
 
+
 	csp_rdp_set_opt(2, 10000, 1000, 1, 1000, 2);
+	//csp_rdp_set_opt(10, 10000, 2000, 1, 2000, 5);
 
 	csp_thread_handle_t server_handle;
 	csp_thread_create(rparam_server_task, "param", 2000, NULL, 1, &server_handle);
