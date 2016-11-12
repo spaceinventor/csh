@@ -35,6 +35,7 @@ def configure(ctx):
     ctx.options.rparam_client = True
     ctx.options.rparam_client_slash = True
     ctx.options.rparam_server = True
+    ctx.options.rparam_store_file = True
 
     ctx.options.vmem_client = True
     ctx.options.vmem_server = True

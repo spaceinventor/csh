@@ -14,6 +14,7 @@
 
 #include <param/param.h>
 #include <param/rparam.h>
+#include <param/rparam_list_store_file.h>
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_ram.h>
 
@@ -148,6 +149,8 @@ int main(int argc, char **argv)
 
 	remain = argc - optind;
 	index = optind;
+
+	rparam_list_store_file_load();
 
 	if (configure_csp(addr, ifc) < 0) {
 		fprintf(stderr, "Failed to init CSP\n");
