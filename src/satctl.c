@@ -58,7 +58,8 @@ void usage(void)
 	printf("\n");
 	printf("Options:\n");
 	printf(" -i INTERFACE,\tUse INTERFACE as CAN interface\n");
-	printf(" -m NODE\tUse NODE as own CSP addres\n");
+	printf(" -n NODE\tUse NODE as own CSP address\n");
+	printf(" -r REMOTE NODE\tUse NODE as remote CSP address for rparam\n");
 	printf(" -h,\t\tPrint this help and exit\n");
 }
 
@@ -99,8 +100,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, NULL, "KISS");
 #endif
 
-	if (csp_can_init(CSP_CAN_MASKED, &can_conf) < 0)
-		;/* return -1; */
+	csp_can_init(CSP_CAN_MASKED, &can_conf);
 
 	if (csp_route_set(CSP_DEFAULT_ROUTE, &csp_if_can, CSP_NODE_MAC) < 0)
 		return -1;
@@ -129,21 +129,22 @@ int main(int argc, char **argv)
 
 	uint8_t addr = SATCTL_DEFAULT_ADDRESS;
 	char *ifc = SATCTL_DEFAULT_INTERFACE;
+	extern int rparam_default_node;
 
-	while ((c = getopt(argc, argv, "+hi:n:")) != -1) {
+	while ((c = getopt(argc, argv, "+hr:i:n:")) != -1) {
 		switch (c) {
+		case 'h':
+			usage();
+			exit(EXIT_SUCCESS);
+		case 'r':
+			rparam_default_node = atoi(optarg);
+			break;
 		case 'i':
 			ifc = optarg;
 			break;
 		case 'n':
 			addr = atoi(optarg);
 			break;
-		case 'h':
-			usage();
-			exit(EXIT_SUCCESS);
-		case '?':
-			if (optopt == 'c')
-				fprintf(stderr, "Option -%c requires an argument.\n", optopt);
 		default:
 			exit(EXIT_FAILURE);
 		}
