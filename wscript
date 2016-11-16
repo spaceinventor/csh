@@ -38,6 +38,7 @@ def configure(ctx):
     ctx.options.rparam_store_file = True
 
     ctx.options.vmem_client = True
+    ctx.options.vmem_client_ftp = True
     ctx.options.vmem_server = True
     ctx.options.vmem_ram = True
     ctx.options.vmem = True
