@@ -75,8 +75,8 @@ int configure_csp(uint8_t addr, char *ifc)
 	csp_set_hostname("satctl");
 	csp_set_model("linux");
 
-	csp_debug_set_level(4, 1);
-	csp_debug_set_level(5, 1);
+	//csp_debug_set_level(4, 1);
+	//csp_debug_set_level(5, 1);
 
 	if (csp_init(addr) < 0)
 		return -1;
