@@ -155,6 +155,8 @@ int main(int argc, char **argv)
 	index = optind;
 
 	rparam_list_store_file_load();
+	void rparam_lists_init(void);
+	rparam_lists_init();
 
 	if (configure_csp(addr, ifc) < 0) {
 		fprintf(stderr, "Failed to init CSP\n");
