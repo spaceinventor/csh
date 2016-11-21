@@ -9,8 +9,9 @@
 #include <stdlib.h>
 #include <param/rparam.h>
 #include <param/rparam_list.h>
+#include <param/rparam_listset.h>
 
-rparam_list_t list_hk = {
+rparam_listset_t list_hk = {
 	.listname = "hk",
 	.names = {
 		"rssi_bgnd",
@@ -18,7 +19,7 @@ rparam_list_t list_hk = {
 	},
 };
 
-rparam_list_t list_basic = {
+rparam_listset_t list_basic = {
 	.listname = "basic",
 	.names = {
 		"csp_node",
@@ -30,7 +31,7 @@ rparam_list_t list_basic = {
 	},
 };
 
-rparam_list_t list_conf = {
+rparam_listset_t list_conf = {
 	.listname = "conf",
 	.names = {
 		"rx_freq",
@@ -49,7 +50,7 @@ rparam_list_t list_conf = {
 };
 
 void rparam_lists_init(void) {
-	rparam_list_add(&list_hk);
-	rparam_list_add(&list_basic);
-	rparam_list_add(&list_conf);
+	rparam_listset_add(&list_hk);
+	rparam_listset_add(&list_basic);
+	rparam_listset_add(&list_conf);
 }
