@@ -15,6 +15,8 @@ rparam_listset_t list_hk = {
 	.listname = "hk",
 	.names = {
 		"rssi_bgnd",
+		"rssi",
+		"rfoff",
 		"rx_count",
 		"rx_err",
 		"rx_auth_err",
@@ -22,6 +24,8 @@ rparam_listset_t list_hk = {
 		"tx_count",
 		"tx_err",
 		"tx_bytes",
+		"tun_rx",
+		"tun_tx",
 		NULL,
 	},
 };

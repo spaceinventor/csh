@@ -110,7 +110,7 @@ int configure_csp(uint8_t addr, char *ifc)
 		return -1;
 
 
-	csp_rdp_set_opt(2, 10000, 2000, 1, 1000, 2);
+	csp_rdp_set_opt(2, 10000, 5000, 1, 2500, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
 	csp_thread_handle_t server_handle;
