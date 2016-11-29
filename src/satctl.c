@@ -27,7 +27,7 @@
 #define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		"\033[96msatctl \033[31m!\033[0m "
 #define SATCTL_DEFAULT_INTERFACE	"can0"
-#define SATCTL_DEFAULT_ADDRESS		30
+#define SATCTL_DEFAULT_ADDRESS		0
 
 #define SATCTL_LINE_SIZE		128
 #define SATCTL_HISTORY_SIZE		2048
@@ -110,7 +110,7 @@ int configure_csp(uint8_t addr, char *ifc)
 		return -1;
 
 
-	csp_rdp_set_opt(1, 10000, 2500, 0, 4000, 2);
+	csp_rdp_set_opt(2, 10000, 2000, 1, 1000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
 	csp_thread_handle_t server_handle;
