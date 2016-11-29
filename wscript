@@ -58,7 +58,7 @@ def build(ctx):
         source   = ctx.path.ant_glob('src/*.c'),
         use      = ['csp', 'slash', 'satlab', 'param', 'vmem'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION],
-        lib      = ['pthread'] + ctx.env.LIBS,
+        lib      = ['pthread', 'm'] + ctx.env.LIBS,
         ldflags  = '-Wl,-Map=' + APPNAME + '.map')
 
 def dist(ctx):
