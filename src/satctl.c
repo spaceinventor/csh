@@ -101,7 +101,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, NULL, "KISS");
 #endif
 
-	csp_can_init(CSP_CAN_PROMISC, &can_conf);
+	csp_can_init(CSP_CAN_MASKED, &can_conf);
 
 	if (csp_route_set(CSP_DEFAULT_ROUTE, &csp_if_can, CSP_NODE_MAC) < 0)
 		return -1;
