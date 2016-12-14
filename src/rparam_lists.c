@@ -5,10 +5,10 @@
  *      Author: johan
  */
 
+#include <param/param_list.h>
+#include <param/param_server.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <param/rparam.h>
-#include <param/rparam_list.h>
 #include <param/rparam_listset.h>
 
 rparam_listset_t list_basic = {

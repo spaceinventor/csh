@@ -13,7 +13,6 @@
 #include <slash/slash.h>
 
 #include <param/param.h>
-#include <param/rparam.h>
 #include <param/rparam_list_store_file.h>
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_ram.h>
@@ -23,6 +22,8 @@
 #include <csp/interfaces/csp_if_can.h>
 #include <csp/interfaces/csp_if_kiss.h>
 #include <csp/drivers/usart.h>
+#include <param/param_list.h>
+#include <param/param_server.h>
 
 #define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		"\033[96msatctl \033[31m!\033[0m "
@@ -47,6 +48,8 @@ PARAM_DEFINE_STATIC_RAM(4, str, PARAM_TYPE_STRING, 16, -1, -1, PARAM_READONLY_FA
 PARAM_DEFINE_STATIC_RAM(5, data, PARAM_TYPE_DATA, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", data_data);
 
 VMEM_DEFINE_STATIC_RAM(ram, "ram", 1000000);
+
+PARAM_DEFINE_STATIC_REMOTE_READWRITE(mppt0_v_in0, 7, 404, PARAM_TYPE_UINT16, sizeof(uint16_t))
 
 void usage(void)
 {
@@ -114,7 +117,7 @@ int configure_csp(uint8_t addr, char *ifc)
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
 	csp_thread_handle_t server_handle;
-	csp_thread_create(rparam_server_task, "param", 2000, NULL, 1, &server_handle);
+	csp_thread_create(param_server_task, "param", 2000, NULL, 1, &server_handle);
 
 	csp_thread_handle_t vmem_handle;
 	csp_thread_create(vmem_server_task, "vmem", 2000, NULL, 1, &vmem_handle);
@@ -157,6 +160,8 @@ int main(int argc, char **argv)
 	rparam_list_store_file_load();
 	void rparam_lists_init(void);
 	rparam_lists_init();
+
+	param_list_add(&mppt0_v_in0);
 
 	if (configure_csp(addr, ifc) < 0) {
 		fprintf(stderr, "Failed to init CSP\n");
