@@ -13,7 +13,6 @@
 #include <slash/slash.h>
 
 #include <param/param.h>
-#include <param/rparam_list_store_file.h>
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_ram.h>
 
@@ -23,6 +22,7 @@
 #include <csp/interfaces/csp_if_kiss.h>
 #include <csp/drivers/usart.h>
 #include <param/param_list.h>
+#include <param/param_list_store_file.h>
 #include <param/param_server.h>
 
 #define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
@@ -133,16 +133,12 @@ int main(int argc, char **argv)
 
 	uint8_t addr = SATCTL_DEFAULT_ADDRESS;
 	char *ifc = SATCTL_DEFAULT_INTERFACE;
-	extern int rparam_default_node;
 
 	while ((c = getopt(argc, argv, "+hr:i:n:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
-		case 'r':
-			rparam_default_node = atoi(optarg);
-			break;
 		case 'i':
 			ifc = optarg;
 			break;
@@ -157,9 +153,7 @@ int main(int argc, char **argv)
 	remain = argc - optind;
 	index = optind;
 
-	rparam_list_store_file_load();
-	void rparam_lists_init(void);
-	rparam_lists_init();
+	param_list_store_file_load("param_store.bin");
 
 	param_list_add(&mppt0_v_in0);
 

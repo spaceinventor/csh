@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <param/rparam_listset.h>
 
+#if 0
+
 rparam_listset_t list_basic = {
 	.listname = "basic",
 	.names = {
@@ -89,3 +91,5 @@ void rparam_lists_init(void) {
 	rparam_listset_add(&list_com_conf);
 	rparam_listset_add(&list_mppt_hk);
 }
+
+#endif

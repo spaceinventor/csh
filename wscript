@@ -32,10 +32,10 @@ def configure(ctx):
     
     ctx.options.slash_csp = True
     
-    ctx.options.rparam_client = True
-    ctx.options.rparam_client_slash = True
-    ctx.options.rparam_server = True
-    ctx.options.rparam_store_file = True
+    ctx.options.param_client = True
+    ctx.options.param_client_slash = True
+    ctx.options.param_server = True
+    ctx.options.param_store_file = True
 
     ctx.options.vmem_client = True
     ctx.options.vmem_client_ftp = True
