@@ -22,7 +22,7 @@
 #include <csp/interfaces/csp_if_kiss.h>
 #include <csp/drivers/usart.h>
 #include <param/param_list.h>
-#include <param/param_list_store_file.h>
+#include <param/param_group.h>
 #include <param/param_server.h>
 
 #define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
@@ -40,16 +40,28 @@ static float flt_data;
 static char str_data[16] = "hest";
 static char data_data[16] = {0xDE, 0xAD, 0xBE, 0xEF};
 
-PARAM_DEFINE_STATIC_RAM(0, u32, PARAM_TYPE_UINT32, -1, 0, UINT32_MAX, PARAM_READONLY_FALSE, NULL, "", &u32_data);
-PARAM_DEFINE_STATIC_RAM(1, i32, PARAM_TYPE_INT32, -1, INT32_MIN, INT32_MAX, PARAM_READONLY_FALSE, NULL, "", &i32_data);
-PARAM_DEFINE_STATIC_RAM(2, u8, PARAM_TYPE_UINT8, -1, 0, UINT8_MAX, PARAM_READONLY_FALSE, NULL, "", &u8_data);
-PARAM_DEFINE_STATIC_RAM(300, flt, PARAM_TYPE_FLOAT, -1, -1, -1, PARAM_READONLY_FALSE, NULL, "", &flt_data);
-PARAM_DEFINE_STATIC_RAM(4, str, PARAM_TYPE_STRING, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", str_data);
-PARAM_DEFINE_STATIC_RAM(5, data, PARAM_TYPE_DATA, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", data_data);
+PARAM_DEFINE_STATIC_RAM(0, u32, PARAM_TYPE_UINT32, -1, 0, UINT32_MAX, PARAM_READONLY_FALSE, NULL, "", &u32_data, NULL);
+PARAM_DEFINE_STATIC_RAM(1, i32, PARAM_TYPE_INT32, -1, INT32_MIN, INT32_MAX, PARAM_READONLY_FALSE, NULL, "", &i32_data, NULL);
+PARAM_DEFINE_STATIC_RAM(2, u8, PARAM_TYPE_UINT8, -1, 0, UINT8_MAX, PARAM_READONLY_FALSE, NULL, "", &u8_data, NULL);
+PARAM_DEFINE_STATIC_RAM(300, flt, PARAM_TYPE_FLOAT, -1, -1, -1, PARAM_READONLY_FALSE, NULL, "", &flt_data, NULL);
+PARAM_DEFINE_STATIC_RAM(4, str, PARAM_TYPE_STRING, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", str_data, NULL);
+PARAM_DEFINE_STATIC_RAM(5, data, PARAM_TYPE_DATA, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", data_data, NULL);
 
 VMEM_DEFINE_STATIC_RAM(ram, "ram", 1000000);
 
 PARAM_DEFINE_STATIC_REMOTE_READWRITE(mppt0_v_in0, 7, 404, PARAM_TYPE_UINT16, sizeof(uint16_t))
+
+param_t const* const mygroup_static[] = {
+	&u32,
+	&i32,
+	&u8,
+	&flt,
+	&str,
+	&data,
+};
+
+PARAM_GROUP_STATIC_PARAMS(mygroup_s, mygroup_static);
+
 
 void usage(void)
 {
