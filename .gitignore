@@ -12,3 +12,4 @@
 .waf-*
 *.swp
 build
+*.cnf
