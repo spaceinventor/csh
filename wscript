@@ -36,6 +36,7 @@ def configure(ctx):
     ctx.options.param_client_slash = True
     ctx.options.param_server = True
     ctx.options.param_store_file = True
+    ctx.options.param_group = True
 
     ctx.options.vmem_client = True
     ctx.options.vmem_client_ftp = True
