@@ -12,4 +12,5 @@
 .waf-*
 *.swp
 build
-*.cnf
+*.cfg
+*.lzo
