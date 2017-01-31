@@ -49,8 +49,6 @@ PARAM_DEFINE_STATIC_RAM(105, data, PARAM_TYPE_DATA, 16, -1, -1, PARAM_READONLY_F
 
 VMEM_DEFINE_STATIC_RAM(ram, "ram", 1000000);
 
-PARAM_DEFINE_STATIC_REMOTE_READWRITE(mppt0_v_in0, 7, 404, PARAM_TYPE_UINT16, sizeof(uint16_t))
-
 param_t const* const mygroup_static[] = {
 	&u32,
 	&i32,
@@ -165,9 +163,8 @@ int main(int argc, char **argv)
 	remain = argc - optind;
 	index = optind;
 
-	param_list_store_file_load("param_store.bin");
-
-	param_list_add(&mppt0_v_in0);
+	param_list_store_file_load("param.cfg");
+	param_group_store_file_load("group.cfg");
 
 	if (configure_csp(addr, ifc) < 0) {
 		fprintf(stderr, "Failed to init CSP\n");
