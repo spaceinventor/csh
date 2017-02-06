@@ -21,6 +21,7 @@
 #include <csp/interfaces/csp_if_can.h>
 #include <csp/interfaces/csp_if_kiss.h>
 #include <csp/drivers/usart.h>
+#include <csp/drivers/can_socketcan.h>
 #include <param/param_list.h>
 #include <param/param_group.h>
 #include <param/param_server.h>
@@ -78,9 +79,6 @@ void usage(void)
 
 int configure_csp(uint8_t addr, char *ifc)
 {
-	struct csp_can_config can_conf = {
-		.ifc = ifc
-	};
 
 	if (csp_buffer_init(100, 320) < 0)
 		return -1;
@@ -114,9 +112,9 @@ int configure_csp(uint8_t addr, char *ifc)
 	csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, NULL, "KISS");
 #endif
 
-	csp_can_init(CSP_CAN_MASKED, &can_conf);
+	csp_iface_t *can0 = csp_can_socketcan_init(ifc, 1000000, 0);
 
-	if (csp_route_set(CSP_DEFAULT_ROUTE, &csp_if_can, CSP_NODE_MAC) < 0)
+	if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0)
 		return -1;
 
 	if (csp_route_start_task(0, 0) < 0)
