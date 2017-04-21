@@ -9,7 +9,7 @@ VERSION = '0.3.0'
 top = '.'
 out = 'build'
 
-modules = ['lib/csp', 'lib/slash', 'lib/satlab', 'lib/param', 'lib/si']
+modules = ['lib/csp', 'lib/slash', 'lib/param']
 
 def options(ctx):
     ctx.load('eclipse')
