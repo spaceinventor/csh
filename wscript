@@ -63,7 +63,7 @@ def build(ctx):
         ldflags  = '-Wl,-Map=' + APPNAME + '.map')
 
 def dist(ctx):
-    ctx.algo      = 'tar.xz'
+    ctx.algo      = 'tar.gz'
     ctx.excl      = '**/.* build'
 
     
