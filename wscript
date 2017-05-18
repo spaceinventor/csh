@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from waftools import eclipse
-
 APPNAME = 'satctl'
 VERSION = '0.3.0'
 
@@ -12,14 +10,12 @@ out = 'build'
 modules = ['lib/csp', 'lib/slash', 'lib/param']
 
 def options(ctx):
-    ctx.load('eclipse')
     
     ctx.add_option('--chip', action='store', default='')
     
     ctx.recurse(modules)
 
 def configure(ctx):
-    ctx.load('eclipse')
 
     # CSP options
     ctx.options.disable_stlib = True
@@ -43,21 +39,17 @@ def configure(ctx):
     ctx.options.vmem_server = True
     ctx.options.vmem_ram = True
     ctx.options.vmem = True
-    
-    # libsi
-    ctx.options.btldr_client = True
-    ctx.options.btldr_client_slash = True
 
     ctx.recurse(modules)
     
-    ctx.env.prepend_value('CFLAGS', ['-Os','-Wall', '-g', '-std=gnu99'])
+    ctx.env.prepend_value('CFLAGS', ['-Os','-Wall', '-g', '-rdynamic', '-std=gnu99'])
 
 def build(ctx):
     ctx.recurse(modules)
     ctx.program(
         target   = APPNAME,
         source   = ctx.path.ant_glob('src/*.c'),
-        use      = ['csp', 'slash', 'satlab', 'param', 'vmem'],
+        use      = ['csp', 'slash', 'param', 'vmem'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION],
         lib      = ['pthread', 'm'] + ctx.env.LIBS,
         ldflags  = '-Wl,-Map=' + APPNAME + '.map')
