@@ -12,5 +12,6 @@
 .waf-*
 *.swp
 build
+builddir
 *.cfg
 *.lzo
