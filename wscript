@@ -42,7 +42,7 @@ def configure(ctx):
 
     ctx.recurse(modules)
     
-    ctx.env.prepend_value('CFLAGS', ['-Os','-Wall', '-g', '-rdynamic', '-std=gnu99'])
+    ctx.env.prepend_value('CFLAGS', ['-Os', '-g', '-std=gnu99', '-D_FILE_OFFSET_BITS=64', '-DHAVE_TERMIOS_H'])
 
 def build(ctx):
     ctx.recurse(modules)
@@ -50,7 +50,7 @@ def build(ctx):
         target   = APPNAME,
         source   = ctx.path.ant_glob('src/*.c'),
         use      = ['csp', 'slash', 'param', 'vmem'],
-        defines  = ['SATCTL_VERSION="%s"' % VERSION],
+        defines  = ['SATCTL_VERSION="%s"' % VERSION, '_FILE_OFFSET_BITS=64'],
         lib      = ['pthread', 'm'] + ctx.env.LIBS,
         ldflags  = '-Wl,-Map=' + APPNAME + '.map')
 

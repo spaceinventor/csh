@@ -66,7 +66,7 @@ void usage(void)
 {
 	printf("usage: satctl [command]\n");
 	printf("\n");
-	printf("Satlab Control Application v" SATCTL_VERSION ".\n");
+	printf("Satlab Control Application\n");
 	printf("\n");
 	printf("Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n");
 	printf("\n");
@@ -114,8 +114,10 @@ int configure_csp(uint8_t addr, char *ifc)
 
 	csp_iface_t *can0 = csp_can_socketcan_init(ifc, 1000000, 0);
 
-	if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0)
-		return -1;
+	if (can0) {
+		if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0)
+			return -1;
+	}
 
 	if (csp_route_start_task(0, 0) < 0)
 		return -1;
@@ -135,7 +137,7 @@ int configure_csp(uint8_t addr, char *ifc)
 
 int main(int argc, char **argv)
 {
-	struct slash *slash;
+	static struct slash *slash;
 	int remain, index, i, c, p = 0;
 	char *ex;
 
@@ -192,7 +194,7 @@ int main(int argc, char **argv)
 		slash_execute(slash, ex);
 		free(ex);
 	} else {
-		printf("Satlab Control v" SATCTL_VERSION "\n");
+		printf("Satlab Control\n");
 		printf("Copyright (c) 2014-2016 Satlab ApS <satlab@satlab.com>\n\n");
 
 		slash_loop(slash, SATCTL_PROMPT_GOOD, SATCTL_PROMPT_BAD);
