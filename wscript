@@ -42,7 +42,7 @@ def configure(ctx):
 
     ctx.recurse(modules)
     
-    ctx.env.prepend_value('CFLAGS', ['-Os', '-g', '-std=gnu99', '-D_FILE_OFFSET_BITS=64', '-DHAVE_TERMIOS_H'])
+    ctx.env.prepend_value('CFLAGS', ['-Os', '-std=gnu99', '-flto'])
 
 def build(ctx):
     ctx.recurse(modules)
@@ -52,7 +52,7 @@ def build(ctx):
         use      = ['csp', 'slash', 'param', 'vmem'],
         defines  = ['SATCTL_VERSION="%s"' % VERSION, '_FILE_OFFSET_BITS=64'],
         lib      = ['pthread', 'm'] + ctx.env.LIBS,
-        ldflags  = '-Wl,-Map=' + APPNAME + '.map')
+        ldflags  = ['-Wl,-Map=' + APPNAME + '.map', '-flto'])
 
 def dist(ctx):
     ctx.algo      = 'tar.gz'
