@@ -1,26 +1,24 @@
-project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=release', 'c_std=gnu99'])
+project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=minsize', 'c_std=gnu99', 'b_lto=true'])
 
-libcsp = subproject('csp', default_options : [
-	'enable_driver_serial=true', 
-	'enable_driver_socketcan=true',
-	'enable_if_can=true'
-])
-libcsp_dep = libcsp.get_variable('libcsp_dep')
+csp = subproject('csp')
+csp_dep = csp.get_variable('csp_dep')
 
 slash = subproject('slash')
 slash_dep = slash.get_variable('slash_dep')
 
-libparam = subproject('param')
-libparam_dep = libparam.get_variable('libparam_dep')
+param = subproject('param')
+param_dep = param.get_variable('param_dep')
 
 satctl_sources = [
 	'src/satctl.c',
 	'src/time.c',
 ]
 
-executable('satctl', satctl_sources,
-	dependencies : [slash_dep, libcsp_dep, libparam_dep],
-	link_whole : [slash.get_variable('slash'), libparam.get_variable('libparam')],
+satctl = executable('satctl', satctl_sources,
+	dependencies : [slash_dep, csp_dep, param_dep],
+	link_whole : [slash.get_variable('slash'), param.get_variable('param')],
 	link_args : ['-Wl,-Map=satctl.map'],
 	install : true,
 )
+
+custom_target('size', output: ['dummy.txt'], command: [find_program('size'), satctl.full_path()], depends: satctl, build_by_default: true)
