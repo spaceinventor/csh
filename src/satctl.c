@@ -61,7 +61,6 @@ param_t const* const mygroup_static[] = {
 
 PARAM_GROUP_STATIC_PARAMS(mygroup_s, mygroup_static);
 
-
 void usage(void)
 {
 	printf("usage: satctl [command]\n");
@@ -83,14 +82,16 @@ int configure_csp(uint8_t addr, char *ifc)
 	if (csp_buffer_init(100, 320) < 0)
 		return -1;
 
-	csp_set_hostname("satctl");
-	csp_set_model("linux");
+	csp_conf_t csp_config;
+	csp_conf_get_defaults(&csp_config);
+	csp_config.address = addr;
+	csp_config.hostname = "satctl";
+	csp_config.model = "linux";
+	if (csp_init(&csp_config) < 0)
+		return -1;
 
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
-
-	if (csp_init(addr) < 0)
-		return -1;
 
 #if 0
 	struct usart_conf usart_conf = {
