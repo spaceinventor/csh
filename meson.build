@@ -1,4 +1,4 @@
-project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=minsize', 'c_std=gnu99', 'b_lto=true'])
+project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=release', 'c_std=gnu99', 'b_lto=false'])
 
 csp = subproject('csp')
 csp_dep = csp.get_variable('csp_dep')
