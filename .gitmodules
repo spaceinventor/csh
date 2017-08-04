@@ -1,12 +1,16 @@
 [submodule "lib/libcsp"]
-	path = lib/csp
-	url = https://github.com/spaceinventor/libcsp
+  path = lib/csp
+  url = https://github.com/spaceinventor/libcsp
+  branch = master     
 [submodule "lib/libparam"]
-	path = lib/param
-	url = https://github.com/spaceinventor/libparam
+  path = lib/param
+  url = https://github.com/spaceinventor/libparam
+  branch = master
 [submodule "lib/slash"]
-	path = lib/slash
-	url = https://github.com/spaceinventor/slash
+  path = lib/slash
+  url = https://github.com/spaceinventor/slash
+  branch = master
 [submodule "lib/si"]
-	path = lib/si
-	url = https://github.com/spaceinventor/libsi
+  path = lib/si
+  url = https://github.com/spaceinventor/libsi
+  branch = master
