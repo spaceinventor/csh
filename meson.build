@@ -22,7 +22,7 @@ slash_cmd = [
 	'-uslash_cmd_pull',     # param_client_slash.c
 	'-uslash_cmd_get',      # param_slash.c
 	'-uslash_cmd_group',    # param_group_slash.c
-	'-uslash_cmd_info',     # param_list_slash.c
+	'-uslash_cmd_list',     # param_list_slash.c
 	'-uslash_cmd_download', # vmem_client_slash_ftp.c
 	'-uslash_cmd_vmem',     # vmem_client_slash.c
 ]
