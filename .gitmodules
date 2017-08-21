@@ -11,6 +11,6 @@
   url = https://github.com/spaceinventor/slash
   branch = master
 [submodule "lib/si"]
-  path = lib/si
-  url = https://github.com/spaceinventor/libsi
+	path = lib/si
+	url = https://github.com/spaceinventor/libsi
   branch = master

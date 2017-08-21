@@ -12,6 +12,8 @@ param_dep = param.get_variable('param_dep')
 satctl_sources = [
 	'src/satctl.c',
 	'src/time.c',
+	'lib/si/src/slash/slash_csp.c',
+	'lib/si/src/slash/base16.c',
 ]
 
 # Provoke some undefined symbols in order to prevent 
@@ -29,7 +31,7 @@ slash_cmd = [
 
 satctl = executable('satctl', satctl_sources,
 	dependencies : [slash_dep, csp_dep, param_dep],
-	link_args : ['-Wl,-Map=satctl.map', slash_cmd],
+	link_args : ['-Wl,-Map=satctl.map', '-lm', slash_cmd],
 	install : true,
 )
 
