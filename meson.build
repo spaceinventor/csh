@@ -31,7 +31,7 @@ slash_cmd = [
 
 satctl = executable('satctl', satctl_sources,
 	dependencies : [slash_dep, csp_dep, param_dep],
-	link_args : ['-Wl,-Map=satctl.map', '-lm', slash_cmd],
+	link_args : ['-Wl,-Map=satctl.map', '-lm', '-T../linux.ld', slash_cmd],
 	install : true,
 )
 

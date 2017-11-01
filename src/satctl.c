@@ -36,14 +36,14 @@
 
 static uint32_t u32_data;
 static int32_t i32_data;
-static uint8_t u8_data;
+static uint8_t u8_data[12];
 static float flt_data;
 static char str_data[16] = "hest";
 static char data_data[16] = {0xDE, 0xAD, 0xBE, 0xEF};
 
 PARAM_DEFINE_STATIC_RAM(100, u32, PARAM_TYPE_UINT32, -1, 0, UINT32_MAX, PARAM_READONLY_FALSE, NULL, "", &u32_data, NULL);
 PARAM_DEFINE_STATIC_RAM(101, i32, PARAM_TYPE_INT32, -1, INT32_MIN, INT32_MAX, PARAM_READONLY_FALSE, NULL, "", &i32_data, NULL);
-PARAM_DEFINE_STATIC_RAM(102, u8, PARAM_TYPE_UINT8, -1, 0, UINT8_MAX, PARAM_READONLY_FALSE, NULL, "", &u8_data, NULL);
+PARAM_DEFINE_STATIC_RAM(102, u8, PARAM_TYPE_UINT8, 12, 0, UINT8_MAX, PARAM_READONLY_FALSE, NULL, "", &u8_data, NULL);
 PARAM_DEFINE_STATIC_RAM(103, flt, PARAM_TYPE_FLOAT, -1, -1, -1, PARAM_READONLY_FALSE, NULL, "", &flt_data, NULL);
 PARAM_DEFINE_STATIC_RAM(104, str, PARAM_TYPE_STRING, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", str_data, NULL);
 PARAM_DEFINE_STATIC_RAM(105, data, PARAM_TYPE_DATA, 16, -1, -1, PARAM_READONLY_FALSE, NULL, "", data_data, NULL);
@@ -177,6 +177,13 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
+
+	param_set_uint8(&u8, 2);
+	printf("u8 = %u\n", param_get_uint8(&u8));
+	param_set_uint8_array(&u8, 3, 0);
+	param_set_uint8_array(&u8, 4, 1);
+	printf("u8[0] = %u\n", param_get_uint8_array(&u8, 0));
+	printf("u8[1000] = %u\n", param_get_uint8_array(&u8, 1000));
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
