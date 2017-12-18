@@ -16,22 +16,9 @@ satctl_sources = [
 	'lib/si/src/slash/base16.c',
 ]
 
-# Provoke some undefined symbols in order to prevent 
-# garbage collection of slash commands
-# Only one command is needed from each object file.
-slash_cmd = [
-	'-uslash_cmd_info',     # slash_csp.c
-	'-uslash_cmd_pull',     # param_client_slash.c
-	'-uslash_cmd_get',      # param_slash.c
-	'-uslash_cmd_group',    # param_group_slash.c
-	'-uslash_cmd_list',     # param_list_slash.c
-	'-uslash_cmd_download', # vmem_client_slash_ftp.c
-	'-uslash_cmd_vmem',     # vmem_client_slash.c
-]
-
 satctl = executable('satctl', satctl_sources,
 	dependencies : [slash_dep, csp_dep, param_dep],
-	link_args : ['-Wl,-Map=satctl.map', '-lm', '-T../linux.ld', slash_cmd],
+	link_args : ['-Wl,-Map=satctl.map', '-lm', '-T../linux.ld'],
 	install : true,
 )
 
