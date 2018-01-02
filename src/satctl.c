@@ -127,8 +127,9 @@ int configure_csp(uint8_t addr, char *ifc)
 	csp_rdp_set_opt(2, 10000, 2000, 1, 1000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
-	csp_thread_handle_t server_handle;
-	csp_thread_create(param_server_task, "param", 2000, NULL, 1, &server_handle);
+	csp_socket_t *sock_param = csp_socket(CSP_SO_NONE);
+	csp_socket_set_callback(sock_param, param_serve);
+	csp_bind(sock_param, PARAM_PORT_SERVER);
 
 	csp_thread_handle_t vmem_handle;
 	csp_thread_create(vmem_server_task, "vmem", 2000, NULL, 1, &vmem_handle);
