@@ -12,8 +12,8 @@ param_dep = param.get_variable('param_dep')
 satctl_sources = [
 	'src/satctl.c',
 	'src/time.c',
-	'lib/si/src/slash/slash_csp.c',
-	'lib/si/src/slash/base16.c',
+	'src/slash_csp.c',
+	'src/base16.c',
 ]
 
 satctl = executable('satctl', satctl_sources,
