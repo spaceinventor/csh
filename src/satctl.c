@@ -38,8 +38,7 @@ void usage(void)
 {
 	printf("usage: satctl [command]\n");
 	printf("\n");
-	printf("Satlab Control Application\n");
-	printf("\n");
+	printf("Copyright (c) 2018 Space Inventor ApS <info@spaceinventor.com>\n");
 	printf("Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n");
 	printf("\n");
 	printf("Options:\n");
@@ -173,8 +172,13 @@ int main(int argc, char **argv)
 		slash_execute(slash, ex);
 		free(ex);
 	} else {
-		printf("Satlab Control\n");
-		printf("Copyright (c) 2014-2016 Satlab ApS <satlab@satlab.com>\n\n");
+		printf("\n\n");
+		printf(" *******************************\n");
+		printf(" **   SatCtl - Space Command  **\n");
+		printf(" *******************************\n\n");
+
+		printf(" Copyright (c) 2018 Space Inventor ApS <info@spaceinventor.com>\n");
+		printf(" Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n\n");
 
 		slash_loop(slash, SATCTL_PROMPT_GOOD, SATCTL_PROMPT_BAD);
 	}
