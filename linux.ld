@@ -65,6 +65,14 @@ SECTIONS
     KEEP(*(param));
     KEEP(*(SORT(param.*)));
     __stop_param = .;
+        __start_vmem = .;
+    KEEP(*(vmem));
+    KEEP(*(SORT(vmem.*)));
+    __stop_vmem = .;    
+    __start_groups = .;
+    KEEP(*(groups));
+    KEEP(*(SORT(groups.*)));
+    __stop_groups = .;
     
     /* .gnu.warning sections are handled specially by elf32.em.  */
     *(.gnu.warning)

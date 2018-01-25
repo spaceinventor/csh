@@ -34,33 +34,6 @@
 #define SATCTL_LINE_SIZE		128
 #define SATCTL_HISTORY_SIZE		2048
 
-static uint32_t u32_data[12];
-static int32_t i32_data[12];
-static uint8_t u8_data[12];
-static float flt_data[12];
-static char str_data[16] = "hest";
-static char data_data[16] = {0xDE, 0xAD, 0xBE, 0xEF};
-
-PARAM_DEFINE_STATIC_RAM(100, u32, PARAM_TYPE_UINT32, 12, sizeof(uint32_t), PARAM_READONLY_FALSE, NULL, "", &u32_data, NULL);
-PARAM_DEFINE_STATIC_RAM(101, i32, PARAM_TYPE_INT32, -1, 0, PARAM_READONLY_FALSE, NULL, "", &i32_data, NULL);
-PARAM_DEFINE_STATIC_RAM(102, u8, PARAM_TYPE_UINT8, 12, sizeof(uint8_t), PARAM_READONLY_FALSE, NULL, "", &u8_data, NULL);
-PARAM_DEFINE_STATIC_RAM(103, flt, PARAM_TYPE_FLOAT, 12, sizeof(float), PARAM_READONLY_FALSE, NULL, "", &flt_data, NULL);
-PARAM_DEFINE_STATIC_RAM(104, str, PARAM_TYPE_STRING, 16, 0, PARAM_READONLY_FALSE, NULL, "", str_data, NULL);
-PARAM_DEFINE_STATIC_RAM(105, data, PARAM_TYPE_DATA, 16, 0, PARAM_READONLY_FALSE, NULL, "", data_data, NULL);
-
-VMEM_DEFINE_STATIC_RAM(ram, "ram", 1000000);
-
-param_t const* const mygroup_static[] = {
-	&u32,
-	&i32,
-	&u8,
-	&flt,
-	&str,
-	&data,
-};
-
-PARAM_GROUP_STATIC_PARAMS(mygroup_s, mygroup_static);
-
 void usage(void)
 {
 	printf("usage: satctl [command]\n");
@@ -178,13 +151,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
-
-	param_set_uint8(&u8, 2);
-	printf("u8 = %u\n", param_get_uint8(&u8));
-	param_set_uint8_array(&u8, 0, 3);
-	param_set_uint8_array(&u8, 1, 4);
-	printf("u8[0] = %u\n", param_get_uint8_array(&u8, 0));
-	printf("u8[1000] = %u\n", param_get_uint8_array(&u8, 1000));
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
