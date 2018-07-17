@@ -14,6 +14,7 @@ satctl_sources = [
 	'src/time.c',
 	'src/slash_csp.c',
 	'src/base16.c',
+	'src/rewl_test.c',
 ]
 
 ldscript = files('linux.ld')
