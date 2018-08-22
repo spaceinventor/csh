@@ -1,4 +1,6 @@
-project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=release', 'c_std=gnu99', 'b_lto=false'])
+project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=release', 'c_std=gnu99', 'b_lto=false', 'csp:use_qos=false'])
+
+add_global_arguments('-I../include', language: 'c')
 
 csp = subproject('csp')
 csp_dep = csp.get_variable('csp_dep')
@@ -13,6 +15,7 @@ satctl_sources = [
 	'src/satctl.c',
 	'src/time.c',
 	'src/slash_csp.c',
+	'src/csp_debug_param.c',
 	'src/base16.c',
 	'src/rewl_test.c',
 ]
@@ -22,7 +25,7 @@ ldscript = files('linux.ld')
 satctl = executable('satctl', satctl_sources,
 	dependencies : [slash_dep, csp_dep, param_dep],
 	link_args : ['-Wl,-Map=satctl.map', '-lm', '-T@0@/@1@'.format(meson.current_source_dir(), ldscript[0])],
-        link_depends : ldscript,
+    link_depends : ldscript,
 	install : true,
 )
 
