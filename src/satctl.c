@@ -34,6 +34,8 @@
 #define SATCTL_LINE_SIZE		128
 #define SATCTL_HISTORY_SIZE		2048
 
+VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
+
 void usage(void)
 {
 	printf("usage: satctl [command]\n");
@@ -151,6 +153,7 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
+
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
