@@ -26,13 +26,14 @@
 #include <param/param_group.h>
 #include <param/param_server.h>
 
-#define SATCTL_PROMPT_GOOD		"\033[96msatctl \033[90m%\033[0m "
-#define SATCTL_PROMPT_BAD		"\033[96msatctl \033[31m!\033[0m "
-#define SATCTL_DEFAULT_INTERFACE	"can0"
+#define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
+#define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
+#define SATCTL_DEFAULT_CAN_DEV	    "can0"
+#define SATCTL_DEFAULT_UART_DEV	    "/dev/ttyUSB0"
+#define SATCTL_DEFAULT_UART_BAUD    1000000
 #define SATCTL_DEFAULT_ADDRESS		0
-
-#define SATCTL_LINE_SIZE		128
-#define SATCTL_HISTORY_SIZE		2048
+#define SATCTL_LINE_SIZE		    128
+#define SATCTL_HISTORY_SIZE		    2048
 
 VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
 
@@ -44,14 +45,58 @@ void usage(void)
 	printf("Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n");
 	printf("\n");
 	printf("Options:\n");
-	printf(" -i INTERFACE,\tUse INTERFACE as CAN interface\n");
+	printf(" -c INTERFACE,\tUse INTERFACE as CAN interface\n");
 	printf(" -n NODE\tUse NODE as own CSP address\n");
 	printf(" -r REMOTE NODE\tUse NODE as remote CSP address for rparam\n");
 	printf(" -h,\t\tPrint this help and exit\n");
 }
 
-int configure_csp(uint8_t addr, char *ifc)
+void kiss_discard(char c, void * taskwoken) {
+	putchar(c);
+}
+
+int main(int argc, char **argv)
 {
+	static struct slash *slash;
+	int remain, index, i, c, p = 0;
+	char *ex;
+
+	uint8_t addr = SATCTL_DEFAULT_ADDRESS;
+	char *can_dev = SATCTL_DEFAULT_CAN_DEV;
+	char *uart_dev = SATCTL_DEFAULT_UART_DEV;
+	uint32_t uart_baud = SATCTL_DEFAULT_UART_BAUD;
+	int use_uart = 0;
+	int use_can = 1;
+
+	while ((c = getopt(argc, argv, "+hr:c:u:n:")) != -1) {
+		switch (c) {
+		case 'h':
+			usage();
+			exit(EXIT_SUCCESS);
+		case 'c':
+			use_uart = 0;
+			use_can = 1;
+			can_dev = optarg;
+			break;
+		case 'u':
+			use_uart = 1;
+			use_can = 0;
+			uart_dev = optarg;
+			break;
+		case 'b':
+			uart_baud = atoi(optarg);
+		case 'n':
+			addr = atoi(optarg);
+			break;
+		default:
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	remain = argc - optind;
+	index = optind;
+
+
 
 	if (csp_buffer_init(100, 320) < 0)
 		return -1;
@@ -67,36 +112,40 @@ int configure_csp(uint8_t addr, char *ifc)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-#if 0
-	struct usart_conf usart_conf = {
-			.device = "/dev/ttyUSB0",
-			.baudrate = 38400,
-	};
-	usart_init(&usart_conf);
+	if (use_uart) {
+		struct usart_conf usart_conf = {
+				.device = uart_dev,
+				.baudrate = uart_baud,
+		};
+		usart_init(&usart_conf);
 
-	static csp_iface_t kiss_if;
-	static csp_kiss_handle_t kiss_handle;
-	void kiss_usart_putchar(char c) {
-		usleep(4000);
-		usart_putc(c);
+		static csp_iface_t kiss_if;
+		static csp_kiss_handle_t kiss_handle;
+		void kiss_usart_putchar(char c) {
+			usleep(1);
+			usart_putc(c);
+		}
+		void kiss_usart_callback(uint8_t *buf, int len, void *pxTaskWoken) {
+			csp_kiss_rx(&kiss_if, buf, len, pxTaskWoken);
+		}
+		usart_set_callback(kiss_usart_callback);
+		csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, kiss_discard, "KISS");
+		csp_route_set(CSP_DEFAULT_ROUTE, &kiss_if, CSP_NODE_MAC);
+		printf("Using usart %s baud %u\n", uart_dev, uart_baud);
 	}
-	void kiss_usart_callback(uint8_t *buf, int len, void *pxTaskWoken) {
-		csp_kiss_rx(&kiss_if, buf, len, pxTaskWoken);
-	}
-	usart_set_callback(kiss_usart_callback);
-	csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, NULL, "KISS");
-#endif
 
-	csp_iface_t *can0 = csp_can_socketcan_init(ifc, 1000000, 0);
-
-	if (can0) {
-		if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0)
-			return -1;
+	if (use_can) {
+		csp_iface_t *can0 = csp_can_socketcan_init(can_dev, 1000000, 0);
+		if (can0) {
+			if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0) {
+				return -1;
+			}
+		}
+		printf("Using can %s baud %u\n", can_dev, 1000000);
 	}
 
 	if (csp_route_start_task(0, 0) < 0)
 		return -1;
-
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
@@ -111,42 +160,6 @@ int configure_csp(uint8_t addr, char *ifc)
 
 	csp_thread_handle_t vmem_handle;
 	csp_thread_create(vmem_server_task, "vmem", 2000, NULL, 1, &vmem_handle);
-
-	return 0;
-}
-
-int main(int argc, char **argv)
-{
-	static struct slash *slash;
-	int remain, index, i, c, p = 0;
-	char *ex;
-
-	uint8_t addr = SATCTL_DEFAULT_ADDRESS;
-	char *ifc = SATCTL_DEFAULT_INTERFACE;
-
-	while ((c = getopt(argc, argv, "+hr:i:n:")) != -1) {
-		switch (c) {
-		case 'h':
-			usage();
-			exit(EXIT_SUCCESS);
-		case 'i':
-			ifc = optarg;
-			break;
-		case 'n':
-			addr = atoi(optarg);
-			break;
-		default:
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	remain = argc - optind;
-	index = optind;
-
-	if (configure_csp(addr, ifc) < 0) {
-		fprintf(stderr, "Failed to init CSP\n");
-		exit(EXIT_FAILURE);
-	}
 
 	slash = slash_create(SATCTL_LINE_SIZE, SATCTL_HISTORY_SIZE);
 	if (!slash) {
