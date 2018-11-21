@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 	int use_uart = 0;
 	int use_can = 1;
 
-	while ((c = getopt(argc, argv, "+hr:c:u:n:")) != -1) {
+	while ((c = getopt(argc, argv, "+hr:b:c:u:n:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -85,6 +85,7 @@ int main(int argc, char **argv)
 			break;
 		case 'b':
 			uart_baud = atoi(optarg);
+			break;
 		case 'n':
 			addr = atoi(optarg);
 			break;
@@ -122,7 +123,6 @@ int main(int argc, char **argv)
 		static csp_iface_t kiss_if;
 		static csp_kiss_handle_t kiss_handle;
 		void kiss_usart_putchar(char c) {
-			usleep(1);
 			usart_putc(c);
 		}
 		void kiss_usart_callback(uint8_t *buf, int len, void *pxTaskWoken) {
