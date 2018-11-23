@@ -132,6 +132,8 @@ int main(int argc, char **argv)
 		csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, kiss_discard, "KISS");
 		csp_route_set(CSP_DEFAULT_ROUTE, &kiss_if, CSP_NODE_MAC);
 		printf("Using usart %s baud %u\n", uart_dev, uart_baud);
+		char *cmd = "\nset kiss_mode 1\n";
+		usart_putstr(cmd, strlen(cmd));
 	}
 
 	if (use_can) {
