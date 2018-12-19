@@ -15,3 +15,4 @@ build
 builddir
 *.cfg
 *.lzo
+*.csv

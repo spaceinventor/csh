@@ -15,6 +15,7 @@
 #include <param/param.h>
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_ram.h>
+#include <vmem/vmem_file.h>
 
 #include <csp/csp.h>
 #include <csp/arch/csp_thread.h>
@@ -36,6 +37,8 @@
 #define SATCTL_HISTORY_SIZE		    2048
 
 VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
+VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
+VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
 
 void usage(void)
 {
@@ -169,6 +172,9 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
+	/* Parameters */
+	vmem_file_init(&vmem_params);
+	param_list_store_vmem_load(&vmem_params);
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
@@ -189,10 +195,10 @@ int main(int argc, char **argv)
 	} else {
 		printf("\n\n");
 		printf(" *******************************\n");
-		printf(" **   SatCtl - Space Command  **\n");
+		printf(" **   Satctl - Space Command  **\n");
 		printf(" *******************************\n\n");
 
-		printf(" Copyright (c) 2018 Space Inventor ApS <info@spaceinventor.com>\n");
+		printf(" Copyright (c) 2019 Space Inventor ApS <info@space-inventor.com>\n");
 		printf(" Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n\n");
 
 		slash_loop(slash, SATCTL_PROMPT_GOOD, SATCTL_PROMPT_BAD);
