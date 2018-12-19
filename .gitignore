@@ -16,3 +16,4 @@ builddir
 *.cfg
 *.lzo
 *.csv
+*.vmem
