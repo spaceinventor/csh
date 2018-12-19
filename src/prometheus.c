@@ -51,6 +51,18 @@ retry_bind:
 		socklen_t client_addr_len;
 		int conn_fd = accept(listen_fd, (struct sockaddr*)&client_addr, &client_addr_len);
 
+		char in[1024];
+		int bread = read(conn_fd, in, 1024);
+		if (bread == 0) {
+			close(conn_fd);
+			continue;
+		}
+
+		if (strncmp(in, "GET /metrics", 12) != 0) {
+			close(conn_fd);
+			continue;
+		}
+
 		int written = write(conn_fd, header, strlen(header));
 
 		/* Dump queued data */

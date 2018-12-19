@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <sys/time.h>
 #include <pthread.h>
 #include <param/param_server.h>
 #include <param/param_queue.h>
@@ -33,7 +34,9 @@ static int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, i
 
 	for (int i = offset; i < offset + count; i++) {
 
-		uint64_t time_us = time(NULL) * (uint64_t) 1000;
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		uint64_t time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
 
 		switch (param->type) {
 		case PARAM_TYPE_UINT8:
@@ -42,25 +45,25 @@ static int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, i
 		case PARAM_TYPE_XINT16:
 		case PARAM_TYPE_UINT32:
 		case PARAM_TYPE_XINT32:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %llu\n", param->name, param->node, i, mpack_expect_uint(reader), time_us);
+			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %llu\n", param->name, param->node, i, mpack_expect_uint(reader), time_ms);
 			break;
 		case PARAM_TYPE_UINT64:
 		case PARAM_TYPE_XINT64:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %llu %llu\n", param->name, param->node, i, mpack_expect_u64(reader), time_us);
+			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %llu %llu\n", param->name, param->node, i, mpack_expect_u64(reader), time_ms);
 			break;
 		case PARAM_TYPE_INT8:
 		case PARAM_TYPE_INT16:
 		case PARAM_TYPE_INT32:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %llu\n", param->name, param->node, i, mpack_expect_int(reader), time_us);
+			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %llu\n", param->name, param->node, i, mpack_expect_int(reader), time_ms);
 			break;
 		case PARAM_TYPE_INT64:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %lld %llu\n", param->name, param->node, i, mpack_expect_i64(reader), time_us);
+			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %lld %llu\n", param->name, param->node, i, mpack_expect_i64(reader), time_ms);
 			break;
 		case PARAM_TYPE_FLOAT:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %f %llu\n", param->name, param->node, i, mpack_expect_float(reader), time_us);
+			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %f %llu\n", param->name, param->node, i, mpack_expect_float(reader), time_ms);
 			break;
 		case PARAM_TYPE_DOUBLE:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %f %llu\n", param->name, param->node, i, mpack_expect_double(reader), time_us);
+			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %f %llu\n", param->name, param->node, i, mpack_expect_double(reader), time_ms);
 			break;
 
 		case PARAM_TYPE_STRING:
