@@ -28,6 +28,9 @@
 #include <param/param_server.h>
 #include <param/param_collector.h>
 
+#include "prometheus.h"
+#include "param_sniffer.h"
+
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
 #define SATCTL_DEFAULT_CAN_DEV	    "can0"
@@ -181,6 +184,9 @@ int main(int argc, char **argv)
 	vmem_file_init(&vmem_col);
 	pthread_t param_collector_handle;
 	pthread_create(&param_collector_handle, NULL, &param_collector_task, NULL);
+
+	prometheus_init();
+	param_sniffer_init();
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
