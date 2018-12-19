@@ -17,7 +17,8 @@ satctl_sources = [
 	'src/slash_csp.c',
 	'src/csp_debug_param.c',
 	'src/base16.c',
-	'src/rewl_test.c',
+	'src/param_sniffer.c',
+	'src/prometheus.c'
 ]
 
 satctl = executable('satctl', satctl_sources,
