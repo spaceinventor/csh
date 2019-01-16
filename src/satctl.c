@@ -21,6 +21,7 @@
 #include <csp/arch/csp_thread.h>
 #include <csp/interfaces/csp_if_can.h>
 #include <csp/interfaces/csp_if_kiss.h>
+#include <csp/interfaces/csp_if_udp.h>
 #include <csp/drivers/usart.h>
 #include <csp/drivers/can_socketcan.h>
 #include <param/param_list.h>
@@ -53,9 +54,12 @@ void usage(void)
 	printf("\n");
 	printf("Options:\n");
 	printf(" -c INTERFACE,\tUse INTERFACE as CAN interface\n");
+	printf(" -u INTERFACE,\tUse INTERFACE as UART interface\n");
+	printf(" -b BAUD,\tUART buad rate\n");
 	printf(" -n NODE\tUse NODE as own CSP address\n");
-	printf(" -r REMOTE NODE\tUse NODE as remote CSP address for rparam\n");
-	printf(" -h,\t\tPrint this help and exit\n");
+	printf(" -r REMOTE_IP\tSetup UDP peer\n");
+	printf(" -p\t\tSetup prometheus node\n");
+	printf(" -h\t\tPrint this help and exit\n");
 }
 
 void kiss_discard(char c, void * taskwoken) {
@@ -74,12 +78,17 @@ int main(int argc, char **argv)
 	uint32_t uart_baud = SATCTL_DEFAULT_UART_BAUD;
 	int use_uart = 0;
 	int use_can = 1;
+	int use_prometheus = 0;
+	char * udp_peer_ip = "";
 
-	while ((c = getopt(argc, argv, "+hr:b:c:u:n:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
+		case 'r':
+			udp_peer_ip = optarg;
+			break;
 		case 'c':
 			use_uart = 0;
 			use_can = 1;
@@ -95,6 +104,9 @@ int main(int argc, char **argv)
 			break;
 		case 'n':
 			addr = atoi(optarg);
+			break;
+		case 'p':
+			use_prometheus = 1;
 			break;
 		default:
 			exit(EXIT_FAILURE);
@@ -159,6 +171,13 @@ int main(int argc, char **argv)
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
+	if (strlen(udp_peer_ip) > 0) {
+		static csp_iface_t udp_client_if;
+		csp_if_udp_init(&udp_client_if, udp_peer_ip);
+		csp_rtable_set(0, 0, &udp_client_if, CSP_NODE_MAC);
+	}
+
+
 	csp_socket_t *sock_csh = csp_socket(CSP_SO_NONE);
 	csp_socket_set_callback(sock_csh, csp_service_handler);
 	csp_bind(sock_csh, CSP_ANY);
@@ -185,8 +204,10 @@ int main(int argc, char **argv)
 	pthread_t param_collector_handle;
 	pthread_create(&param_collector_handle, NULL, &param_collector_task, NULL);
 
-	prometheus_init();
-	param_sniffer_init();
+	if (use_prometheus) {
+		prometheus_init();
+		param_sniffer_init();
+	}
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
