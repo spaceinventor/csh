@@ -43,6 +43,7 @@
 
 VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
+VMEM_DEFINE_FILE(csp, "csp", "cspcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
 
 void usage(void)
@@ -116,7 +117,8 @@ int main(int argc, char **argv)
 	remain = argc - optind;
 	index = optind;
 
-
+	/* Get csp config from file */
+	vmem_file_init(&vmem_csp);
 
 	if (csp_buffer_init(100, 320) < 0)
 		return -1;
@@ -177,6 +179,15 @@ int main(int argc, char **argv)
 		csp_rtable_set(0, 0, &udp_client_if, CSP_NODE_MAC);
 	}
 
+	/* Read routing table from parameter system */
+	extern param_t csp_rtable;
+	char rtable[csp_rtable.array_size];
+	param_get_string(&csp_rtable, rtable, csp_rtable.array_size);
+
+	if (csp_rtable_check(rtable)) {
+		csp_rtable_clear();
+		csp_rtable_load(rtable);
+	}
 
 	csp_socket_t *sock_csh = csp_socket(CSP_SO_NONE);
 	csp_socket_set_callback(sock_csh, csp_service_handler);
