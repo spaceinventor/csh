@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 	}
 
 	if (use_can) {
-		csp_iface_t *can0 = csp_can_socketcan_init(can_dev, 1000000, 0);
+		csp_iface_t *can0 = csp_can_socketcan_init(can_dev, 1000000, 1);
 		if (can0) {
 			if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0) {
 				return -1;
