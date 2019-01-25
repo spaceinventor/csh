@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 	/* Get csp config from file */
 	vmem_file_init(&vmem_csp);
 
-	if (csp_buffer_init(100, 320) < 0)
+	if (csp_buffer_init(100, 2100) < 0)
 		return -1;
 
 	csp_conf_t csp_config;
