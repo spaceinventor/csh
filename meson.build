@@ -9,7 +9,7 @@ slash = subproject('slash')
 slash_dep = slash.get_variable('slash_dep')
 
 param = subproject('param')
-param_dep = param.get_variable('param_dep')
+param_dep = param.get_variable('param_dep_whole')
 
 satctl_sources = [
 	'src/satctl.c',
