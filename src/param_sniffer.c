@@ -12,6 +12,7 @@
 #include <param/param_queue.h>
 #include <mpack/mpack.h>
 #include <csp/csp.h>
+#include <csp/csp_crc32.h>
 
 #include "prometheus.h"
 
@@ -89,10 +90,28 @@ static void * param_sniffer(void * param) {
 	csp_promisc_enable(100);
 	while(1) {
 		csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
+
 		if (packet->id.sport != PARAM_PORT_SERVER) {
 			csp_buffer_free(packet);
 			continue;
 		}
+
+		/* CRC32 verified packet */
+		if (packet->id.flags & CSP_FCRC32) {
+			if (packet->length < 4) {
+				csp_log_error("Too short packet for CRC32, %u", packet->length);
+				csp_buffer_free(packet);
+				continue;
+			}
+			/* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
+			if (csp_crc32_verify(packet, false) != 0) {
+				/* Checksum failed */
+				csp_log_error("CRC32 verification error! Discarding packet");
+				csp_buffer_free(packet);
+				continue;
+			}
+		}
+
 		uint8_t type = packet->data[0];
 		if (type != PARAM_PULL_RESPONSE) {
 			csp_buffer_free(packet);
