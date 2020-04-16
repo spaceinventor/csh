@@ -1,8 +1,8 @@
 ### Build
 
-Requirements: build-essential, libsocketcan-dev, libzmq-dev
+Requirements: build-essential, libsocketcan-dev, libzmq-dev, meson
 
-./meson . builddir
+meson . builddir
 cd builddir
 ninja
 sudo ninja install
