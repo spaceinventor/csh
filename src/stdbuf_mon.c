@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_queue.h>

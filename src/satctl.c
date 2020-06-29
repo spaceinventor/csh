@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	int use_uart = 0;
 	int use_can = 1;
 	int use_prometheus = 0;
-	char * udp_peer_ip = "";
+	char * udp_peer_str = "";
 
 	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:")) != -1) {
 		switch (c) {
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 			usage();
 			exit(EXIT_SUCCESS);
 		case 'r':
-			udp_peer_ip = optarg;
+			udp_peer_str = optarg;
 			break;
 		case 'c':
 			use_uart = 0;
@@ -120,11 +120,10 @@ int main(int argc, char **argv)
 	/* Get csp config from file */
 	vmem_file_init(&vmem_csp);
 
-	if (csp_buffer_init(100, 2100) < 0)
-		return -1;
-
 	csp_conf_t csp_config;
 	csp_conf_get_defaults(&csp_config);
+	csp_config.buffers = 100;
+	csp_config.buffer_data_size = 2100;
 	csp_config.address = addr;
 	csp_config.hostname = "satctl";
 	csp_config.model = "linux";
@@ -134,37 +133,29 @@ int main(int argc, char **argv)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
+	csp_iface_t * default_iface = NULL;
 	if (use_uart) {
-		struct usart_conf usart_conf = {
-				.device = uart_dev,
-				.baudrate = uart_baud,
+		csp_usart_conf_t conf = {
+			.device = uart_dev,
+			.baudrate = uart_baud, /* supported on all platforms */
+			.databits = 8,
+			.stopbits = 1,
+			.paritysetting = 0,
+			.checkparity = 0
 		};
-		usart_init(&usart_conf);
-
-		static csp_iface_t kiss_if;
-		static csp_kiss_handle_t kiss_handle;
-		void kiss_usart_putchar(char c) {
-			usart_putc(c);
+		int error = csp_usart_open_and_add_kiss_interface(&conf, CSP_IF_KISS_DEFAULT_NAME, &default_iface);
+		if (error != CSP_ERR_NONE) {
+			csp_log_error("failed to add KISS interface [%s], error: %d", uart_dev, error);
+			exit(1);
 		}
-		void kiss_usart_callback(uint8_t *buf, int len, void *pxTaskWoken) {
-			csp_kiss_rx(&kiss_if, buf, len, pxTaskWoken);
-		}
-		usart_set_callback(kiss_usart_callback);
-		csp_kiss_init(&kiss_if, &kiss_handle, kiss_usart_putchar, kiss_discard, "KISS");
-		csp_route_set(CSP_DEFAULT_ROUTE, &kiss_if, CSP_NODE_MAC);
-		printf("Using usart %s baud %u\n", uart_dev, uart_baud);
-		char *cmd = "\nset kiss_mode 1\n";
-		usart_putstr(cmd, strlen(cmd));
 	}
 
 	if (use_can) {
-		csp_iface_t *can0 = csp_can_socketcan_init(can_dev, 1000000, 1);
-		if (can0) {
-			if (csp_route_set(CSP_DEFAULT_ROUTE, can0, CSP_NODE_MAC) < 0) {
-				return -1;
-			}
+		int error = csp_can_socketcan_open_and_add_interface(can_dev, CSP_IF_CAN_DEFAULT_NAME, 1000000, true, &default_iface);
+		if (error != CSP_ERR_NONE) {
+			csp_log_error("failed to add CAN interface [%s], error: %d", can_dev, error);
+			exit(1);
 		}
-		printf("Using can %s baud %u\n", can_dev, 1000000);
 	}
 
 	if (csp_route_start_task(0, 0) < 0)
@@ -173,10 +164,21 @@ int main(int argc, char **argv)
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
-	if (strlen(udp_peer_ip) > 0) {
+	if (strlen(udp_peer_str) > 0) {
+		printf("udp str %s\n", udp_peer_str);
+		int lport = 9600;
+		int rport = 9600;
+		char udp_peer_ip[20];
+
+		if (sscanf(udp_peer_str, "%d %19s %d", &lport, udp_peer_ip, &rport) != 3) {
+			printf("Invalid UDP configuration string: %s\n", udp_peer_str);
+			printf("Should math the pattern \"<lport> <peer ip> <rport>\" exactly\n");
+			return -1;
+		}
+
 		static csp_iface_t udp_client_if;
-		csp_if_udp_init(&udp_client_if, udp_peer_ip);
-		csp_rtable_set(0, 0, &udp_client_if, CSP_NODE_MAC);
+		csp_if_udp_init(&udp_client_if, udp_peer_ip, lport, rport);
+		default_iface = &udp_client_if;
 	}
 
 	/* Read routing table from parameter system */
@@ -185,9 +187,18 @@ int main(int argc, char **argv)
 	param_get_string(&csp_rtable, rtable, csp_rtable.array_size);
 
 	if (csp_rtable_check(rtable)) {
-		csp_rtable_clear();
-		csp_rtable_load(rtable);
+		int error = csp_rtable_load(rtable);
+		if (error < 1) {
+			csp_log_error("csp_rtable_load(%s) failed, error: %d", rtable, error);
+			exit(1);
+		}
+	} else if (default_iface) {
+		printf("Setting default route to %s\n", default_iface->name);
+		csp_rtable_set(CSP_DEFAULT_ROUTE, 0, default_iface, CSP_NO_VIA_ADDRESS);
+	} else {
+		printf("No routing defined\n");
 	}
+
 
 	csp_socket_t *sock_csh = csp_socket(CSP_SO_NONE);
 	csp_socket_set_callback(sock_csh, csp_service_handler);

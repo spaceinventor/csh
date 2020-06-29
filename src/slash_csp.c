@@ -192,7 +192,7 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 	unsigned int node = atoi(slash->argv[1]);
 	unsigned int dest_node = atoi(slash->argv[2]);
 	char * interface = slash->argv[3];
-	unsigned int next_hop_mac = atoi(slash->argv[4]);
+	unsigned int next_hop_via = atoi(slash->argv[4]);
 	unsigned int timeout = 1000;
 	if (slash->argc >= 6)
 		timeout = atoi(slash->argv[5]);
@@ -200,7 +200,7 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 	struct csp_cmp_message message;
 
 	message.route_set.dest_node = dest_node;
-	message.route_set.next_hop_mac = next_hop_mac;
+	message.route_set.next_hop_via = next_hop_via;
 	strncpy(message.route_set.interface, interface, CSP_CMP_ROUTE_IFACE_LEN);
 
 	if (csp_cmp_route_set(node, timeout, &message) != CSP_ERR_NONE) {
@@ -348,7 +348,7 @@ static int slash_csp_cmp_time(struct slash *slash)
 	struct csp_cmp_message message;
 
 	csp_timestamp_t localtime;
-	clock_get_time(&localtime);
+	csp_clock_get_time(&localtime);
 
 	if (timestamp == -1) {
 		message.clock.tv_sec = csp_hton32(localtime.tv_sec);
