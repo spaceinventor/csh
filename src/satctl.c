@@ -154,7 +154,6 @@ int main(int argc, char **argv)
 		int error = csp_can_socketcan_open_and_add_interface(can_dev, CSP_IF_CAN_DEFAULT_NAME, 1000000, true, &default_iface);
 		if (error != CSP_ERR_NONE) {
 			csp_log_error("failed to add CAN interface [%s], error: %d", can_dev, error);
-			exit(1);
 		}
 	}
 
