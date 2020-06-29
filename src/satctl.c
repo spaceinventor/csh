@@ -37,7 +37,7 @@
 #define SATCTL_DEFAULT_CAN_DEV	    "can0"
 #define SATCTL_DEFAULT_UART_DEV	    "/dev/ttyUSB0"
 #define SATCTL_DEFAULT_UART_BAUD    1000000
-#define SATCTL_DEFAULT_ADDRESS		0
+#define SATCTL_DEFAULT_ADDRESS		1
 #define SATCTL_LINE_SIZE		    128
 #define SATCTL_HISTORY_SIZE		    2048
 
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	int remain, index, i, c, p = 0;
 	char *ex;
 
-	uint8_t addr = SATCTL_DEFAULT_ADDRESS;
+	uint16_t addr = SATCTL_DEFAULT_ADDRESS;
 	char *can_dev = SATCTL_DEFAULT_CAN_DEV;
 	char *uart_dev = SATCTL_DEFAULT_UART_DEV;
 	uint32_t uart_baud = SATCTL_DEFAULT_UART_BAUD;
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
 		}
 	} else if (default_iface) {
 		printf("Setting default route to %s\n", default_iface->name);
-		csp_rtable_set(CSP_DEFAULT_ROUTE, 0, default_iface, CSP_NO_VIA_ADDRESS);
+		csp_rtable_set(0, 0, default_iface, CSP_NO_VIA_ADDRESS);
 	} else {
 		printf("No routing defined\n");
 	}
