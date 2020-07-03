@@ -81,8 +81,9 @@ int main(int argc, char **argv)
 	int use_can = 1;
 	int use_prometheus = 0;
 	char * udp_peer_str = "";
+	int csp_version = 2;
 
-	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -109,6 +110,9 @@ int main(int argc, char **argv)
 		case 'p':
 			use_prometheus = 1;
 			break;
+		case 'v':
+			csp_version = atoi(optarg);
+			break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -122,6 +126,7 @@ int main(int argc, char **argv)
 
 	csp_conf_t csp_config;
 	csp_conf_get_defaults(&csp_config);
+	csp_config.version = csp_version;
 	csp_config.buffers = 100;
 	csp_config.buffer_data_size = 2100;
 	csp_config.address = addr;
