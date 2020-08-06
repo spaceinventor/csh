@@ -25,7 +25,6 @@
 #include <csp/drivers/usart.h>
 #include <csp/drivers/can_socketcan.h>
 #include <param/param_list.h>
-#include <param/param_group.h>
 #include <param/param_server.h>
 #include <param/param_collector.h>
 

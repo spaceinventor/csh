@@ -201,7 +201,7 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 
 	message.route_set.dest_node = dest_node;
 	message.route_set.next_hop_mac = next_hop_mac;
-	strncpy(message.route_set.interface, interface, CSP_CMP_ROUTE_IFACE_LEN);
+	strncpy(message.route_set.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
 
 	if (csp_cmp_route_set(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
@@ -229,7 +229,7 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 
 	struct csp_cmp_message message;
 
-	strncpy(message.if_stats.interface, slash->argv[2], CSP_CMP_ROUTE_IFACE_LEN);
+	strncpy(message.if_stats.interface, slash->argv[2], CSP_CMP_ROUTE_IFACE_LEN - 1);
 
 	if (csp_cmp_if_stats(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
