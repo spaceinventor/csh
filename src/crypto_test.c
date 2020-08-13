@@ -26,26 +26,20 @@
 #define CRYPTO_REMOTE_KEY_COUNT 8
 
 // Future Params
-unsigned char crypto_key_public[crypto_box_PUBLICKEYBYTES] = {0};
-unsigned char crypto_key_secret[crypto_box_SECRETKEYBYTES] = {0};
+uint8_t _crypto_key_public[crypto_box_PUBLICKEYBYTES];
+uint8_t _crypto_key_secret[crypto_box_SECRETKEYBYTES];
 
-unsigned char crypto_remote_key[CRYPTO_REMOTE_KEY_COUNT][crypto_box_PUBLICKEYBYTES] = {
-    {0}
-};
-unsigned char crypto_remote_beforem[CRYPTO_REMOTE_KEY_COUNT][crypto_box_BEFORENMBYTES] = {
-    {0}
-};
-unsigned int crypto_remote_counter[CRYPTO_REMOTE_KEY_COUNT] = {0};
-unsigned int crypto_remote_privilege[CRYPTO_REMOTE_KEY_COUNT] = {0};
-unsigned char crypto_remote_active = 0;
+uint8_t _crypto_remote_key[crypto_box_PUBLICKEYBYTES];
+uint64_t _crypto_remote_counter;
+uint64_t _crypto_fail_auth_count;
+uint64_t _crypto_fail_nonce_count;
 
-unsigned int crypto_fail_auth_count = 0;
-unsigned int crypto_fail_nonce_count = 0;
+uint8_t crypto_remote_beforem[crypto_box_BEFORENMBYTES];
 
 // Test
-unsigned char crypto_key_test_public[crypto_box_PUBLICKEYBYTES] = {0};
-unsigned char crypto_key_test_secret[crypto_box_SECRETKEYBYTES] = {0};
-unsigned char crypto_key_test_beforem[crypto_box_BEFORENMBYTES] = {0};
+unsigned char _crypto_key_test_public[crypto_box_PUBLICKEYBYTES] = {0};
+unsigned char _crypto_key_test_secret[crypto_box_SECRETKEYBYTES] = {0};
+unsigned char _crypto_key_test_beforem[crypto_box_BEFORENMBYTES] = {0};
 
 
 // ------------------------
@@ -69,9 +63,9 @@ void * debug_csp_buffer_get(size_t size) {
 void crypto_test_generate_keys() {
     int result;
 
-    if(crypto_key_public[0] == 0) {
+    if(_crypto_key_public[0] == 0) {
         printf("Run crypto_box_keypair\n");
-        result = crypto_box_keypair(crypto_key_public, crypto_key_secret);
+        result = crypto_box_keypair(_crypto_key_public, _crypto_key_secret);
         if(result != 0) {
             printf("ERROR\n");
         }
@@ -79,12 +73,12 @@ void crypto_test_generate_keys() {
     else {
         printf("Using hardcoded key");
     }
-    CRYPTO_TEST_PRINT_HEX(crypto_key_public);
-    CRYPTO_TEST_PRINT_HEX(crypto_key_secret);
+    CRYPTO_TEST_PRINT_HEX(_crypto_key_public);
+    CRYPTO_TEST_PRINT_HEX(_crypto_key_secret);
 
-    if(crypto_key_test_public[0] == 0) {
+    if(_crypto_key_test_public[0] == 0) {
         printf("Run crypto_box_keypair\n");
-        result = crypto_box_keypair(crypto_key_test_public, crypto_key_test_secret);
+        result = crypto_box_keypair(_crypto_key_test_public, _crypto_key_test_secret);
         if(result != 0) {
             printf("ERROR\n");
         }
@@ -92,17 +86,17 @@ void crypto_test_generate_keys() {
     else {
         printf("Using hardcoded key");
     }
-    CRYPTO_TEST_PRINT_HEX(crypto_key_test_public);
-    CRYPTO_TEST_PRINT_HEX(crypto_key_test_secret);
+    CRYPTO_TEST_PRINT_HEX(_crypto_key_test_public);
+    CRYPTO_TEST_PRINT_HEX(_crypto_key_test_secret);
 
     printf("Run crypto_box_beforenm\n");
-    result = crypto_box_beforenm(crypto_key_test_beforem, crypto_key_public, crypto_key_test_secret);
+    result = crypto_box_beforenm(_crypto_key_test_beforem, _crypto_key_public, _crypto_key_test_secret);
     if(result != 0) {
         printf("ERROR\n");
     }
 
     // Assign Test key to Slot 0
-    memcpy(crypto_remote_key[0], crypto_key_test_public, sizeof(crypto_key_test_public));
+    memcpy(_crypto_remote_key, _crypto_key_test_public, sizeof(_crypto_key_test_public));
 }
 
 // ------------------------
@@ -187,14 +181,8 @@ out:
     return packet;
 }
 
-int crypto_test_csp_decrypt_packet(uint8_t * data, unsigned int size) {
-    return 0;
-}
-
-void crypto_test_packet_handler(csp_packet_t * packet) {
-    int result;
-
-    printf("\n\n\n--------\ncrypto_test_packet_handler [%d]\n", packet->length);
+int crypto_test_csp_decrypt_packet(csp_packet_t * packet) {
+    int result = 1;
 
     // Allocate an extra buffer for de decrypted data
     csp_packet_t * buffer = NULL;
@@ -213,7 +201,7 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
     crypto_test_print_hex("packet->data", packet->data, packet->length);
 
     printf("crypto_box_open_afternm\n");
-    result = crypto_box_open_afternm(buffer->data, packet->data, packet->length, nonce, crypto_remote_beforem[0]);
+    result = crypto_box_open_afternm(buffer->data, packet->data, packet->length, nonce, crypto_remote_beforem);
     if(result != 0) {
         printf("ERROR\n");
     }
@@ -224,28 +212,35 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
 out:
     if (buffer != NULL)
         csp_buffer_free(buffer);
+
+    return result;
 }
 
-void crypto_test_init(void) {
-    // Debug
-    crypto_test_generate_keys();
+void crypto_test_packet_handler(csp_packet_t * packet) {
+    int result;
+    csp_packet_t * reply_packet = NULL;
 
-    // Pre-compute for for all public keys
-    for(int i = 0; i < CRYPTO_REMOTE_KEY_COUNT; i++) {
-        crypto_box_beforenm(crypto_remote_beforem[i], crypto_remote_key[i], crypto_key_secret);
-    }
-    CRYPTO_TEST_PRINT_HEX(crypto_remote_beforem[0]);
+    printf("\n\n\n--------\ncrypto_test_packet_handler [%d]\n", packet->length);
+    result = crypto_test_csp_decrypt_packet(packet);
+    csp_buffer_free(packet);
+    if(result != 0)
+        goto out;
 
-    /* Server */
-    printf("Register Crypto Packet Handler\r\n");
+    char * reply = "Woop Woop Bitches";
+    reply_packet = crypto_test_csp_encrypt_packet((uint8_t*)reply, sizeof(reply), _crypto_key_test_beforem, ++_crypto_remote_counter);
+    if(reply_packet == NULL)
+        goto out;
 
-    csp_socket_t *sock_crypto = csp_socket(CSP_SO_NONE);
-    csp_socket_set_callback(sock_crypto, crypto_test_packet_handler);
-    csp_bind(sock_crypto, CSP_DECRYPTOR_PORT);
+    if (csp_sendto_reply(packet, reply_packet, CSP_O_SAME, 0) != CSP_ERR_NONE)
+        goto out;
+
+out:
+    if (reply_packet != NULL)
+        csp_buffer_free(reply_packet);
 }
 
 int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
-
+    int result;
     uint32_t start, time, status = 0;
 
     printf("crypto_test_echo %d\n", size);
@@ -259,7 +254,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         return -1;
 
     csp_packet_t * packet = NULL;
-    packet = crypto_test_csp_encrypt_packet(data, size, crypto_key_test_beforem, ++crypto_remote_counter[0]);
+    packet = crypto_test_csp_encrypt_packet(data, size, _crypto_key_test_beforem, ++_crypto_remote_counter);
     if (packet == NULL)
         goto out;
 
@@ -273,6 +268,11 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         goto out;
 
     printf("Received\n");
+    result = crypto_test_csp_decrypt_packet(packet);
+    if(result != 0)
+        goto out;
+
+    csp_buffer_free(packet);
 
     status = 1;
 
@@ -294,4 +294,25 @@ out:
         return -1;
     }
 
+}
+
+void crypto_test_init(void) {
+    // Debug
+    crypto_test_generate_keys();
+
+    // Pre-compute for for all public keys
+    crypto_box_beforenm(crypto_remote_beforem, _crypto_remote_key, _crypto_key_secret);
+    CRYPTO_TEST_PRINT_HEX(crypto_remote_beforem);
+
+    /* Server */
+    printf("Register Crypto Packet Handler\r\n");
+
+    csp_socket_t *sock_crypto = csp_socket(CSP_SO_NONE);
+    csp_socket_set_callback(sock_crypto, crypto_test_packet_handler);
+    csp_bind(sock_crypto, CSP_DECRYPTOR_PORT);
+}
+
+void crypto_test_send() {
+    char test[] = "Helloooooo";
+    crypto_test_echo(1, (uint8_t*)test, sizeof(test));
 }
