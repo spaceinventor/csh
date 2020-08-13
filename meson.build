@@ -21,6 +21,7 @@ satctl_sources = [
 	'src/param_sniffer.c',
 	'src/tweetnacl.c',
 	'src/crypto_test.c',
+	'src/crypto_test_param.c',
 	'src/prometheus.c',
 	'src/stdbuf_mon.c',
 ]
