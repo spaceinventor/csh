@@ -65,6 +65,12 @@ void crypto_test_print_hex(char * text, unsigned char * data, int length) {
     printf("\n");
 }
 
+void * debug_csp_buffer_get(size_t size) {
+    printf("csp_buffer_get(%d)\n", size);
+    return csp_buffer_get(size);
+}
+#define csp_buffer_get debug_csp_buffer_get
+
 void crypto_test_generate_keys() {
     int result;
 
@@ -107,48 +113,36 @@ void crypto_test_generate_keys() {
 void crypto_test_packet_handler(csp_packet_t * packet) {
     unsigned int result;
 
-    printf("crypto_test_packet_handler [%d]\n", packet->length);
-
-    unsigned char nonce[crypto_box_NONCEBYTES];
-    memset(nonce, 0, crypto_box_NONCEBYTES);
-    nonce[0] = crypto_remote_counter[0];
-    nonce[1] = 10;
-    nonce[2] = 100;
+    printf("\n\n\n--------\ncrypto_test_packet_handler [%d]\n", packet->length);
 
     /* HACKED UP Allocate an extra buffer just so we can pre-pend 16 bytes, libsodium appears to have eliminated this using crypto_box_easy */
     csp_packet_t * buffer = NULL;
-    csp_packet_t * buffer2 = NULL;
 
-    buffer = csp_buffer_get(packet->length + crypto_box_BOXZEROBYTES);
+    buffer = csp_buffer_get(packet->length - crypto_box_BOXZEROBYTES + crypto_box_ZEROBYTES);
     if (buffer == NULL)
         goto out;
 
-    memset(buffer->data, 0, crypto_box_BOXZEROBYTES);
-    memcpy(buffer->data + crypto_box_BOXZEROBYTES, packet->data, packet->length);
+    // Extract NONCE from packet, then set to zero as required
+    unsigned char nonce[crypto_box_NONCEBYTES];
+    memset(nonce, 0, crypto_box_NONCEBYTES);
+    memcpy(nonce, packet->data, crypto_box_BOXZEROBYTES);
+    memset(packet->data, 0, crypto_box_BOXZEROBYTES);
+
+    CRYPTO_TEST_PRINT_HEX(nonce);
     crypto_test_print_hex("packet->data", packet->data, packet->length);
-    crypto_test_print_hex("buffer->data", buffer->data, packet->length + crypto_box_BOXZEROBYTES);
-
-    buffer2 = csp_buffer_get(packet->length + crypto_box_ZEROBYTES);
-    if (buffer2 == NULL)
-        goto out;
-
-    memset(buffer2->data, 0, crypto_box_ZEROBYTES);
 
     printf("crypto_box_open_afternm\n");
-    result = crypto_box_open_afternm(buffer2->data, buffer->data, packet->length + crypto_box_BOXZEROBYTES, nonce, crypto_remote_beforem[0]);
+    result = crypto_box_open_afternm(buffer->data, packet->data, packet->length, nonce, crypto_remote_beforem[0]);
     if(result != 0) {
         printf("ERROR\n");
     }
 
-    crypto_test_print_hex("buffer->data", buffer->data, packet->length + crypto_secretbox_BOXZEROBYTES);
-    crypto_test_print_hex("buffer2->data", buffer2->data, packet->length + crypto_secretbox_ZEROBYTES);
-    printf("Decrypted packet: [%s]\n", buffer2->data + crypto_secretbox_ZEROBYTES);
+    crypto_test_print_hex("buffer->data", buffer->data, packet->length);
+    printf("Decrypted packet: [%s]\n", buffer->data + crypto_secretbox_ZEROBYTES);
 
 out:
     if (buffer != NULL)
         csp_buffer_free(buffer);
-    if (buffer2 != NULL)
-        csp_buffer_free(buffer2);
 }
 
 void crypto_test_init(void) {
@@ -188,6 +182,9 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     unsigned int i;
     uint32_t start, time, status = 0;
 
+    csp_packet_t * packet = NULL;
+    csp_packet_t * buffer = NULL;
+
     printf("crypto_test_echo %d\n", size);
 
     /* Counter */
@@ -199,16 +196,11 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         return -1;
 
     /* Prepare data */
-    csp_packet_t * packet = NULL;
-    csp_packet_t * buffer = NULL;
-
-    printf("csp_buffer_get %d\n", size + crypto_secretbox_BOXZEROBYTES);
     packet = csp_buffer_get(size + crypto_secretbox_BOXZEROBYTES);
     if (packet == NULL)
         goto out;
 
-    /* HACKED UP Allocate an extra buffer just so we can pre-pend 16 bytes, libsodium appears to have eliminated this using crypto_box_easy */
-    printf("csp_buffer_get %d\n", size + crypto_secretbox_ZEROBYTES);
+    /* Allocate additional buffer to pre-pad input data */
     buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
     if (buffer == NULL)
         goto out;
@@ -218,7 +210,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
 
     // VERY VERY BAD NONCE
-    unsigned char nonce[crypto_box_NONCEBYTES];
+    unsigned char nonce[crypto_box_NONCEBYTES]; //24
     memset(nonce, 0, crypto_box_NONCEBYTES);
     nonce[0] = ++crypto_remote_counter[0];
     nonce[1] = 10;
@@ -231,12 +223,13 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         goto out;
 
     // Trim first 16 bytes from transmission? So actual data length is +16 (instead of +32?) HACK ALERT
-    packet->length = size + crypto_secretbox_BOXZEROBYTES;
-    memmove(packet->data, packet->data + crypto_secretbox_BOXZEROBYTES, packet->length);
+    packet->length = size + crypto_secretbox_BOXZEROBYTES + 16;
+    memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
 
     printf("Sending [%s]\n", data);
+    CRYPTO_TEST_PRINT_HEX(nonce);
     crypto_test_print_hex("buffer->data", buffer->data, size + crypto_secretbox_ZEROBYTES);
-    crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES);
+    crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES + 16);
 
     /* Try to send frame */
     if (!csp_send(conn, packet, 0))
