@@ -47,16 +47,10 @@ unsigned char crypto_key_test_public[crypto_box_PUBLICKEYBYTES] = {0};
 unsigned char crypto_key_test_secret[crypto_box_SECRETKEYBYTES] = {0};
 unsigned char crypto_key_test_beforem[crypto_box_BEFORENMBYTES] = {0};
 
-void randombytes(unsigned char * a, unsigned long long c) {
-    // Note: Pseudo random since we are not initializing random!
-    while(c > 0) {
-        *a = rand() & 0xFF;
-        a++;
-        c--;
-    }
-}
 
-#define CRYPTO_TEST_PRINT_HEX(EXP) crypto_test_print_hex(#EXP, EXP, sizeof(EXP))
+// ------------------------
+// Temporary Debug functions
+// ------------------------
 void crypto_test_print_hex(char * text, unsigned char * data, int length) {
     printf("%-25s: ", text);
     for(int i = 0; i < length; i++) {
@@ -64,6 +58,7 @@ void crypto_test_print_hex(char * text, unsigned char * data, int length) {
     }
     printf("\n");
 }
+#define CRYPTO_TEST_PRINT_HEX(EXP) crypto_test_print_hex(#EXP, EXP, sizeof(EXP))
 
 void * debug_csp_buffer_get(size_t size) {
     printf("csp_buffer_get(%d)\n", size);
@@ -110,8 +105,27 @@ void crypto_test_generate_keys() {
     memcpy(crypto_remote_key[0], crypto_key_test_public, sizeof(crypto_key_test_public));
 }
 
+// ------------------------
+// Crypto Helper Functions
+// ------------------------
+void randombytes(unsigned char * a, unsigned long long c) {
+    // Note: Pseudo random since we are not initializing random!
+    while(c > 0) {
+        *a = rand() & 0xFF;
+        a++;
+        c--;
+    }
+}
+
+void crypto_test_make_nonce(uint8_t * nonce, int counter) {
+    memset(nonce, 0, crypto_box_NONCEBYTES);
+    nonce[0] = counter;
+    nonce[1] = 10;
+    nonce[2] = 100;
+}
+
 void crypto_test_packet_handler(csp_packet_t * packet) {
-    unsigned int result;
+    int result;
 
     printf("\n\n\n--------\ncrypto_test_packet_handler [%d]\n", packet->length);
 
@@ -179,7 +193,7 @@ network, don't forget to remove them!
 
 int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
 
-    unsigned int i;
+    int result;
     uint32_t start, time, status = 0;
 
     csp_packet_t * packet = NULL;
@@ -187,20 +201,15 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
 
     printf("crypto_test_echo %d\n", size);
 
-    /* Counter */
+    // Counter
     start = csp_get_ms();
 
-    /* Open connection */
+    // Open connection
     csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, CSP_DECRYPTOR_PORT, TEST_TIMEOUT, CSP_O_NONE);
     if (conn == NULL)
         return -1;
 
-    /* Prepare data */
-    packet = csp_buffer_get(size + crypto_secretbox_BOXZEROBYTES);
-    if (packet == NULL)
-        goto out;
-
-    /* Allocate additional buffer to pre-pad input data */
+    // Allocate additional buffer to pre-pad input data
     buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
     if (buffer == NULL)
         goto out;
@@ -209,21 +218,20 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     memset(buffer->data, 0, crypto_secretbox_ZEROBYTES);
     memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
 
-    // VERY VERY BAD NONCE
     unsigned char nonce[crypto_box_NONCEBYTES]; //24
-    memset(nonce, 0, crypto_box_NONCEBYTES);
-    nonce[0] = ++crypto_remote_counter[0];
-    nonce[1] = 10;
-    nonce[2] = 100;
+    crypto_test_make_nonce(nonce, ++crypto_remote_counter[0]);
 
-    printf("crypto_box_afternm\n");
-
-    i = crypto_box_afternm(packet->data, buffer->data, size + crypto_secretbox_ZEROBYTES, nonce, crypto_key_test_beforem);
-    if (i != 0)
+    /* Prepare data */
+    packet = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
+    if (packet == NULL)
         goto out;
 
-    // Trim first 16 bytes from transmission? So actual data length is +16 (instead of +32?) HACK ALERT
-    packet->length = size + crypto_secretbox_BOXZEROBYTES + 16;
+    result = crypto_box_afternm(packet->data, buffer->data, size + crypto_secretbox_ZEROBYTES, nonce, crypto_key_test_beforem);
+    if (result != 0)
+        goto out;
+
+    // Use cyphertext 0-padding for nonce to avoid additonal memcpy's
+    packet->length = size + crypto_secretbox_ZEROBYTES;
     memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
 
     printf("Sending [%s]\n", data);
@@ -241,11 +249,6 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         goto out;
 
     printf("Received\n");
-
-    /* Ensure that the data was actually echoed */
-    for (i = 0; i < size; i++)
-        if (packet->data[i] != i % (0xff + 1))
-            goto out;
 
     status = 1;
 
