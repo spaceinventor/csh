@@ -30,6 +30,7 @@
 
 #include "prometheus.h"
 #include "param_sniffer.h"
+#include "crypto_test.h"
 
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
@@ -219,6 +220,8 @@ int main(int argc, char **argv)
 		param_sniffer_init();
 	}
 
+	crypto_test_init();
+
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
 		ex = malloc(SATCTL_LINE_SIZE);
@@ -241,8 +244,11 @@ int main(int argc, char **argv)
 		printf(" **   Satctl - Space Command  **\n");
 		printf(" *******************************\n\n");
 
-		printf(" Copyright (c) 2019 Space Inventor ApS <info@space-inventor.com>\n");
+		printf(" Copyright (c) 2021 Space Inventor ApS <info@space-inventor.com>\n");
 		printf(" Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n\n");
+
+		char test[] = "Helloooooo";
+		crypto_test_echo(1, (uint8_t*)test, sizeof(test));
 
 		slash_loop(slash, SATCTL_PROMPT_GOOD, SATCTL_PROMPT_BAD);
 	}
