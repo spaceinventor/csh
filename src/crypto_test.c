@@ -129,14 +129,14 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
 
     printf("\n\n\n--------\ncrypto_test_packet_handler [%d]\n", packet->length);
 
-    /* HACKED UP Allocate an extra buffer just so we can pre-pend 16 bytes, libsodium appears to have eliminated this using crypto_box_easy */
+    // Allocate an extra buffer for de decrypted data
     csp_packet_t * buffer = NULL;
 
     buffer = csp_buffer_get(packet->length - crypto_box_BOXZEROBYTES + crypto_box_ZEROBYTES);
     if (buffer == NULL)
         goto out;
 
-    // Extract NONCE from packet, then set to zero as required
+    // Extract NONCE from packet, then set padding to zero as required
     unsigned char nonce[crypto_box_NONCEBYTES];
     memset(nonce, 0, crypto_box_NONCEBYTES);
     memcpy(nonce, packet->data, crypto_box_BOXZEROBYTES);
@@ -177,6 +177,60 @@ void crypto_test_init(void) {
     csp_bind(sock_crypto, CSP_DECRYPTOR_PORT);
 }
 
+csp_packet_t * crypto_test_csp_encrypted_packet(uint8_t * data, unsigned int size, uint8_t * key_beforem, int counter) {
+
+    int result = 1;
+
+    csp_packet_t * packet = NULL;
+    csp_packet_t * buffer = NULL;
+
+    printf("crypto_test_csp_encrypted_packet %d\n", size);
+
+    // Allocate additional buffer to pre-pad input data
+    buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
+    if (buffer == NULL)
+        goto out;
+
+    // Copy input data to temporary buffer prepended with zeros
+    memset(buffer->data, 0, crypto_secretbox_ZEROBYTES);
+    memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
+
+    unsigned char nonce[crypto_box_NONCEBYTES]; //24
+    crypto_test_make_nonce(nonce, counter);
+
+    /* Prepare data */
+    packet = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
+    if (packet == NULL)
+        goto out;
+
+    result = crypto_box_afternm(packet->data, buffer->data, size + crypto_secretbox_ZEROBYTES, nonce, key_beforem);
+    if (result != 0)
+        goto out;
+
+    // Use cyphertext 0-padding for nonce to avoid additonal memcpy's
+    packet->length = size + crypto_secretbox_ZEROBYTES;
+    memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
+
+    printf("Sending [%s]\n", data);
+    CRYPTO_TEST_PRINT_HEX(nonce);
+    crypto_test_print_hex("buffer->data", buffer->data, size + crypto_secretbox_ZEROBYTES);
+    crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES + 16);
+
+out:
+    if (buffer != NULL)
+        csp_buffer_free(buffer);
+
+    if (result != 0)
+        csp_buffer_free(packet);
+
+    return packet;
+}
+
+int crypto_test_csp_decrypt_packet(uint8_t * data, unsigned int size) {
+    return 0;
+}
+
+
 //#define crypto_secretbox_xsalsa20poly1305_tweet_ZEROBYTES 32
 //#define crypto_secretbox_xsalsa20poly1305_tweet_BOXZEROBYTES 16
 /*
@@ -193,11 +247,11 @@ network, don't forget to remove them!
 
 int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
 
-    int result;
     uint32_t start, time, status = 0;
-
+/*
     csp_packet_t * packet = NULL;
     csp_packet_t * buffer = NULL;
+*/
 
     printf("crypto_test_echo %d\n", size);
 
@@ -209,41 +263,16 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     if (conn == NULL)
         return -1;
 
-    // Allocate additional buffer to pre-pad input data
-    buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
-    if (buffer == NULL)
-        goto out;
-
-    // Copy input data to temporary buffer prepended with zeros
-    memset(buffer->data, 0, crypto_secretbox_ZEROBYTES);
-    memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
-
-    unsigned char nonce[crypto_box_NONCEBYTES]; //24
-    crypto_test_make_nonce(nonce, ++crypto_remote_counter[0]);
-
-    /* Prepare data */
-    packet = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
+    csp_packet_t * packet = NULL;
+    packet = crypto_test_csp_encrypted_packet(data, size, crypto_key_test_beforem, ++crypto_remote_counter[0]);
     if (packet == NULL)
         goto out;
 
-    result = crypto_box_afternm(packet->data, buffer->data, size + crypto_secretbox_ZEROBYTES, nonce, crypto_key_test_beforem);
-    if (result != 0)
-        goto out;
-
-    // Use cyphertext 0-padding for nonce to avoid additonal memcpy's
-    packet->length = size + crypto_secretbox_ZEROBYTES;
-    memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
-
-    printf("Sending [%s]\n", data);
-    CRYPTO_TEST_PRINT_HEX(nonce);
-    crypto_test_print_hex("buffer->data", buffer->data, size + crypto_secretbox_ZEROBYTES);
-    crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES + 16);
-
-    /* Try to send frame */
+    // Try to send frame
     if (!csp_send(conn, packet, 0))
         goto out;
 
-    /* Read incoming frame */
+    // Read incoming frame
     packet = csp_read(conn, TEST_TIMEOUT);
     if (packet == NULL)
         goto out;
@@ -256,9 +285,6 @@ out:
     /* Clean up */
     if (packet != NULL)
         csp_buffer_free(packet);
-
-    if (buffer != NULL)
-        csp_buffer_free(buffer);
 
     csp_close(conn);
 
