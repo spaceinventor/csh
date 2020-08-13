@@ -247,8 +247,6 @@ int main(int argc, char **argv)
 		printf(" Copyright (c) 2021 Space Inventor ApS <info@space-inventor.com>\n");
 		printf(" Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n\n");
 
-		crypto_test_send();
-
 		slash_loop(slash, SATCTL_PROMPT_GOOD, SATCTL_PROMPT_BAD);
 	}
 

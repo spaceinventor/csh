@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
@@ -46,7 +47,7 @@ unsigned char _crypto_key_test_beforem[crypto_box_BEFORENMBYTES] = {0};
 // Temporary Debug functions
 // ------------------------
 void crypto_test_print_hex(char * text, unsigned char * data, int length) {
-    printf("%-25s: ", text);
+    printf("    %-25s: ", text);
     for(int i = 0; i < length; i++) {
         printf("%02hhX, ", data[i]);
     }
@@ -54,45 +55,55 @@ void crypto_test_print_hex(char * text, unsigned char * data, int length) {
 }
 #define CRYPTO_TEST_PRINT_HEX(EXP) crypto_test_print_hex(#EXP, EXP, sizeof(EXP))
 
+/*
 void * debug_csp_buffer_get(size_t size) {
     printf("csp_buffer_get(%d)\n", size);
     return csp_buffer_get(size);
 }
 #define csp_buffer_get debug_csp_buffer_get
+*/
+
+void crypto_test_generate_local_key() {
+    int result;
+
+    printf("Run crypto_test_generate_local_key\n");
+
+    if(_crypto_key_public[0] == 0) {
+        printf("    Run crypto_box_keypair\n");
+        result = crypto_box_keypair(_crypto_key_public, _crypto_key_secret);
+        if(result != 0) {
+            printf("    ERROR\n");
+        }
+    }
+    else {
+        printf("    Using hardcoded key");
+    }
+    CRYPTO_TEST_PRINT_HEX(_crypto_key_public);
+    CRYPTO_TEST_PRINT_HEX(_crypto_key_secret);
+}
 
 void crypto_test_generate_keys() {
     int result;
 
-    if(_crypto_key_public[0] == 0) {
-        printf("Run crypto_box_keypair\n");
-        result = crypto_box_keypair(_crypto_key_public, _crypto_key_secret);
-        if(result != 0) {
-            printf("ERROR\n");
-        }
-    }
-    else {
-        printf("Using hardcoded key");
-    }
-    CRYPTO_TEST_PRINT_HEX(_crypto_key_public);
-    CRYPTO_TEST_PRINT_HEX(_crypto_key_secret);
+    crypto_test_generate_local_key();
 
     if(_crypto_key_test_public[0] == 0) {
-        printf("Run crypto_box_keypair\n");
+        printf("    Run crypto_box_keypair\n");
         result = crypto_box_keypair(_crypto_key_test_public, _crypto_key_test_secret);
         if(result != 0) {
-            printf("ERROR\n");
+            printf("    ERROR\n");
         }
     }
     else {
-        printf("Using hardcoded key");
+        printf("    Using hardcoded key");
     }
     CRYPTO_TEST_PRINT_HEX(_crypto_key_test_public);
     CRYPTO_TEST_PRINT_HEX(_crypto_key_test_secret);
 
-    printf("Run crypto_box_beforenm\n");
+    printf("    Run crypto_box_beforenm\n");
     result = crypto_box_beforenm(_crypto_key_test_beforem, _crypto_key_public, _crypto_key_test_secret);
     if(result != 0) {
-        printf("ERROR\n");
+        printf("    ERROR\n");
     }
 
     // Assign Test key to Slot 0
@@ -104,6 +115,8 @@ void crypto_test_generate_keys() {
 // ------------------------
 void randombytes(unsigned char * a, unsigned long long c) {
     // Note: Pseudo random since we are not initializing random!
+    time_t t;
+    srand((unsigned) time(&t));
     while(c > 0) {
         *a = rand() & 0xFF;
         a++;
@@ -139,7 +152,7 @@ csp_packet_t * crypto_test_csp_encrypt_packet(uint8_t * data, unsigned int size,
     csp_packet_t * packet = NULL;
     csp_packet_t * buffer = NULL;
 
-    printf("crypto_test_csp_encrypted_packet %d\n", size);
+    printf("    crypto_test_csp_encrypted_packet %d\n", size);
 
     // Allocate additional buffer to pre-pad input data
     buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
@@ -166,7 +179,7 @@ csp_packet_t * crypto_test_csp_encrypt_packet(uint8_t * data, unsigned int size,
     packet->length = size + crypto_secretbox_ZEROBYTES;
     memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
 
-    printf("Sending [%s]\n", data);
+    printf("    Sending [%s]\n", data);
     CRYPTO_TEST_PRINT_HEX(nonce);
     crypto_test_print_hex("buffer->data", buffer->data, size + crypto_secretbox_ZEROBYTES);
     crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES + 16);
@@ -200,14 +213,12 @@ int crypto_test_csp_decrypt_packet(csp_packet_t * packet) {
     CRYPTO_TEST_PRINT_HEX(nonce);
     crypto_test_print_hex("packet->data", packet->data, packet->length);
 
-    printf("crypto_box_open_afternm\n");
     result = crypto_box_open_afternm(buffer->data, packet->data, packet->length, nonce, crypto_remote_beforem);
-    if(result != 0) {
-        printf("ERROR\n");
-    }
+    if(result != 0)
+        goto out;
 
     crypto_test_print_hex("buffer->data", buffer->data, packet->length);
-    printf("Decrypted packet: [%s]\n", buffer->data + crypto_secretbox_ZEROBYTES);
+    printf("    Decrypted packet: [%s]\n", buffer->data + crypto_secretbox_ZEROBYTES);
 
 out:
     if (buffer != NULL)
@@ -220,13 +231,13 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
     int result;
     csp_packet_t * reply_packet = NULL;
 
-    printf("\n\n\n--------\ncrypto_test_packet_handler [%d]\n", packet->length);
+    printf("    --------\n    crypto_test_packet_handler [%d]\n", packet->length);
     result = crypto_test_csp_decrypt_packet(packet);
     csp_buffer_free(packet);
     if(result != 0)
         goto out;
 
-    char * reply = "Woop Woop Bitches";
+    char reply[] = "SUCCESS";
     reply_packet = crypto_test_csp_encrypt_packet((uint8_t*)reply, sizeof(reply), _crypto_key_test_beforem, ++_crypto_remote_counter);
     if(reply_packet == NULL)
         goto out;
@@ -243,7 +254,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     int result;
     uint32_t start, time, status = 0;
 
-    printf("crypto_test_echo %d\n", size);
+    printf("    crypto_test_echo %d\n", size);
 
     // Counter
     start = csp_get_ms();
@@ -267,12 +278,10 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     if (packet == NULL)
         goto out;
 
-    printf("Received\n");
+    printf("    Received\n");
     result = crypto_test_csp_decrypt_packet(packet);
     if(result != 0)
         goto out;
-
-    csp_buffer_free(packet);
 
     status = 1;
 
@@ -287,10 +296,10 @@ out:
     time = (csp_get_ms() - start);
 
     if (status) {
-        printf("Great Success\n");
+        printf("    Great Success\n");
         return time;
     } else {
-        printf("Failed\n");
+        printf("    Failed\n");
         return -1;
     }
 
@@ -310,9 +319,4 @@ void crypto_test_init(void) {
     csp_socket_t *sock_crypto = csp_socket(CSP_SO_NONE);
     csp_socket_set_callback(sock_crypto, crypto_test_packet_handler);
     csp_bind(sock_crypto, CSP_DECRYPTOR_PORT);
-}
-
-void crypto_test_send() {
-    char test[] = "Helloooooo";
-    crypto_test_echo(1, (uint8_t*)test, sizeof(test));
 }
