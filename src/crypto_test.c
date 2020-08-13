@@ -124,6 +124,73 @@ void crypto_test_make_nonce(uint8_t * nonce, int counter) {
     nonce[2] = 100;
 }
 
+//#define crypto_secretbox_xsalsa20poly1305_tweet_ZEROBYTES 32
+//#define crypto_secretbox_xsalsa20poly1305_tweet_BOXZEROBYTES 16
+/*
+There is a 32-octet padding requirement on the plaintext buffer that you pass to crypto_box.
+Internally, the NaCl implementation uses this space to avoid having to allocate memory or
+use static memory that might involve a cache hit (see Bernstein's paper on cache timing
+side-channel attacks for the juicy details).
+
+Similarly, the crypto_box_open call requires 16 octets of zero padding before the start
+of the actual ciphertext. This is used in a similar fashion. These padding octets are not
+part of either the plaintext or the ciphertext, so if you are sending ciphertext across the
+network, don't forget to remove them!
+*/
+
+csp_packet_t * crypto_test_csp_encrypt_packet(uint8_t * data, unsigned int size, uint8_t * key_beforem, int counter) {
+
+    int result = 1;
+
+    csp_packet_t * packet = NULL;
+    csp_packet_t * buffer = NULL;
+
+    printf("crypto_test_csp_encrypted_packet %d\n", size);
+
+    // Allocate additional buffer to pre-pad input data
+    buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
+    if (buffer == NULL)
+        goto out;
+
+    // Copy input data to temporary buffer prepended with zeros
+    memset(buffer->data, 0, crypto_secretbox_ZEROBYTES);
+    memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
+
+    unsigned char nonce[crypto_box_NONCEBYTES]; //24
+    crypto_test_make_nonce(nonce, counter);
+
+    /* Prepare data */
+    packet = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
+    if (packet == NULL)
+        goto out;
+
+    result = crypto_box_afternm(packet->data, buffer->data, size + crypto_secretbox_ZEROBYTES, nonce, key_beforem);
+    if (result != 0)
+        goto out;
+
+    // Use cyphertext 0-padding for nonce to avoid additonal memcpy's
+    packet->length = size + crypto_secretbox_ZEROBYTES;
+    memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
+
+    printf("Sending [%s]\n", data);
+    CRYPTO_TEST_PRINT_HEX(nonce);
+    crypto_test_print_hex("buffer->data", buffer->data, size + crypto_secretbox_ZEROBYTES);
+    crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES + 16);
+
+out:
+    if (buffer != NULL)
+        csp_buffer_free(buffer);
+
+    if (result != 0)
+        csp_buffer_free(packet);
+
+    return packet;
+}
+
+int crypto_test_csp_decrypt_packet(uint8_t * data, unsigned int size) {
+    return 0;
+}
+
 void crypto_test_packet_handler(csp_packet_t * packet) {
     int result;
 
@@ -177,81 +244,9 @@ void crypto_test_init(void) {
     csp_bind(sock_crypto, CSP_DECRYPTOR_PORT);
 }
 
-csp_packet_t * crypto_test_csp_encrypted_packet(uint8_t * data, unsigned int size, uint8_t * key_beforem, int counter) {
-
-    int result = 1;
-
-    csp_packet_t * packet = NULL;
-    csp_packet_t * buffer = NULL;
-
-    printf("crypto_test_csp_encrypted_packet %d\n", size);
-
-    // Allocate additional buffer to pre-pad input data
-    buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
-    if (buffer == NULL)
-        goto out;
-
-    // Copy input data to temporary buffer prepended with zeros
-    memset(buffer->data, 0, crypto_secretbox_ZEROBYTES);
-    memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
-
-    unsigned char nonce[crypto_box_NONCEBYTES]; //24
-    crypto_test_make_nonce(nonce, counter);
-
-    /* Prepare data */
-    packet = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
-    if (packet == NULL)
-        goto out;
-
-    result = crypto_box_afternm(packet->data, buffer->data, size + crypto_secretbox_ZEROBYTES, nonce, key_beforem);
-    if (result != 0)
-        goto out;
-
-    // Use cyphertext 0-padding for nonce to avoid additonal memcpy's
-    packet->length = size + crypto_secretbox_ZEROBYTES;
-    memcpy(packet->data, nonce, crypto_secretbox_BOXZEROBYTES);
-
-    printf("Sending [%s]\n", data);
-    CRYPTO_TEST_PRINT_HEX(nonce);
-    crypto_test_print_hex("buffer->data", buffer->data, size + crypto_secretbox_ZEROBYTES);
-    crypto_test_print_hex("packet->data", packet->data, size + crypto_secretbox_BOXZEROBYTES + 16);
-
-out:
-    if (buffer != NULL)
-        csp_buffer_free(buffer);
-
-    if (result != 0)
-        csp_buffer_free(packet);
-
-    return packet;
-}
-
-int crypto_test_csp_decrypt_packet(uint8_t * data, unsigned int size) {
-    return 0;
-}
-
-
-//#define crypto_secretbox_xsalsa20poly1305_tweet_ZEROBYTES 32
-//#define crypto_secretbox_xsalsa20poly1305_tweet_BOXZEROBYTES 16
-/*
-There is a 32-octet padding requirement on the plaintext buffer that you pass to crypto_box.
-Internally, the NaCl implementation uses this space to avoid having to allocate memory or
-use static memory that might involve a cache hit (see Bernstein's paper on cache timing
-side-channel attacks for the juicy details).
-
-Similarly, the crypto_box_open call requires 16 octets of zero padding before the start
-of the actual ciphertext. This is used in a similar fashion. These padding octets are not
-part of either the plaintext or the ciphertext, so if you are sending ciphertext across the
-network, don't forget to remove them!
-*/
-
 int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
 
     uint32_t start, time, status = 0;
-/*
-    csp_packet_t * packet = NULL;
-    csp_packet_t * buffer = NULL;
-*/
 
     printf("crypto_test_echo %d\n", size);
 
@@ -264,7 +259,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         return -1;
 
     csp_packet_t * packet = NULL;
-    packet = crypto_test_csp_encrypted_packet(data, size, crypto_key_test_beforem, ++crypto_remote_counter[0]);
+    packet = crypto_test_csp_encrypt_packet(data, size, crypto_key_test_beforem, ++crypto_remote_counter[0]);
     if (packet == NULL)
         goto out;
 
