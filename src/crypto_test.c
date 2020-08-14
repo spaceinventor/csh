@@ -26,7 +26,11 @@
 
 #define CRYPTO_REMOTE_KEY_COUNT 8
 
-// Future Params
+#define DIRECTION_UPLINK    1
+#define DIRECTION_DOWNLINK  0
+
+
+// Future Params for server
 uint8_t _crypto_key_public[crypto_box_PUBLICKEYBYTES];
 uint8_t _crypto_key_secret[crypto_box_SECRETKEYBYTES];
 
@@ -37,10 +41,11 @@ uint64_t _crypto_fail_nonce_count;
 
 uint8_t crypto_remote_beforem[crypto_box_BEFORENMBYTES];
 
-// Test
+// Test for client
 unsigned char _crypto_key_test_public[crypto_box_PUBLICKEYBYTES] = {0};
 unsigned char _crypto_key_test_secret[crypto_box_SECRETKEYBYTES] = {0};
 unsigned char _crypto_key_test_beforem[crypto_box_BEFORENMBYTES] = {0};
+uint64_t _crypto_test_counter;
 
 
 // ------------------------
@@ -116,7 +121,7 @@ void crypto_test_generate_keys() {
 void randombytes(unsigned char * a, unsigned long long c) {
     // Note: Pseudo random since we are not initializing random!
     time_t t;
-    srand((unsigned) time(&t));
+    srand((unsigned) time(&t) + rand());
     while(c > 0) {
         *a = rand() & 0xFF;
         a++;
@@ -124,11 +129,35 @@ void randombytes(unsigned char * a, unsigned long long c) {
     }
 }
 
-void crypto_test_make_nonce(uint8_t * nonce, int counter) {
+uint8_t crypto_compare_pkey(uint8_t * own_key, uint8_t * other_key) {
+    int result = memcmp(own_key, other_key, crypto_box_PUBLICKEYBYTES);
+    if(result > 0) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+void crypto_test_make_nonce(uint8_t * nonce, uint64_t counter)  {
     memset(nonce, 0, crypto_box_NONCEBYTES);
-    nonce[0] = counter;
-    nonce[1] = 10;
-    nonce[2] = 100;
+
+    // Nonce format: first 8 bytes is 64bit counter.
+    uint8_t *p = (uint8_t *)&counter;
+    for(int i = 0; i < 8; i++) {
+        nonce[i] = p[i];
+    }
+}
+
+uint64_t crypto_test_get_counter(uint8_t * nonce) {
+    uint64_t counter = 0;
+
+    // Nonce format: first 8 bytes is 64bit counter.
+    uint8_t *p = (uint8_t *)&counter;
+    for(int i = 0; i < 8; i++) {
+        p[i] = nonce[i];
+    }
+    return counter;
 }
 
 //#define crypto_secretbox_xsalsa20poly1305_tweet_ZEROBYTES 32
@@ -145,14 +174,14 @@ part of either the plaintext or the ciphertext, so if you are sending ciphertext
 network, don't forget to remove them!
 */
 
-csp_packet_t * crypto_test_csp_encrypt_packet(uint8_t * data, unsigned int size, uint8_t * key_beforem, int counter) {
+csp_packet_t * crypto_test_csp_encrypt_packet(uint8_t * data, unsigned int size, uint8_t * key_beforem, uint64_t * counter, uint8_t nonce_counter_parity) {
 
     int result = 1;
 
     csp_packet_t * packet = NULL;
     csp_packet_t * buffer = NULL;
 
-    printf("    crypto_test_csp_encrypted_packet %d\n", size);
+    printf("    crypto_test_csp_encrypted_packet %d - counter=%lld\n", size, *counter);
 
     // Allocate additional buffer to pre-pad input data
     buffer = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
@@ -163,8 +192,12 @@ csp_packet_t * crypto_test_csp_encrypt_packet(uint8_t * data, unsigned int size,
     memset(buffer->data, 0, crypto_secretbox_ZEROBYTES);
     memcpy(buffer->data + crypto_secretbox_ZEROBYTES, data, size);
 
+    // HACKZORS
+    *counter = (*counter & 0xFFFFFFFE) + 1 + nonce_counter_parity;
+    printf("    new counter=%lld\n", *counter);
+
     unsigned char nonce[crypto_box_NONCEBYTES]; //24
-    crypto_test_make_nonce(nonce, counter);
+    crypto_test_make_nonce(nonce, *counter);
 
     /* Prepare data */
     packet = csp_buffer_get(size + crypto_secretbox_ZEROBYTES);
@@ -194,7 +227,7 @@ out:
     return packet;
 }
 
-int crypto_test_csp_decrypt_packet(csp_packet_t * packet) {
+int crypto_test_csp_decrypt_packet(csp_packet_t * packet, uint8_t * key_beforem, uint64_t * counter, uint8_t nonce_counter_parity) {
     int result = 1;
 
     // Allocate an extra buffer for de decrypted data
@@ -213,9 +246,20 @@ int crypto_test_csp_decrypt_packet(csp_packet_t * packet) {
     CRYPTO_TEST_PRINT_HEX(nonce);
     crypto_test_print_hex("packet->data", packet->data, packet->length);
 
-    result = crypto_box_open_afternm(buffer->data, packet->data, packet->length, nonce, crypto_remote_beforem);
+    result = crypto_box_open_afternm(buffer->data, packet->data, packet->length, nonce, key_beforem);
     if(result != 0)
         goto out;
+
+    // Message successfully decrypted, only then check if nonce was valid
+    uint64_t nonce_counter = crypto_test_get_counter(nonce);
+    printf("Counter: %lld - Nonce: %lld\n", *counter, nonce_counter);
+    if(nonce_counter <= *counter) {
+        printf("Nonce check failed\n");
+        result = 1;
+        goto out;
+    }
+    // Update counter with received value so that next sent value is higher
+    *counter = nonce_counter;
 
     crypto_test_print_hex("buffer->data", buffer->data, packet->length);
     printf("    Decrypted packet: [%s]\n", buffer->data + crypto_secretbox_ZEROBYTES);
@@ -231,14 +275,16 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
     int result;
     csp_packet_t * reply_packet = NULL;
 
-    printf("    --------\n    crypto_test_packet_handler [%d]\n", packet->length);
-    result = crypto_test_csp_decrypt_packet(packet);
+    uint8_t nonce_counter_parity = crypto_compare_pkey(_crypto_key_public, _crypto_key_test_public);
+    printf("    --------\n    crypto_test_packet_handler %d bytes, parity=%d\n", packet->length, nonce_counter_parity);
+
+    result = crypto_test_csp_decrypt_packet(packet, crypto_remote_beforem, &_crypto_remote_counter, nonce_counter_parity);
     csp_buffer_free(packet);
     if(result != 0)
         goto out;
 
     char reply[] = "SUCCESS";
-    reply_packet = crypto_test_csp_encrypt_packet((uint8_t*)reply, sizeof(reply), _crypto_key_test_beforem, ++_crypto_remote_counter);
+    reply_packet = crypto_test_csp_encrypt_packet((uint8_t*)reply, sizeof(reply), _crypto_key_test_beforem, &_crypto_remote_counter, nonce_counter_parity);
     if(reply_packet == NULL)
         goto out;
 
@@ -254,7 +300,8 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     int result;
     uint32_t start, time, status = 0;
 
-    printf("    crypto_test_echo %d\n", size);
+    uint8_t nonce_counter_parity = crypto_compare_pkey(_crypto_key_test_public, _crypto_key_public);
+    printf("    crypto_test_echo %d bytes, parity=%d\n", size, nonce_counter_parity);
 
     // Counter
     start = csp_get_ms();
@@ -265,7 +312,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         return -1;
 
     csp_packet_t * packet = NULL;
-    packet = crypto_test_csp_encrypt_packet(data, size, _crypto_key_test_beforem, ++_crypto_remote_counter);
+    packet = crypto_test_csp_encrypt_packet(data, size, _crypto_key_test_beforem, &_crypto_test_counter, nonce_counter_parity);
     if (packet == NULL)
         goto out;
 
@@ -279,7 +326,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
         goto out;
 
     printf("    Received\n");
-    result = crypto_test_csp_decrypt_packet(packet);
+    result = crypto_test_csp_decrypt_packet(packet, _crypto_key_test_beforem, &_crypto_test_counter, nonce_counter_parity);
     if(result != 0)
         goto out;
 
