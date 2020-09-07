@@ -58,8 +58,9 @@ void usage(void)
 	printf(" -u INTERFACE,\tUse INTERFACE as UART interface\n");
 	printf(" -b BAUD,\tUART buad rate\n");
 	printf(" -n NODE\tUse NODE as own CSP address\n");
-	printf(" -r REMOTE_IP\tSetup UDP peer\n");
+	printf(" -r UDP_CONFIG\tUDP configuration string, encapsulate in brackets: \"<lport> <peer ip> <rport>\"\n");
 	printf(" -p\t\tSetup prometheus node\n");
+	printf(" -R\tRTABLE\tOverride rtable with this string");
 	printf(" -h\t\tPrint this help and exit\n");
 }
 
@@ -78,27 +79,27 @@ int main(int argc, char **argv)
 	char *uart_dev = SATCTL_DEFAULT_UART_DEV;
 	uint32_t uart_baud = SATCTL_DEFAULT_UART_BAUD;
 	int use_uart = 0;
-	int use_can = 1;
+	int use_can = 0;
 	int use_prometheus = 0;
-	char * udp_peer_str = "";
+	char * udp_peer_str[10];
+	int udp_peer_idx = 0;
 	int csp_version = 2;
+	char * rtable = NULL;
 
-	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
 		case 'r':
-			udp_peer_str = optarg;
+			udp_peer_str[udp_peer_idx++] = optarg;
 			break;
 		case 'c':
-			use_uart = 0;
 			use_can = 1;
 			can_dev = optarg;
 			break;
 		case 'u':
 			use_uart = 1;
-			use_can = 0;
 			uart_dev = optarg;
 			break;
 		case 'b':
@@ -110,6 +111,9 @@ int main(int argc, char **argv)
 		case 'p':
 			use_prometheus = 1;
 			break;
+		case 'R':
+			rtable = optarg;
+			break;
 		case 'v':
 			csp_version = atoi(optarg);
 			break;
@@ -120,6 +124,14 @@ int main(int argc, char **argv)
 
 	remain = argc - optind;
 	index = optind;
+
+	if (use_can == 0 && use_uart == 0 && udp_peer_idx == 0) {
+		printf("\n");
+		printf(" *** Warning: No interfaces configured ***\n");
+		printf("  use -c for CAN\n");
+		printf("  use -u for UART\n");
+		printf("  use -r for UDP\n");
+	}
 
 	/* Get csp config from file */
 	vmem_file_init(&vmem_csp);
@@ -168,27 +180,42 @@ int main(int argc, char **argv)
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
-	if (strlen(udp_peer_str) > 0) {
-		printf("udp str %s\n", udp_peer_str);
+	while (udp_peer_idx > 0) {
+		char * udp_str = udp_peer_str[--udp_peer_idx];
+		printf("udp str %s\n", udp_str);
+
 		int lport = 9600;
 		int rport = 9600;
 		char udp_peer_ip[20];
 
-		if (sscanf(udp_peer_str, "%d %19s %d", &lport, udp_peer_ip, &rport) != 3) {
-			printf("Invalid UDP configuration string: %s\n", udp_peer_str);
+		if (sscanf(udp_str, "%d %19s %d", &lport, udp_peer_ip, &rport) != 3) {
+			printf("Invalid UDP configuration string: %s\n", udp_str);
 			printf("Should math the pattern \"<lport> <peer ip> <rport>\" exactly\n");
 			return -1;
 		}
 
-		static csp_iface_t udp_client_if;
-		csp_if_udp_init(&udp_client_if, udp_peer_ip, lport, rport);
-		default_iface = &udp_client_if;
+		csp_iface_t * udp_client_if = malloc(sizeof(csp_iface_t));
+		csp_if_udp_conf_t * udp_conf = malloc(sizeof(csp_if_udp_conf_t));
+		udp_conf->host = udp_peer_ip;
+		udp_conf->lport = lport;
+		udp_conf->rport = rport;
+		csp_if_udp_init(udp_client_if, udp_conf);
+
+		char * udp_name = malloc(10);
+		sprintf(udp_name, "UDP%u", udp_peer_idx);
+		udp_client_if->name = udp_name;
+
+		default_iface = udp_client_if;
 	}
 
-	/* Read routing table from parameter system */
-	extern param_t csp_rtable;
-	char rtable[csp_rtable.array_size];
-	param_get_string(&csp_rtable, rtable, csp_rtable.array_size);
+
+	if (!rtable) {
+		/* Read routing table from parameter system */
+		extern param_t csp_rtable;
+		char saved_rtable[csp_rtable.array_size];
+		param_get_string(&csp_rtable, saved_rtable, csp_rtable.array_size);
+		rtable = saved_rtable;
+	}
 
 	if (csp_rtable_check(rtable)) {
 		int error = csp_rtable_load(rtable);
