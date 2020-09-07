@@ -29,6 +29,7 @@
 #include <param/param_server.h>
 #include <param/param_collector.h>
 
+#include "csp_if_tun.h"
 #include "prometheus.h"
 #include "param_sniffer.h"
 
@@ -85,8 +86,9 @@ int main(int argc, char **argv)
 	int udp_peer_idx = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
+	char * tun_conf_str = NULL;
 
-	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:t:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -116,6 +118,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			csp_version = atoi(optarg);
+			break;
+		case 't':
+			tun_conf_str = optarg;
 			break;
 		default:
 			exit(EXIT_FAILURE);
@@ -206,6 +211,27 @@ int main(int argc, char **argv)
 		udp_client_if->name = udp_name;
 
 		default_iface = udp_client_if;
+	}
+
+	if (tun_conf_str) {
+
+		int src;
+		int dst;
+
+		if (sscanf(tun_conf_str, "%d %d", &src, &dst) != 2) {
+			printf("Invalid TUN configuration string: %s\n", tun_conf_str);
+			printf("Should math the pattern \"<src> <dst>\" exactly\n");
+			return -1;
+		}
+
+		csp_iface_t * tun_if = malloc(sizeof(csp_iface_t));
+		csp_if_tun_conf_t * ifconf = malloc(sizeof(csp_if_tun_conf_t));
+
+		ifconf->tun_dst = dst;
+		ifconf->tun_src = src;
+
+		csp_if_tun_init(tun_if, ifconf);
+
 	}
 
 

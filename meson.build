@@ -21,6 +21,7 @@ satctl_sources = [
 	'src/param_sniffer.c',
 	'src/prometheus.c',
 	'src/stdbuf_mon.c',
+	'src/csp_if_tun.c',
 ]
 
 satctl = executable('satctl', satctl_sources,
