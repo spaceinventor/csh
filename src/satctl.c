@@ -22,6 +22,7 @@
 #include <csp/interfaces/csp_if_can.h>
 #include <csp/interfaces/csp_if_kiss.h>
 #include <csp/interfaces/csp_if_udp.h>
+#include <csp/interfaces/csp_if_zmqhub.h>
 #include <csp/drivers/usart.h>
 #include <csp/drivers/can_socketcan.h>
 #include <param/param_list.h>
@@ -59,9 +60,10 @@ void usage(void)
 	printf(" -u INTERFACE,\tUse INTERFACE as UART interface\n");
 	printf(" -b BAUD,\tUART buad rate\n");
 	printf(" -n NODE\tUse NODE as own CSP address\n");
-	printf(" -r UDP_CONFIG\tUDP configuration string, encapsulate in brackets: \"<lport> <peer ip> <rport>\"\n");
+	printf(" -r UDP_CONFIG\tUDP configuration string, encapsulate in brackets: \"<lport> <peer ip> <rport>\" (supports multiple) \n");
+	printf(" -z ZMQ_IP\tIP of zmqproxy node (supports multiple)\n");
 	printf(" -p\t\tSetup prometheus node\n");
-	printf(" -R\tRTABLE\tOverride rtable with this string");
+	printf(" -R RTABLE\tOverride rtable with this string\n");
 	printf(" -h\t\tPrint this help and exit\n");
 }
 
@@ -87,8 +89,10 @@ int main(int argc, char **argv)
 	int csp_version = 2;
 	char * rtable = NULL;
 	char * tun_conf_str = NULL;
+	char * csp_zmqhub_addr[10];
+	int csp_zmqhub_idx = 0;
 
-	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:t:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:t:z:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -122,6 +126,9 @@ int main(int argc, char **argv)
 		case 't':
 			tun_conf_str = optarg;
 			break;
+		case 'z':
+			csp_zmqhub_addr[csp_zmqhub_idx++] = optarg;
+			break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -130,12 +137,13 @@ int main(int argc, char **argv)
 	remain = argc - optind;
 	index = optind;
 
-	if (use_can == 0 && use_uart == 0 && udp_peer_idx == 0) {
+	if (use_can == 0 && use_uart == 0 && udp_peer_idx == 0 && csp_zmqhub_addr == NULL) {
 		printf("\n");
 		printf(" *** Warning: No interfaces configured ***\n");
 		printf("  use -c for CAN\n");
 		printf("  use -u for UART\n");
 		printf("  use -r for UDP\n");
+		printf("  use -z for ZMQHUB\n");
 	}
 
 	/* Get csp config from file */
@@ -234,6 +242,11 @@ int main(int argc, char **argv)
 
 	}
 
+	while (csp_zmqhub_idx > 0) {
+		char * zmq_str = csp_zmqhub_addr[--csp_zmqhub_idx];
+		printf("zmq str %s\n", zmq_str);
+		csp_zmqhub_init(csp_get_address(), zmq_str, 0, NULL);
+	}
 
 	if (!rtable) {
 		/* Read routing table from parameter system */

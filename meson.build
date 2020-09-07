@@ -31,3 +31,9 @@ satctl = executable('satctl', satctl_sources,
 )
 
 custom_target('size', output: ['dummy.txt'], command: [find_program('size'), satctl.full_path()], depends: satctl, build_by_default: true)
+
+zmqproxy_sources = ['src/zmqproxy.c']
+zmqproxy = executable('zmqproxy', zmqproxy_sources,
+	dependencies : [csp_dep],
+	install : true,
+)
