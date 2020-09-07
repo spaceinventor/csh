@@ -214,6 +214,7 @@ int main(int argc, char **argv)
 		udp_conf->rport = rport;
 		csp_if_udp_init(udp_client_if, udp_conf);
 
+		/* Use auto incrementing names */
 		char * udp_name = malloc(10);
 		sprintf(udp_name, "UDP%u", udp_peer_idx);
 		udp_client_if->name = udp_name;
@@ -245,7 +246,15 @@ int main(int argc, char **argv)
 	while (csp_zmqhub_idx > 0) {
 		char * zmq_str = csp_zmqhub_addr[--csp_zmqhub_idx];
 		printf("zmq str %s\n", zmq_str);
-		csp_zmqhub_init(csp_get_address(), zmq_str, 0, NULL);
+		csp_iface_t * zmq_if;
+		csp_zmqhub_init(csp_get_address(), zmq_str, 0, &zmq_if);
+
+		/* Use auto incrementing names */
+		char * zmq_name = malloc(10);
+		sprintf(zmq_name, "ZMQ%u", csp_zmqhub_idx);
+		zmq_if->name = zmq_name;
+
+		default_iface = zmq_if;
 	}
 
 	if (!rtable) {
