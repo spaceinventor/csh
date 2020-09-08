@@ -17,6 +17,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "csp_if_tun.h"
+#include "crypto_test.h"
 #include <csp/csp.h>
 
 void csp_id_prepend(csp_packet_t * packet);
@@ -43,9 +44,24 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
 		csp_id_setup_rx(new_packet);
 
+#if 1
+		int length = crypto_decrypt_with_zeromargin(packet->data, packet->length, new_packet->frame_begin);
+		if (length < 0) {
+			csp_buffer_free(new_packet);
+			csp_buffer_free(packet);
+			ifroute->iface->rx_error++;
+			printf("Decryption error\n");
+			return CSP_ERR_NONE;
+		} else {
+			new_packet->frame_length = length;
+		}
+#else
 		/* Decapsulate */
 		memcpy(new_packet->frame_begin, packet->data, packet->length);
 		new_packet->frame_length = packet->length;
+#endif
+
+		csp_hex_dump("new frame", new_packet->frame_begin, new_packet->frame_length + 16);
 
 		csp_id_strip(new_packet);
 
@@ -67,9 +83,7 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
 		csp_hex_dump("frame", packet->frame_begin, packet->frame_length);
 
-		/* Encapsulate */
-		memcpy(new_packet->data, packet->frame_begin, packet->frame_length);
-
+		/* Create tunnel header */
 		new_packet->id.dst = ifconf->tun_dst;
 		new_packet->id.src = ifconf->tun_dst;
 		new_packet->id.sport = 0;
@@ -77,15 +91,23 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 		new_packet->id.pri = packet->id.pri;
 		new_packet->length = packet->frame_length;
 
+#if 1
+		/* Encrypt */
+		new_packet->length = crypto_encrypt_with_zeromargin(packet->frame_begin, packet->frame_length, new_packet->data);
+#else
+		/* Encapsulate */
+		memcpy(new_packet->data, packet->frame_begin, packet->frame_length);
+#endif
+
+		/* Free old packet */
+		csp_buffer_free(packet);
+
 		csp_hex_dump("new packet", new_packet->data, new_packet->length);
 
 		/* Apply CSP header */
 		csp_id_prepend(new_packet);
 
 		csp_hex_dump("new frame", new_packet->frame_begin, new_packet->frame_length);
-
-		/* Free old packet */
-		csp_buffer_free(packet);
 
 		/* Send new packet */
 		csp_qfifo_write(new_packet, ifroute->iface, NULL);

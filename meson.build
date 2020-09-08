@@ -1,4 +1,4 @@
-project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=release', 'c_std=gnu99', 'b_lto=false', 'csp:use_qos=false', 'param:have_fopen=true', 'param:slash=true', 'param:collector=true'])
+project('satctl', 'c', subproject_dir: 'lib', default_options: ['buildtype=release', 'c_std=gnu99', 'b_lto=false', 'csp:packet_padding_bytes=32', 'csp:use_qos=false', 'param:have_fopen=true', 'param:slash=true', 'param:collector=true'])
 
 add_global_arguments('-I../include', language: 'c')
 

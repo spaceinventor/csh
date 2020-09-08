@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 		csp_if_udp_init(udp_client_if, udp_conf);
 
 		/* Use auto incrementing names */
-		char * udp_name = malloc(10);
+		char * udp_name = malloc(20);
 		sprintf(udp_name, "UDP%u", udp_peer_idx);
 		udp_client_if->name = udp_name;
 
@@ -251,7 +251,7 @@ int main(int argc, char **argv)
 		csp_zmqhub_init(csp_get_address(), zmq_str, 0, &zmq_if);
 
 		/* Use auto incrementing names */
-		char * zmq_name = malloc(10);
+		char * zmq_name = malloc(20);
 		sprintf(zmq_name, "ZMQ%u", csp_zmqhub_idx);
 		zmq_if->name = zmq_name;
 
