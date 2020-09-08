@@ -19,6 +19,10 @@ satctl_sources = [
 	'src/csp_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',
+	'src/tweetnacl.c',
+	'src/crypto_test.c',
+	'src/crypto_test_param.c',
+	'src/crypto_test_slash.c',
 	'src/prometheus.c',
 	'src/stdbuf_mon.c',
 ]
