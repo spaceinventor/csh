@@ -22,7 +22,7 @@
 
 #include "crypto_test.h"
 
-static int crypto_test_send(struct slash *slash)
+static int crypto_send_cmd(struct slash *slash)
 {
     int node = csp_get_address();
     int timeout = 2000;
@@ -43,9 +43,19 @@ static int crypto_test_send(struct slash *slash)
     printf("Sending encrypted packed to %u timeout %u\n", node, timeout);
 
     char test[] = "Hello this is a test message!!";
-    crypto_test_echo(1, (uint8_t*)test, sizeof(test));
+    crypto_test_echo(node, (uint8_t*)test, sizeof(test));
 
     return SLASH_SUCCESS;
 }
 
-slash_command_sub(crypto, send, crypto_test_send, "<node> <timeout>", NULL);
+slash_command_sub(crypto, send, crypto_send_cmd, "<node> <timeout>", NULL);
+
+static int crypto_generate_cmd(struct slash *slash)
+{
+	crypto_test_generate_local_key();
+    return SLASH_SUCCESS;
+}
+
+slash_command_sub(crypto, generate, crypto_generate_cmd, NULL, NULL);
+
+

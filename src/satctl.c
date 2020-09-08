@@ -313,7 +313,6 @@ int main(int argc, char **argv)
 
 	/* Crypto magic */
 	vmem_file_init(&vmem_crypto);
-	param_list_store_vmem_load(&vmem_crypto);
 	crypto_test_init();
 
 	/* Interactive or one-shot mode */
