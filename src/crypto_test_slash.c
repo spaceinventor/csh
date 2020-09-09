@@ -21,7 +21,7 @@
 #include <slash/slash.h>
 
 #include "tweetnacl.h"
-#include "crypto_test.h"
+#include "crypto.h"
 
 /** Example defines */
 #define CSP_DECRYPTOR_PORT  20   // Address of local CSP node

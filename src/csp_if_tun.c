@@ -17,7 +17,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include "csp_if_tun.h"
-#include "crypto_test.h"
+#include "crypto.h"
 #include <csp/csp.h>
 
 void csp_id_prepend(csp_packet_t * packet);
@@ -60,6 +60,9 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 		memcpy(new_packet->frame_begin, packet->data, packet->length);
 		new_packet->frame_length = packet->length;
 #endif
+
+		/* Now free old packet */
+		csp_buffer_free(packet);
 
 		csp_hex_dump("new frame", new_packet->frame_begin, new_packet->frame_length + 16);
 

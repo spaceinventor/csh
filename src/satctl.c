@@ -32,7 +32,7 @@
 #include "csp_if_tun.h"
 #include "prometheus.h"
 #include "param_sniffer.h"
-#include "crypto_test.h"
+#include "crypto.h"
 
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "

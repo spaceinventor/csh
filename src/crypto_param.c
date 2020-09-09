@@ -1,7 +1,7 @@
 #include <param/param.h>
 #include <param_config.h>
 
-#include "crypto_test.h"
+#include "crypto.h"
 
 void key_refresh_callback(param_t * param, int idx) {
 	crypto_test_key_refresh();

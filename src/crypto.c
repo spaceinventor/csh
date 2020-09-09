@@ -5,7 +5,7 @@
  *      Author: joris
  */
 
-#include "crypto_test.h"
+#include "crypto.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -20,7 +20,7 @@
 #include <csp/arch/csp_thread.h>
 
 #include "tweetnacl.h"
-#include "crypto_test_param.h"
+#include "crypto_param.h"
 
 // Future Params for server
 static uint8_t _crypto_key_public[crypto_box_PUBLICKEYBYTES];
