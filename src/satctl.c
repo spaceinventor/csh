@@ -313,7 +313,7 @@ int main(int argc, char **argv)
 
 	/* Crypto magic */
 	vmem_file_init(&vmem_crypto);
-	crypto_test_init();
+	crypto_key_refresh();
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {

@@ -4,7 +4,7 @@
 #include "crypto.h"
 
 void key_refresh_callback(param_t * param, int idx) {
-	crypto_test_key_refresh();
+	crypto_key_refresh();
 }
 
 extern vmem_t vmem_crypto;

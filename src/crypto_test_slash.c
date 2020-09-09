@@ -175,7 +175,7 @@ slash_command_sub(crypto, send, crypto_send_cmd, "<node> <timeout>", NULL);
 
 static int crypto_generate_cmd(struct slash *slash)
 {
-	crypto_test_generate_local_key();
+	crypto_generate_local_key();
     return SLASH_SUCCESS;
 }
 

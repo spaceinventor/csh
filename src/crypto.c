@@ -130,7 +130,7 @@ int crypto_decrypt_with_zeromargin(uint8_t * ciphertext_in, uint8_t ciphertext_l
 
 }
 
-void crypto_test_key_refresh(void) {
+void crypto_key_refresh(void) {
 
 	/* Read keys from vmem/config file */
 	param_get_data(&crypto_key_public, _crypto_key_public, crypto_box_PUBLICKEYBYTES);
@@ -147,7 +147,7 @@ void crypto_test_key_refresh(void) {
 
 }
 
-void crypto_test_generate_local_key(void) {
+void crypto_generate_local_key(void) {
     int result;
 
     static uint8_t new_public[crypto_box_PUBLICKEYBYTES];
@@ -167,6 +167,3 @@ void crypto_test_generate_local_key(void) {
 
 }
 
-void crypto_test_init(void) {
-	crypto_test_key_refresh();
-}
