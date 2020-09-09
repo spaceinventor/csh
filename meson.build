@@ -26,6 +26,7 @@ satctl_sources = [
 	'src/prometheus.c',
 	'src/stdbuf_mon.c',
 	'src/csp_if_tun.c',
+	'src/randombytes.c',
 ]
 
 satctl = executable('satctl', satctl_sources,
