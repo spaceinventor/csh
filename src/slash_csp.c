@@ -186,21 +186,23 @@ slash_command(ident, slash_csp_cmp_ident, "<node> [timeout]", "Ident");
 
 static int slash_csp_cmp_route_set(struct slash *slash)
 {
-	if ((slash->argc < 5) || (slash->argc > 6))
+	if ((slash->argc < 6) || (slash->argc > 7))
 		return SLASH_EUSAGE;
 
 	unsigned int node = atoi(slash->argv[1]);
 	unsigned int dest_node = atoi(slash->argv[2]);
-	char * interface = slash->argv[3];
-	unsigned int next_hop_via = atoi(slash->argv[4]);
+	unsigned int netmask = atoi(slash->argv[3]);
+	char * interface = slash->argv[4];
+	unsigned int next_hop_via = atoi(slash->argv[5]);
 	unsigned int timeout = 1000;
-	if (slash->argc >= 6)
-		timeout = atoi(slash->argv[5]);
+	if (slash->argc >= 7)
+		timeout = atoi(slash->argv[6]);
 
 	struct csp_cmp_message message;
 
 	message.route_set.dest_node = dest_node;
 	message.route_set.next_hop_via = next_hop_via;
+	message.route_set.netmask = netmask;
 	strncpy(message.route_set.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
 
 	if (csp_cmp_route_set(node, timeout, &message) != CSP_ERR_NONE) {
@@ -213,7 +215,7 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(route_set, slash_csp_cmp_route_set, "<node> <dest_node> <interface> <mac> [timeout]", "Route set");
+slash_command(route_set, slash_csp_cmp_route_set, "<node> <dest_node> <netmask> <interface> <mac> [timeout]", "Route set");
 
 
 static int slash_csp_cmp_ifstat(struct slash *slash)
