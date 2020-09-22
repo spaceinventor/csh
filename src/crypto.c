@@ -28,21 +28,15 @@ static uint8_t _crypto_key_secret[crypto_box_SECRETKEYBYTES];
 static uint8_t _crypto_key_remote[crypto_box_PUBLICKEYBYTES];
 static uint8_t _crypto_beforenm[crypto_box_BEFORENMBYTES];
 
-uint64_t _crypto_nonce;
+uint64_t _crypto_nonce_rx;
+uint64_t _crypto_nonce_tx;
 uint16_t _crypto_fail_auth_count;
 uint16_t _crypto_fail_nonce_count;
 
-PARAM_DEFINE_STATIC_RAM(PARAMID_CRYPTO_REMOTE_COUNTER,    crypto_nonce,      PARAM_TYPE_UINT64,  1, sizeof(uint64_t), PM_READONLY, NULL,                  "", &_crypto_nonce, NULL);
+PARAM_DEFINE_STATIC_RAM(PARAMID_CRYPTO_NONCE_RX,    crypto_nonce_rx,      PARAM_TYPE_UINT64,  1, sizeof(uint64_t), PM_READONLY, NULL,                  "", &_crypto_nonce_rx, NULL);
+PARAM_DEFINE_STATIC_RAM(PARAMID_CRYPTO_NONCE_TX,    crypto_nonce_tx,      PARAM_TYPE_UINT64,  1, sizeof(uint64_t), PM_READONLY, NULL,                  "", &_crypto_nonce_tx, NULL);
 PARAM_DEFINE_STATIC_RAM(PARAMID_CRYPTO_FAUL_AUTH_COUNT,   crypto_fail_auth_count,     PARAM_TYPE_UINT16,  1, sizeof(uint16_t), PM_READONLY, NULL,                  "", &_crypto_fail_auth_count, NULL);
 PARAM_DEFINE_STATIC_RAM(PARAMID_CRYPTO_FAUL_NONCE_COUNT,  crypto_fail_nonce_count,    PARAM_TYPE_UINT16,  1, sizeof(uint16_t), PM_READONLY, NULL,                  "", &_crypto_fail_nonce_count, NULL);
-
-static uint8_t crypto_compare_pkey(uint8_t * own_key, uint8_t * other_key) {
-    int result = memcmp(own_key, other_key, crypto_box_PUBLICKEYBYTES);
-    if(result > 0) {
-        return 1;
-    }
-	return 0;
-}
 
 /*
 There is a 32-octet padding requirement on the plaintext buffer that you pass to crypto_box.
@@ -57,14 +51,12 @@ network, don't forget to remove them!
 */
 int crypto_encrypt_with_zeromargin(uint8_t * msg_begin, uint8_t msg_len, uint8_t * ciphertext_out) {
 
-	/* Increment nonce */
-	uint8_t nonce_counter_parity = crypto_compare_pkey(_crypto_key_remote, _crypto_key_public);
-	_crypto_nonce = (_crypto_nonce & (~1UL)) + 1 + nonce_counter_parity;
-	//printf("nonce tx: %"PRIu64"\n", _crypto_nonce);
+    _crypto_nonce_tx++;
+	printf("nonce tx: %"PRIu64"\n", _crypto_nonce_tx);
 
 	/* Pack nonce into 24-bytes format, expected by NaCl */
 	unsigned char nonce[crypto_box_NONCEBYTES] = {};
-	memcpy(nonce, &_crypto_nonce, sizeof(uint64_t));
+	memcpy(nonce, &_crypto_nonce_tx, sizeof(uint64_t));
 	//csp_hex_dump("nonce", nonce, crypto_box_NONCEBYTES);
 
 	/* Make room for zerofill at the beginning of message */
@@ -117,13 +109,13 @@ int crypto_decrypt_with_zeromargin(uint8_t * ciphertext_in, uint8_t ciphertext_l
     /* Message successfully decrypted, check for valid nonce */
     uint64_t nonce_counter;
     memcpy(&nonce_counter, nonce, sizeof(uint64_t));
-    if(nonce_counter <= _crypto_nonce) {
+    if(nonce_counter <= _crypto_nonce_rx) {
     	_crypto_fail_nonce_count++;
         return -1;
     }
 
     /* Update counter with received value so that next sent value is higher */
-    _crypto_nonce = nonce_counter;
+    _crypto_nonce_rx = nonce_counter;
 
     /* Return useable length */
 	return ciphertext_len - crypto_secretbox_BOXZEROBYTES;
