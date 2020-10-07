@@ -89,7 +89,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		return SLASH_EUSAGE;
 
 	int version = 2;
-	uint8_t node = atoi(slash->argv[1]);
+	uint16_t node = atoi(slash->argv[1]);
     if (slash->argc >= 3)
         version = atoi(slash->argv[2]);
 
