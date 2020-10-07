@@ -85,10 +85,15 @@ static int stdbuf_get(uint8_t node, uint32_t base, int from, int to, int timeout
 
 static int stdbuf_mon_slash(struct slash *slash) {
 
-	if (slash->argc != 2)
+	if (slash->argc < 2)
 		return SLASH_EUSAGE;
 
+	int version = 2;
 	uint8_t node = atoi(slash->argv[1]);
+    if (slash->argc >= 3)
+        version = atoi(slash->argv[2]);
+
+    printf("Using paramver %u\n", version);
 
 	/* Pull buffer */
 	char pull_buf[25];
@@ -97,6 +102,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		.buffer_size = 25,
 		.type = PARAM_QUEUE_TYPE_GET,
 		.used = 0,
+		.version = version,
 	};
 
 	param_t * stdbuf_in = param_list_find_id(node, 28);
