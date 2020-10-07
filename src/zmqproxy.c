@@ -32,8 +32,8 @@ int csp_id_setup_rx(csp_packet_t * packet);
 extern csp_conf_t csp_conf;
 
 int debug = 0;
-char * sub_str = "tcp://127.0.0.1:6000";
-char * pub_str = "tcp://127.0.0.1:7000";
+char * sub_str = "tcp://0.0.0.0:6000";
+char * pub_str = "tcp://0.0.0.0:7000";
 char * logfile_name = NULL;
 FILE * logfile;
 

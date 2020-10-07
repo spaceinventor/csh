@@ -113,13 +113,20 @@ static void * param_sniffer(void * param) {
 		}
 
 		uint8_t type = packet->data[0];
-		if (type != PARAM_PULL_RESPONSE) {
+		if ((type != PARAM_PULL_RESPONSE) || (type != PARAM_PULL_RESPONSE_V2)) {
 			csp_buffer_free(packet);
 			continue;
 		}
 
+		int queue_version;
+		if (type == PARAM_PULL_RESPONSE) {
+		    queue_version = 1;
+		} else {
+		    queue_version = 2;
+		}
+
 		param_queue_t queue;
-		param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET);
+		param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
 		param_queue_foreach(&queue, param_sniffer_log, NULL);
 		csp_buffer_free(packet);
 	}
