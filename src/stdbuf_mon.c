@@ -63,7 +63,7 @@ static vmem_list_t stdbuf_get_base(int node, int timeout) {
 	return ret;
 }
 
-static int stdbuf_get(uint8_t node, uint32_t base, int from, int to, int timeout) {
+static int stdbuf_get(uint16_t node, uint32_t base, int from, int to, int timeout) {
 
 	int len = to - from;
 	if (len > 200)
