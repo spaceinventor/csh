@@ -113,7 +113,7 @@ static void * param_sniffer(void * param) {
 		}
 
 		uint8_t type = packet->data[0];
-		if ((type != PARAM_PULL_RESPONSE) || (type != PARAM_PULL_RESPONSE_V2)) {
+		if ((type != PARAM_PULL_RESPONSE) && (type != PARAM_PULL_RESPONSE_V2)) {
 			csp_buffer_free(packet);
 			continue;
 		}
