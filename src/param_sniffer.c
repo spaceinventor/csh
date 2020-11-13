@@ -128,7 +128,9 @@ static void * param_sniffer(void * param) {
 		param_queue_t queue;
 		param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
         PARAM_QUEUE_FOREACH(param, reader, (&queue), offset)
-			param_sniffer_log(NULL, &queue, param, offset, &reader);
+			if (param) {	
+				param_sniffer_log(NULL, &queue, param, offset, &reader);
+			}
 		}
 		csp_buffer_free(packet);
 	}
