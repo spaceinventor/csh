@@ -142,7 +142,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 		uint16_t out_push = out + got;
 		out_push %= vmem.size;
-	    param_push_single(stdbuf_out, 0, &out_push, 0, node, 1000, 2);
+	    param_push_single(stdbuf_out, 0, &out_push, 0, node, 1000, version);
 
 	    if (got > 0) {
 	    	continue;
