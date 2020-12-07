@@ -99,7 +99,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 	char pull_buf[25];
 	param_queue_t pull_q = {
 		.buffer = pull_buf,
-		.buffer_size = 25,
+		.buffer_size = 50,
 		.type = PARAM_QUEUE_TYPE_GET,
 		.used = 0,
 		.version = version,
@@ -112,8 +112,17 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		return SLASH_EINVAL;
 	}
 
-	param_t * stdbuf_in = param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", 9);
-	param_t * stdbuf_out = param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", 10);
+	param_t * stdbuf_in = param_list_find_id(node, 28);
+	if (stdbuf_in == NULL) {
+		stdbuf_in = param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", 9);
+		param_list_add(stdbuf_in);
+	}
+
+	param_t * stdbuf_out = param_list_find_id(node, 29);
+	if (stdbuf_out == NULL) {
+		stdbuf_out = param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", 10);
+		param_list_add(stdbuf_out);
+	}
 
 	param_queue_add(&pull_q, stdbuf_in, 0, NULL);
 	param_queue_add(&pull_q, stdbuf_out, 0, NULL);
