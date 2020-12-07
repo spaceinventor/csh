@@ -105,23 +105,18 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		.version = version,
 	};
 
-	param_t * stdbuf_in = param_list_find_id(node, 28);
-	param_t * stdbuf_out = param_list_find_id(node, 29);
-
-	if (!stdbuf_in || !stdbuf_out) {
-		printf("Please download stdbuf_in and _out parameters first\n");
-		return SLASH_EINVAL;
-	}
-
-	param_queue_add(&pull_q, stdbuf_in, 0, NULL);
-	param_queue_add(&pull_q, stdbuf_out, 0, NULL);
-
 	vmem_list_t vmem = stdbuf_get_base(node, 1000);
 
 	if (vmem.size == 0 || vmem.vaddr == 0) {
 		printf("Could not find stdbuffer on node %u\n", node);
 		return SLASH_EINVAL;
 	}
+
+	param_t * stdbuf_in = param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", 9);
+	param_t * stdbuf_out = param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", 10);
+
+	param_queue_add(&pull_q, stdbuf_in, 0, NULL);
+	param_queue_add(&pull_q, stdbuf_out, 0, NULL);
 
 	printf("Monitoring stdbuf on node %u, base %x, size %u\n", node, vmem.vaddr, vmem.size);
 
@@ -154,6 +149,10 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		}
 
 	};
+
+	free(stdbuf_in);
+	free(stdbuf_out);
+
 	return SLASH_SUCCESS;
 }
 

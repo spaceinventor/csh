@@ -33,6 +33,7 @@
 #include "prometheus.h"
 #include "param_sniffer.h"
 #include "crypto.h"
+#include "tfetch.h"
 
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
@@ -44,6 +45,7 @@
 #define SATCTL_HISTORY_SIZE		    2048
 
 VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
+VMEM_DEFINE_FILE(tfetch, "tfetc", "tfetch.vmem", 120);
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
 VMEM_DEFINE_FILE(csp, "csp", "cspcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
@@ -314,6 +316,10 @@ int main(int argc, char **argv)
 	/* Crypto magic */
 	vmem_file_init(&vmem_crypto);
 	crypto_key_refresh();
+
+	/* Test of time fetch */
+	vmem_file_init(&vmem_tfetch);
+	tfetch_onehz();
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
