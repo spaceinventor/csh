@@ -159,9 +159,6 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	};
 
-	free(stdbuf_in);
-	free(stdbuf_out);
-
 	return SLASH_SUCCESS;
 }
 
