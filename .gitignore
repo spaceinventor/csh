@@ -17,3 +17,4 @@ builddir
 *.lzo
 *.csv
 *.vmem
+*.log
