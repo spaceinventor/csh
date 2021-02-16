@@ -7,7 +7,6 @@
 *.d
 *.map
 *.sym
-.*project
 .lock*
 .waf-*
 *.swp
