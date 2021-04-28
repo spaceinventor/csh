@@ -29,6 +29,9 @@ void * prometheus_exporter(void * param) {
 
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
+    	printf("setsockopt(SO_REUSEADDR) failed\n");
+
 	struct sockaddr_in server_addr = {0};
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -36,7 +39,7 @@ void * prometheus_exporter(void * param) {
 
 retry_bind:
 	if (bind(listen_fd, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
-		//printf("Cannot bind prometheus to port 9101\n");
+		printf("Cannot bind prometheus to port 9101\n");
 		sleep(1);
 		goto retry_bind;
 	} else {
@@ -71,6 +74,8 @@ retry_bind:
 
 		prometheus_clear();
 
+		shutdown(conn_fd, SHUT_RDWR);
+
 		close(conn_fd);
 
 	}
@@ -84,6 +89,7 @@ void prometheus_add(char * str) {
 		strcpy(prometheus_buf + prometheus_buf_len, str);
 		prometheus_buf_len += strlen(str);
 	}
+	//printf("prometheus add %s, buflen %d\n", str, prometheus_buf_len);
 }
 
 void prometheus_clear(void) {
