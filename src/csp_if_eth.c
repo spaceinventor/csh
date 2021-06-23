@@ -34,27 +34,18 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
 	/* Ethernet header */
     struct ether_header *eh = (struct ether_header *) sendbuf;
-	eh->ether_shost[0] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[0];
-	eh->ether_shost[1] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[1];
-	eh->ether_shost[2] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[2];
-	eh->ether_shost[3] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[3];
-	eh->ether_shost[4] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4];
-	eh->ether_shost[5] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5];
-    #if 1
+	eh->ether_dhost[0] = 0x66;
+	eh->ether_dhost[1] = 0x66;
+	eh->ether_dhost[2] = 0x66;
+	eh->ether_dhost[3] = 0x66;
+	eh->ether_dhost[4] = (packet->id.src >> 8) & 0xFF;
+	eh->ether_dhost[5] = (packet->id.src) & 0xFF;
 	eh->ether_dhost[0] = 0x66;
 	eh->ether_dhost[1] = 0x66;
 	eh->ether_dhost[2] = 0x66;
 	eh->ether_dhost[3] = 0x66;
 	eh->ether_dhost[4] = (packet->id.dst >> 8) & 0xFF;
 	eh->ether_dhost[5] = (packet->id.dst) & 0xFF;
-    #else
-    eh->ether_dhost[0] = 0x04;
-	eh->ether_dhost[1] = 0x33;
-	eh->ether_dhost[2] = 0xc2;
-	eh->ether_dhost[3] = 0x24;
-	eh->ether_dhost[4] = 0x51;
-	eh->ether_dhost[5] = 0x7b;
-    #endif
 	eh->ether_type = htons(PROTOCOL);
 
     int tx_len = sizeof(struct ether_header);
