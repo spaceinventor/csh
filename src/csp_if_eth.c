@@ -34,12 +34,12 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
 	/* Ethernet header */
     struct ether_header *eh = (struct ether_header *) sendbuf;
-	eh->ether_dhost[0] = 0x66;
-	eh->ether_dhost[1] = 0x66;
-	eh->ether_dhost[2] = 0x66;
-	eh->ether_dhost[3] = 0x66;
-	eh->ether_dhost[4] = (packet->id.src >> 8) & 0xFF;
-	eh->ether_dhost[5] = (packet->id.src) & 0xFF;
+	eh->ether_shost[0] = 0x66;
+	eh->ether_shost[1] = 0x66;
+	eh->ether_shost[2] = 0x66;
+	eh->ether_shost[3] = 0x66;
+	eh->ether_shost[4] = (packet->id.src >> 8) & 0xFF;
+	eh->ether_shost[5] = (packet->id.src) & 0xFF;
 	eh->ether_dhost[0] = 0x66;
 	eh->ether_dhost[1] = 0x66;
 	eh->ether_dhost[2] = 0x66;
