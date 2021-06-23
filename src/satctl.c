@@ -34,6 +34,7 @@
 #include "param_sniffer.h"
 #include "crypto.h"
 #include "tfetch.h"
+#include "csp_if_eth.h"
 
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
@@ -92,10 +93,11 @@ int main(int argc, char **argv)
 	int csp_version = 2;
 	char * rtable = NULL;
 	char * tun_conf_str = NULL;
+	char * eth_ifname = NULL;
 	char * csp_zmqhub_addr[10];
 	int csp_zmqhub_idx = 0;
 
-	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:t:z:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:t:e:z:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -128,6 +130,9 @@ int main(int argc, char **argv)
 			break;
 		case 't':
 			tun_conf_str = optarg;
+			break;
+		case 'e':
+			eth_ifname = optarg;
 			break;
 		case 'z':
 			csp_zmqhub_addr[csp_zmqhub_idx++] = optarg;
@@ -244,6 +249,12 @@ int main(int argc, char **argv)
 
 		csp_if_tun_init(tun_if, ifconf);
 
+	}
+
+	if (eth_ifname) {
+		static csp_iface_t csp_iface_eth;
+		csp_if_eth_init(&csp_iface_eth, eth_ifname);
+		default_iface = &csp_iface_eth;
 	}
 
 	while (csp_zmqhub_idx > 0) {
