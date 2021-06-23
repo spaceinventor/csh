@@ -12,14 +12,7 @@
 #include <net/if.h>
 #include <netinet/ether.h>
 
-#define MY_DEST_MAC0	0xFF
-#define MY_DEST_MAC1	0xFF
-#define MY_DEST_MAC2	0xFF
-#define MY_DEST_MAC3	0xFF
-#define MY_DEST_MAC4	0xFF
-#define MY_DEST_MAC5	0xFF
-
-#define BUF_SIZ		1024
+#define BUF_SIZ		2048
 
 static int sockfd;
 static struct ifreq if_idx;
@@ -31,34 +24,29 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
 	/* Construct the Ethernet header */
 	char sendbuf[BUF_SIZ];
-    struct ether_header *eh = (struct ether_header *) sendbuf;
-	//struct iphdr *iph = (struct iphdr *) (sendbuf + sizeof(struct ether_header));
+    memset(sendbuf, 0, BUF_SIZ);
 
-	memset(sendbuf, 0, BUF_SIZ);
 	/* Ethernet header */
+    struct ether_header *eh = (struct ether_header *) sendbuf;
 	eh->ether_shost[0] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[0];
 	eh->ether_shost[1] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[1];
 	eh->ether_shost[2] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[2];
 	eh->ether_shost[3] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[3];
 	eh->ether_shost[4] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4];
 	eh->ether_shost[5] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5];
-	eh->ether_dhost[0] = MY_DEST_MAC0;
-	eh->ether_dhost[1] = MY_DEST_MAC1;
-	eh->ether_dhost[2] = MY_DEST_MAC2;
-	eh->ether_dhost[3] = MY_DEST_MAC3;
-	eh->ether_dhost[4] = MY_DEST_MAC4;
-	eh->ether_dhost[5] = MY_DEST_MAC5;
-	/* Ethertype field */
-	eh->ether_type = htons(0x4305);
+	eh->ether_dhost[0] = 0x66;
+	eh->ether_dhost[1] = 0x66;
+	eh->ether_dhost[2] = 0x66;
+	eh->ether_dhost[3] = 0x66;
+	eh->ether_dhost[4] = (packet->id.dst >> 8) & 0xFF;
+	eh->ether_dhost[5] = (packet->id.dst) & 0xFF;
+	eh->ether_type = htons(0x6666);
 
-	int tx_len = 0;
-	tx_len += sizeof(struct ether_header);
+    int tx_len = sizeof(struct ether_header);
 
-	/* Packet data */
-	sendbuf[tx_len++] = 0xde;
-	sendbuf[tx_len++] = 0xad;
-	sendbuf[tx_len++] = 0xbe;
-	sendbuf[tx_len++] = 0xef;
+    /* Copy data to outgoing */
+    memcpy(&sendbuf[tx_len], packet->frame_begin, packet->frame_length);
+    tx_len += packet->frame_length;
 
 	/* Index of the network device */
 	struct sockaddr_ll socket_address;
@@ -66,12 +54,12 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 	/* Address length*/
 	socket_address.sll_halen = ETH_ALEN;
 	/* Destination MAC */
-	socket_address.sll_addr[0] = MY_DEST_MAC0;
-	socket_address.sll_addr[1] = MY_DEST_MAC1;
-	socket_address.sll_addr[2] = MY_DEST_MAC2;
-	socket_address.sll_addr[3] = MY_DEST_MAC3;
-	socket_address.sll_addr[4] = MY_DEST_MAC4;
-	socket_address.sll_addr[5] = MY_DEST_MAC5;
+	socket_address.sll_addr[0] = eh->ether_dhost[0];
+	socket_address.sll_addr[1] = eh->ether_dhost[1];
+	socket_address.sll_addr[2] = eh->ether_dhost[2];
+	socket_address.sll_addr[3] = eh->ether_dhost[3];
+	socket_address.sll_addr[4] = eh->ether_dhost[4];
+	socket_address.sll_addr[5] = eh->ether_dhost[5];
 
 	/* Send packet */
 	if (sendto(sockfd, sendbuf, tx_len, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0)
