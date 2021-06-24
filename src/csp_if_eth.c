@@ -24,6 +24,11 @@ static int rx_sockfd;
 static struct ifreq if_idx;
 static struct ifreq if_mac;
 
+static void csp_if_eth_arp_tx(void) {
+	
+}
+
+
 static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
 	csp_id_prepend(packet);

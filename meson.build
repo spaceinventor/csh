@@ -29,6 +29,7 @@ satctl_sources = [
 	'src/randombytes.c',
 	'src/tfetch_once.c',
 	'src/csp_if_eth.c',
+	'src/it6942a.c',
 ]
 
 satctl = executable('satctl', satctl_sources,
