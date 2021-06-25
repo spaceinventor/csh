@@ -17,7 +17,6 @@
 #include <unistd.h>
 
 #define BUF_SIZ	2048
-#define ETHER_TYPE ETH_P_IP
 
 static int sockfd;
 static struct ifreq if_idx;
@@ -80,34 +79,24 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
     struct ether_header *eh = (struct ether_header *) sendbuf;
 	int tx_len = sizeof(struct ether_header);
 
-#if 0
-	eh->ether_shost[0] = 0x66;
-	eh->ether_shost[1] = 0x66;
-	eh->ether_shost[2] = 0x66;
-	eh->ether_shost[3] = 0x66;
-	eh->ether_shost[4] = (packet->id.src >> 8) & 0xFF;
-	eh->ether_shost[5] = (packet->id.src) & 0xFF;
-	eh->ether_dhost[0] = 0x66;
-	eh->ether_dhost[1] = 0x66;
-	eh->ether_dhost[2] = 0x66;
-	eh->ether_dhost[3] = 0x66;
-	eh->ether_dhost[4] = (packet->id.dst >> 8) & 0xFF;
-	eh->ether_dhost[5] = (packet->id.dst) & 0xFF;
-#else
-	eh->ether_shost[0] = 0x04;
-	eh->ether_shost[1] = 0x33;
-	eh->ether_shost[2] = 0xc2;
-	eh->ether_shost[3] = 0x24;
-	eh->ether_shost[4] = 0x51;
-	eh->ether_shost[5] = 0x7b;
-	eh->ether_dhost[0] = 0xdc;
-	eh->ether_dhost[1] = 0xa6;
-	eh->ether_dhost[2] = 0x32;
-	eh->ether_dhost[3] = 0xa4;
-	eh->ether_dhost[4] = 0xb1;
-	eh->ether_dhost[5] = 0x5f;
-#endif
+	/* We just broadcast on ethernet! */
+	eh->ether_shost[0] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[0];
+	eh->ether_shost[1] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[1];
+	eh->ether_shost[2] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[2];
+	eh->ether_shost[3] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[3];
+	eh->ether_shost[4] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4];
+	eh->ether_shost[5] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5];
+	eh->ether_dhost[0] = 0xff;
+	eh->ether_dhost[1] = 0xff;
+	eh->ether_dhost[2] = 0xff;
+	eh->ether_dhost[3] = 0xff;
+	eh->ether_dhost[4] = 0xff;
+	eh->ether_dhost[5] = 0xff;
+#if 1
 	eh->ether_type = htons(0x6666);
+
+#else
+	eh->ether_type = htons(0x0800);
     
 	/* IP header */
 	struct iphdr *iph = (struct iphdr *) (sendbuf + tx_len);
@@ -130,22 +119,20 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 	struct udphdr *udp = (struct udphdr *) (sendbuf + tx_len);
 	tx_len += sizeof(struct udphdr);
 
-	udp->source = 9000;
-	udp->dest = 9000;
+	udp->source = htons(9000);
+	udp->dest = htons(9000);
 	udp->len = htons(sizeof(struct udphdr) + packet->frame_length);
 	udp->check = 0; // TODO;
+#endif
 
     /* Copy data to outgoing */
     memcpy(&sendbuf[tx_len], packet->frame_begin, packet->frame_length);
     tx_len += packet->frame_length;
 
-	/* Index of the network device */
+	/* Socket address */
 	struct sockaddr_ll socket_address = {};
 	socket_address.sll_ifindex = if_idx.ifr_ifindex;
-    socket_address.sll_protocol = htons(ETHER_TYPE);
-	/* Address length*/
 	socket_address.sll_halen = ETH_ALEN;
-	/* Destination MAC */
 	socket_address.sll_addr[0] = eh->ether_dhost[0];
 	socket_address.sll_addr[1] = eh->ether_dhost[1];
 	socket_address.sll_addr[2] = eh->ether_dhost[2];
@@ -191,7 +178,7 @@ CSP_DEFINE_TASK(csp_if_eth_rx_task) {
         }
 
         /* Filter */
-        if ((eth_frame_begin[12] != 0x08) || (eth_frame_begin[13] != 0x00)) {
+        if ((eth_frame_begin[12] != 0x66) || (eth_frame_begin[13] != 0x66)) {
             iface->rx_error++;
             csp_buffer_free(packet);
             continue;
