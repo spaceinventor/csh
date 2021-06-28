@@ -79,19 +79,24 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
     struct ether_header *eh = (struct ether_header *) sendbuf;
 	int tx_len = sizeof(struct ether_header);
 
-	/* We just broadcast on ethernet! */
 	eh->ether_shost[0] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[0];
 	eh->ether_shost[1] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[1];
 	eh->ether_shost[2] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[2];
 	eh->ether_shost[3] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[3];
 	eh->ether_shost[4] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4];
 	eh->ether_shost[5] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5];
+
+	/* We just broadcast on ethernet! */
+	/* TODO: Broadcast traffic is throttled on some networks,
+	 * this should not be an issue with a point to point ethernet link
+	 * but in largere corporate networks, we might want to add an ARP */
 	eh->ether_dhost[0] = 0xff;
 	eh->ether_dhost[1] = 0xff;
 	eh->ether_dhost[2] = 0xff;
 	eh->ether_dhost[3] = 0xff;
 	eh->ether_dhost[4] = 0xff;
 	eh->ether_dhost[5] = 0xff;
+	
 #if 1
 	eh->ether_type = htons(0x6666);
 
@@ -164,11 +169,13 @@ CSP_DEFINE_TASK(csp_if_eth_rx_task) {
             continue;
         }
 
-        /* Setup RX frane to point to ID */
+        /* Setup RX frame to point to ID */
         int csp_header_size = csp_id_setup_rx(packet);
         uint8_t * eth_frame_begin = packet->frame_begin - 14;
-        int received_len = recvfrom(sockfd, eth_frame_begin, iface->mtu + 14 + csp_header_size, 0, NULL, NULL);
+		printf("Recv ready\n");
+        int received_len = recvfrom(sockfd, eth_frame_begin, 21, 0, NULL, NULL);
         packet->frame_length = received_len - 14;
+		printf("Recv %d\n", received_len);
 
         /* Filter */
         if (received_len < 14) {
@@ -204,7 +211,7 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
      */
 
     /* Open RAW socket to send on */
-	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_IP))) == -1) {
+	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(0x6666))) == -1) {
 	    perror("socket");
         return;
 	}
@@ -233,12 +240,15 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4],
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5]);
 
+#if 0
 	/* Set interface to promiscuous mode - do we need to do this every time? */
+	/* Answer: no this is not needed */
     struct ifreq ifopts = {};	/* set promiscuous mode */
 	strncpy(ifopts.ifr_name, ifname, IFNAMSIZ-1);
 	ioctl(sockfd, SIOCGIFFLAGS, &ifopts);
 	ifopts.ifr_flags |= IFF_PROMISC;
 	ioctl(sockfd, SIOCSIFFLAGS, &ifopts);
+#endif
 
     /* Allow the socket to be reused - incase connection is closed prematurely */
     int sockopt;
@@ -247,6 +257,7 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
 		close(sockfd);
 		return;
 	}
+
 	/* Bind to device */
 	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, ifname, IFNAMSIZ-1) == -1)	{
 		perror("SO_BINDTODEVICE");
@@ -257,7 +268,7 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
 	/* fill sockaddr_ll struct to prepare binding */
 	struct sockaddr_ll my_addr;
 	my_addr.sll_family = AF_PACKET;
-	my_addr.sll_protocol = htons(ETH_P_ALL);
+	my_addr.sll_protocol = htons(0x6666);
 	my_addr.sll_ifindex = if_idx.ifr_ifindex;
 
 	/* bind socket  */
