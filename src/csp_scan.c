@@ -10,7 +10,7 @@ static int csp_scan(struct slash *slash)
 
     for (int i = 0; i < 0x3FFF; i++) {
         printf("\rtrying %d: ", i);
-        if (csp_ping(i, 20, 0, CSP_O_NONE) == 0) {
+        if (csp_ping(i, 20, 0, CSP_O_NONE) >= 0) {
             printf("\nFound something on addr %d...\n", i);
             
             struct csp_cmp_message message;
@@ -19,7 +19,7 @@ static int csp_scan(struct slash *slash)
             }
 
         }
-        
+
         /* Check for exit command */
 		if (slash_wait_interruptible(slash, 0) != 0)
 			break;
