@@ -30,6 +30,7 @@ satctl_sources = [
 	'src/tfetch_once.c',
 	'src/csp_if_eth.c',
 	'src/it6942a.c',
+	'src/csp_scan.c',
 ]
 
 satctl = executable('satctl', satctl_sources,
