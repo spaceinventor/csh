@@ -157,16 +157,11 @@ int main(int argc, char **argv)
 	/* Get csp config from file */
 	vmem_file_init(&vmem_csp);
 
-	csp_conf_t csp_config;
-	csp_conf_get_defaults(&csp_config);
-	csp_config.version = csp_version;
-	csp_config.buffers = 100;
-	csp_config.buffer_data_size = 2100;
-	csp_config.address = addr;
-	csp_config.hostname = "satctl";
-	csp_config.model = "linux";
-	if (csp_init(&csp_config) < 0)
-		return -1;
+	csp_conf.address = addr;
+	csp_conf.version = csp_version;
+	csp_conf.hostname = "satctl";
+	csp_conf.model = "linux";
+	csp_init();
 
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
