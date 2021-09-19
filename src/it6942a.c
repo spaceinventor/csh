@@ -18,7 +18,7 @@ CSP_DEFINE_TASK(it69_task) {
 
         /* Send requrest for data */
         static const char * req_cmd = "GET ALL";
-        printf("Writing %s size %d\n", req_cmd, strlen(req_cmd));
+        printf("Writing %s size %ld\n", req_cmd, strlen(req_cmd));
         if (write(fd, req_cmd, strlen(req_cmd) + 1) < 0) {
             printf("it69 write error\n");
             continue;

@@ -170,7 +170,7 @@ CSP_DEFINE_TASK(csp_if_eth_rx_task) {
         }
 
         /* Setup RX frame to point to ID */
-        int csp_header_size = csp_id_setup_rx(packet);
+        //int csp_header_size = csp_id_setup_rx(packet);
         uint8_t * eth_frame_begin = packet->frame_begin - 14;
 		printf("Recv ready\n");
         int received_len = recvfrom(sockfd, eth_frame_begin, 21, 0, NULL, NULL);
