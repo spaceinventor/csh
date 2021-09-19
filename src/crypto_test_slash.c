@@ -16,7 +16,7 @@
 #include <inttypes.h>
 
 #include <csp/csp.h>
-#include <csp/csp_endian.h>
+#include <sys/types.h>
 
 #include <slash/slash.h>
 

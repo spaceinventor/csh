@@ -9,7 +9,7 @@
 
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
-#include <csp/csp_endian.h>
+#include <sys/types.h>
 #include <csp/arch/csp_clock.h>
 
 #include <param/param.h>
@@ -61,8 +61,8 @@ static int tfetch_remote(int node, int timeout) {
 
 	/* Take care of endianness */
 	csp_timestamp_t clock;
-	clock.tv_sec = csp_ntoh32(message.clock.tv_sec);
-	clock.tv_nsec = csp_ntoh32(message.clock.tv_nsec);
+	clock.tv_sec = be32toh(message.clock.tv_sec);
+	clock.tv_nsec = be32toh(message.clock.tv_nsec);
 
 	/* Time needs to be after 1. Jan 2020 00:00:00 */
 	if (clock.tv_sec < 1577836800) {

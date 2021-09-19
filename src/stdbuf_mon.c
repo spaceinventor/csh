@@ -14,7 +14,7 @@
 #include <param/param_client.h>
 #include <vmem/vmem_server.h>
 #include <csp/csp.h>
-#include <csp/csp_endian.h>
+#include <sys/types.h>
 #include <csp/csp_cmp.h>
 #include <slash/slash.h>
 
@@ -47,13 +47,13 @@ static vmem_list_t stdbuf_get_base(int node, int timeout) {
 	}
 
 	for (vmem_list_t * vmem = (void *) packet->data; (intptr_t) vmem < (intptr_t) packet->data + packet->length; vmem++) {
-		//printf(" %u: %-5.5s 0x%08X - %u typ %u\r\n", vmem->vmem_id, vmem->name, (unsigned int) csp_ntoh32(vmem->vaddr), (unsigned int) csp_ntoh32(vmem->size), vmem->type);
+		//printf(" %u: %-5.5s 0x%08X - %u typ %u\r\n", vmem->vmem_id, vmem->name, (unsigned int) be32toh(vmem->vaddr), (unsigned int) be32toh(vmem->size), vmem->type);
 		if (strncmp(vmem->name, "stdbu", 5) == 0) {
 			ret.vmem_id = vmem->vmem_id;
 			ret.type = vmem->type;
 			memcpy(ret.name, vmem->name, 5);
-			ret.vaddr = csp_ntoh32(vmem->vaddr);
-			ret.size = csp_ntoh32(vmem->size);
+			ret.vaddr = be32toh(vmem->vaddr);
+			ret.size = be32toh(vmem->size);
 		}
 	}
 
@@ -70,7 +70,7 @@ static int stdbuf_get(uint16_t node, uint32_t base, int from, int to, int timeou
 		len = 200;
 
 	struct csp_cmp_message message;
-	message.peek.addr = csp_hton32(base + from);
+	message.peek.addr = htobe32(base + from);
 	message.peek.len = len;
 
 	if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
-#include <csp/csp_endian.h>
+#include <sys/types.h>
 #include <slash/slash.h>
 #include "base16.h"
 
@@ -238,16 +238,16 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 		return SLASH_EINVAL;
 	}
 
-	message.if_stats.tx =       csp_ntoh32(message.if_stats.tx);
-	message.if_stats.rx =       csp_ntoh32(message.if_stats.rx);
-	message.if_stats.tx_error = csp_ntoh32(message.if_stats.tx_error);
-	message.if_stats.rx_error = csp_ntoh32(message.if_stats.rx_error);
-	message.if_stats.drop =     csp_ntoh32(message.if_stats.drop);
-	message.if_stats.autherr =  csp_ntoh32(message.if_stats.autherr);
-	message.if_stats.frame =    csp_ntoh32(message.if_stats.frame);
-	message.if_stats.txbytes =  csp_ntoh32(message.if_stats.txbytes);
-	message.if_stats.rxbytes =  csp_ntoh32(message.if_stats.rxbytes);
-	message.if_stats.irq = 	 csp_ntoh32(message.if_stats.irq);
+	message.if_stats.tx =       be32toh(message.if_stats.tx);
+	message.if_stats.rx =       be32toh(message.if_stats.rx);
+	message.if_stats.tx_error = be32toh(message.if_stats.tx_error);
+	message.if_stats.rx_error = be32toh(message.if_stats.rx_error);
+	message.if_stats.drop =     be32toh(message.if_stats.drop);
+	message.if_stats.autherr =  be32toh(message.if_stats.autherr);
+	message.if_stats.frame =    be32toh(message.if_stats.frame);
+	message.if_stats.txbytes =  be32toh(message.if_stats.txbytes);
+	message.if_stats.rxbytes =  be32toh(message.if_stats.rxbytes);
+	message.if_stats.irq = 	 be32toh(message.if_stats.irq);
 
 
 	printf("%-5s   tx: %05"PRIu32" rx: %05"PRIu32" txe: %05"PRIu32" rxe: %05"PRIu32"\n"
@@ -285,7 +285,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
 
 	struct csp_cmp_message message;
 
-	message.peek.addr = csp_hton32(address);
+	message.peek.addr = htobe32(address);
 	message.peek.len = len;
 
 	if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {
@@ -315,7 +315,7 @@ static int slash_csp_cmp_poke(struct slash *slash)
 
 	struct csp_cmp_message message;
 
-	message.poke.addr = csp_hton32(address);
+	message.poke.addr = htobe32(address);
 
 	int outlen = base16_decode(slash->argv[3], (uint8_t *) message.poke.data);
 
@@ -353,11 +353,11 @@ static int slash_csp_cmp_time(struct slash *slash)
 	csp_clock_get_time(&localtime);
 
 	if (timestamp == -1) {
-		message.clock.tv_sec = csp_hton32(localtime.tv_sec);
-		message.clock.tv_nsec = csp_hton32(localtime.tv_nsec);
+		message.clock.tv_sec = htobe32(localtime.tv_sec);
+		message.clock.tv_nsec = htobe32(localtime.tv_nsec);
 	} else {
-		message.clock.tv_sec = csp_hton32(timestamp);
-		message.clock.tv_nsec = csp_hton32(0);
+		message.clock.tv_sec = htobe32(timestamp);
+		message.clock.tv_nsec = htobe32(0);
 	}
 
 	if (csp_cmp_clock(node, timeout, &message) != CSP_ERR_NONE) {
@@ -365,8 +365,8 @@ static int slash_csp_cmp_time(struct slash *slash)
 		return SLASH_EINVAL;
 	}
 
-	message.clock.tv_sec = csp_ntoh32(message.clock.tv_sec);
-	message.clock.tv_nsec = csp_ntoh32(message.clock.tv_nsec);
+	message.clock.tv_sec = be32toh(message.clock.tv_sec);
+	message.clock.tv_nsec = be32toh(message.clock.tv_nsec);
 
 	int64_t remote_time_ns = message.clock.tv_sec * 1E9 + message.clock.tv_nsec;
 	int64_t local_time_ns = localtime.tv_sec * 1E9 + localtime.tv_nsec;
