@@ -11,6 +11,10 @@ project('satctl', 'c', subproject_dir: 'lib', default_options: [
 	'csp:port_max_bind=16',
 	'param:have_fopen=true', 
 	'param:slash=true', 
+	'param:commands=false',
+	'param:scheduler=false',
+	'param:commands_client=true',
+	'param:scheduler_client=true',
 	'param:collector=true', 
 	'param:list_dynamic=true'])
 
