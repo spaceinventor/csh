@@ -33,10 +33,7 @@ static vmem_list_t stdbuf_get_base(int node, int timeout) {
 	request->type = VMEM_SERVER_LIST;
 	packet->length = sizeof(vmem_request_t);
 
-	if (!csp_send(conn, packet, VMEM_SERVER_TIMEOUT)) {
-		csp_buffer_free(packet);
-		return ret;
-	}
+	csp_send(conn, packet);
 
 	/* Wait for response */
 	packet = csp_read(conn, timeout);

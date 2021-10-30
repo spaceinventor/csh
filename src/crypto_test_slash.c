@@ -56,14 +56,7 @@ int crypto_test_echo(uint8_t node, uint8_t * data, unsigned int size) {
     csp_hex_dump("packet", packet->data, packet->length);
 
     // Try to send frame
-    if (!csp_send(conn, packet, 0)) {
-    	printf("Send failed\n");
-        csp_buffer_free(packet);
-        csp_close(conn);
-    	free(msg_buf);
-        return -1;
-    }
-
+    csp_send(conn, packet);
 
     // Read incoming frame
     packet = csp_read(conn, TEST_TIMEOUT);
@@ -124,9 +117,7 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
 
 	csp_hex_dump("new packet", new_packet->data, new_packet->length);
 
-    if (csp_sendto_reply(packet, new_packet, CSP_O_SAME, 0) != CSP_ERR_NONE) {
-    	csp_buffer_free(new_packet);
-    }
+    csp_sendto_reply(packet, new_packet, CSP_O_SAME);
 
     csp_buffer_free(packet);
     free(msg_buf);
