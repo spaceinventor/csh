@@ -110,7 +110,7 @@ static void * param_sniffer(void * param) {
 				continue;
 			}
 			/* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
-			if (csp_crc32_verify(packet, false) != 0) {
+			if (csp_crc32_verify(packet) != 0) {
 				/* Checksum failed */
 				csp_log_error("CRC32 verification error! Discarding packet");
 				csp_buffer_free(packet);
