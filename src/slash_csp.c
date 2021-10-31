@@ -200,12 +200,12 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 
 	struct csp_cmp_message message;
 
-	message.route_set.dest_node = dest_node;
-	message.route_set.next_hop_via = next_hop_via;
-	message.route_set.netmask = netmask;
-	strncpy(message.route_set.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
+	message.route_set_v2.dest_node = htobe16(dest_node);
+	message.route_set_v2.next_hop_via = htobe16(next_hop_via);
+	message.route_set_v2.netmask = htobe16(netmask);
+	strncpy(message.route_set_v2.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
 
-	if (csp_cmp_route_set(node, timeout, &message) != CSP_ERR_NONE) {
+	if (csp_cmp_route_set_v2(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
 		return SLASH_EINVAL;
 	}
