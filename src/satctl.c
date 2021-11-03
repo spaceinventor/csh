@@ -76,7 +76,7 @@ void kiss_discard(char c, void * taskwoken) {
 }
 
 static pthread_t router_handle;
-void * router_task(void *) {
+void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
 	}
