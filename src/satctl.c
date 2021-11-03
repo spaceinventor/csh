@@ -75,6 +75,13 @@ void kiss_discard(char c, void * taskwoken) {
 	putchar(c);
 }
 
+static pthread_t router_handle;
+void * router_task(void *) {
+	while(1) {
+		csp_route_work();
+	}
+}
+	
 int main(int argc, char **argv)
 {
 	static struct slash *slash;
@@ -157,6 +164,10 @@ int main(int argc, char **argv)
 	/* Get csp config from file */
 	vmem_file_init(&vmem_csp);
 
+	/* Parameters */
+	vmem_file_init(&vmem_params);
+	param_list_store_vmem_load(&vmem_params);
+
 	csp_conf.address = addr;
 	csp_conf.version = csp_version;
 	csp_conf.hostname = "satctl";
@@ -190,8 +201,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if (csp_route_start_task(0, 0) < 0)
-		return -1;
+	pthread_create(&router_handle, NULL, &router_task, NULL);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
@@ -266,10 +276,11 @@ int main(int argc, char **argv)
 		default_iface = zmq_if;
 	}
 
+	extern param_t csp_rtable;
+	char saved_rtable[csp_rtable.array_size];
+
 	if (!rtable) {
 		/* Read routing table from parameter system */
-		extern param_t csp_rtable;
-		char saved_rtable[csp_rtable.array_size];
 		param_get_string(&csp_rtable, saved_rtable, csp_rtable.array_size);
 		rtable = saved_rtable;
 	}
@@ -278,7 +289,7 @@ int main(int argc, char **argv)
 		int error = csp_rtable_load(rtable);
 		if (error < 1) {
 			csp_log_error("csp_rtable_load(%s) failed, error: %d", rtable, error);
-			exit(1);
+			//exit(1);
 		}
 	} else if (default_iface) {
 		printf("Setting default route to %s\n", default_iface->name);
@@ -304,10 +315,6 @@ int main(int argc, char **argv)
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
-
-	/* Parameters */
-	vmem_file_init(&vmem_params);
-	param_list_store_vmem_load(&vmem_params);
 
 	/* Start a collector task */
 	vmem_file_init(&vmem_col);
