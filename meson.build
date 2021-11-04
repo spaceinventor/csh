@@ -64,3 +64,9 @@ zmqproxy = executable('zmqproxy', zmqproxy_sources,
 	dependencies : [csp_dep],
 	install : true,
 )
+
+spacebridge_sources = ['src/spacebridge.c']
+spacebridge = executable('spacebridge', spacebridge_sources,
+	dependencies : [csp_dep],
+	install : true,
+)

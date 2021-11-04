@@ -1,10 +1,3 @@
-/*
- * Copyright (c) 2014 Satlab ApS <satlab@satlab.com>
- * Proprietary software - All rights reserved.
- *
- * Satellite and subsystem control program
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
