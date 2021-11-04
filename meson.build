@@ -1,6 +1,6 @@
 project('satctl', 'c', subproject_dir: 'lib', default_options: [
 	'buildtype=release', 
-	'c_std=gnu99', 
+	'c_std=gnu11', 
 	'b_lto=false', 
 	'csp:packet_padding_bytes=42', 
 	'csp:buffer_count=50',

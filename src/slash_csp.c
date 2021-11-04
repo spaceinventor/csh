@@ -60,7 +60,7 @@ static int slash_csp_ping(struct slash *slash)
 
 	slash_printf(slash, "Ping node %u size %u timeout %u: ", node, size, timeout);
 
-	int result = csp_ping(node, timeout, size, CSP_SO_NONE);
+	int result = csp_ping(node, timeout, size, CSP_O_CRC32);
 
 	if (result >= 0) {
 		slash_printf(slash, "Reply in %d [ms]\n", result);
