@@ -1,7 +1,6 @@
 #include <csp/csp.h>
 #include <csp/csp_interface.h>
 #include <csp/csp_id.h>
-#include <csp/arch/csp_thread.h>
 
 #include <arpa/inet.h>
 #include <linux/if_packet.h>
@@ -15,6 +14,7 @@
 #include <net/if.h>
 #include <netinet/ether.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #define BUF_SIZ	2048
 
@@ -156,7 +156,7 @@ static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 }
 
 
-CSP_DEFINE_TASK(csp_if_eth_rx_task) {
+void csp_if_eth_rx_loop(void * param) {
 
     static csp_iface_t * iface;
     iface = param;
@@ -165,7 +165,7 @@ CSP_DEFINE_TASK(csp_if_eth_rx_task) {
 
         csp_packet_t * packet = csp_buffer_get(0);
         if (packet == NULL) {
-            csp_sleep_ms(10);
+            usleep(10000);
             continue;
         }
 
@@ -275,9 +275,12 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
 	bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr_ll));
 
 	/* Start server thread */
-    static csp_thread_handle_t server_handle;
-	int ret = csp_thread_create(csp_if_eth_rx_task, "ETH", 10000, iface, 0, &server_handle);
-	csp_log_info("csp_if_eth_rx_task start %d\r\n", ret);
+	void * csp_if_eth_rx_task(void * param) {
+		csp_if_eth_rx_loop(param);
+		return NULL;
+	}
+    static pthread_t server_handle;
+	pthread_create(&server_handle, NULL, &csp_if_eth_rx_task, NULL);
 
     /**
      * CSP INTERFACE

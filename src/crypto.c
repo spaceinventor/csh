@@ -17,7 +17,6 @@
 
 #include <csp/csp.h>
 #include <csp/arch/csp_time.h>
-#include <csp/arch/csp_thread.h>
 
 #include "tweetnacl.h"
 #include "crypto_param.h"

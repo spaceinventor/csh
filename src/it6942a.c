@@ -1,20 +1,20 @@
 #include <csp/csp.h>
-#include <csp/arch/csp_thread.h>
 #include <unistd.h>
 #include <slash/slash.h>
 #include <termios.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 static int fd;
 
-CSP_DEFINE_TASK(it69_task) {
+void * it69_task(void * param) {
 
     while(1) {
 
         /* Each second */
-        csp_sleep_ms(1000);
+        sleep(1);
 
         /* Send requrest for data */
         static const char * req_cmd = "GET ALL";
@@ -80,9 +80,9 @@ void it69_init(char * device, int brate) {
 		return;
 	}
 
-    /* Start server thread */
-    static csp_thread_handle_t handle;
-	csp_thread_create(it69_task, "IT69", 10000, NULL, 0, &handle);
+	/* Start server thread */
+    static pthread_t server_handle;
+	pthread_create(&server_handle, NULL, &it69_task, NULL);
 
 }
 

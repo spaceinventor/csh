@@ -11,7 +11,6 @@
 #include <vmem/vmem_file.h>
 
 #include <csp/csp.h>
-#include <csp/arch/csp_thread.h>
 #include <csp/interfaces/csp_if_can.h>
 #include <csp/interfaces/csp_if_kiss.h>
 #include <csp/interfaces/csp_if_udp.h>
@@ -300,8 +299,12 @@ int main(int argc, char **argv)
 	csp_socket_set_callback(sock_param, param_serve);
 	csp_bind(sock_param, PARAM_PORT_SERVER);
 
-	csp_thread_handle_t vmem_handle;
-	csp_thread_create(vmem_server_task, "vmem", 2000, NULL, 1, &vmem_handle);
+	void * vmem_server_task(void * param) {
+		vmem_server_loop(param);
+		return NULL;
+	}
+	pthread_t vmem_server_handle;
+	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
 
 	slash = slash_create(SATCTL_LINE_SIZE, SATCTL_HISTORY_SIZE);
 	if (!slash) {
@@ -311,6 +314,11 @@ int main(int argc, char **argv)
 
 	/* Start a collector task */
 	vmem_file_init(&vmem_col);
+
+	void * param_collector_task(void * param) {
+		param_collector_loop(param);
+		return NULL;
+	}
 	pthread_t param_collector_handle;
 	pthread_create(&param_collector_handle, NULL, &param_collector_task, NULL);
 
