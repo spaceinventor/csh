@@ -2,8 +2,8 @@
 
 - name: "CAN0"
   driver: "can"
-  device: "/dev/can0"
-  addr: 4
+  device: "vcan0"
+  addr: 66
   netmask: 8
 
 - name: "ZMQ0"

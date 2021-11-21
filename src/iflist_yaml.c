@@ -1,12 +1,14 @@
 
 #include "iflist_yaml.h"
 
-#include <csp/csp_interface.h>
+#include <assert.h>
 #include <csp/csp_iflist.h>
+#include <csp/csp_interface.h>
 #include <csp/csp_rtable.h>
 #include <csp/interfaces/csp_if_zmqhub.h>
-
-#include <assert.h>
+#include <csp/interfaces/csp_if_can.h>
+#include <csp/drivers/can_socketcan.h>
+#include <csp/drivers/usart.h>
 #include <stdio.h>
 #include <yaml.h>
 
@@ -25,14 +27,13 @@ static void iflist_yaml_start_if(void) {
 }
 
 static void iflist_yaml_end_if(void) {
-
     /* Sanity checks */
     if ((!data.name) || (!data.driver) || (!data.addr)) {
         printf("interface is missing, name, driver or addr\n");
         return;
     }
 
-    csp_iface_t * iface;
+    csp_iface_t *iface;
 
     /* ZMQ */
     if (strcmp(data.driver, "zmq") == 0) {
@@ -40,32 +41,48 @@ static void iflist_yaml_end_if(void) {
 
         /* Check for valid server */
         if (!data.server) {
-            printf("No server: configured\n");
+            printf("no server configured\n");
             return;
         }
 
-		printf("server: %s\n", data.server);
-		
-		csp_zmqhub_init(atoi(data.addr), data.server, 0, &iface);
-        iface->addr = atoi(data.addr);
-        iface->netmask = atoi(data.netmask);
+        printf("server: %s\n", data.server);
 
-        strncpy(iface->name, data.name, CSP_IFLIST_NAME_MAX);
-		
+        csp_zmqhub_init(atoi(data.addr), data.server, 0, &iface);
+        strncpy((char*) iface->name, data.name, CSP_IFLIST_NAME_MAX);
+
         csp_iflist_add(iface);
-
-        
     }
+
+    /* CAN */
+    if (strcmp(data.driver, "can") == 0) {
+
+        /* Check for valid server */
+        if (!data.device) {
+            printf("can: no device configured\n");
+            return;
+        }
+
+        printf("device: %s\n", data.device);
+
+        int error = csp_can_socketcan_open_and_add_interface(data.device, data.name, 1000000, true, &iface);
+        if (error != CSP_ERR_NONE) {
+            printf("failed to add CAN interface [%s], error: %d", data.device, error);
+            return;
+        }
+    }
+
+    iface->addr = atoi(data.addr);
+    iface->netmask = atoi(data.netmask);
+
+    csp_rtable_set(atoi(data.addr), atoi(data.netmask), iface, CSP_NO_VIA_ADDRESS);
 
     if (iface && data.is_dfl) {
         printf("Setting default route to %s\n", iface->name);
         csp_rtable_set(0, 0, iface, CSP_NO_VIA_ADDRESS);
     }
-
-
 }
 
-static void iflist_yaml_key_value(char * key, char * value) {
+static void iflist_yaml_key_value(char *key, char *value) {
     //printf("%s : %s\n", key, value);
 
     if (strcmp(key, "name") == 0) {
@@ -84,14 +101,11 @@ static void iflist_yaml_key_value(char * key, char * value) {
         data.is_dfl = value;
     } else {
         printf("Unkown key %s\n", key);
-    }    
-
+    }
 }
 
-
 void iflist_yaml_init(void) {
-
-    FILE * file = fopen("iflist.yaml", "rb");
+    FILE *file = fopen("iflist.yaml", "rb");
     if (file == NULL)
         return;
 
@@ -112,8 +126,7 @@ void iflist_yaml_init(void) {
     if (event.type != YAML_SEQUENCE_START_EVENT)
         return;
 
-    while(1) {
-
+    while (1) {
         assert(yaml_parser_parse(&parser, &event));
 
         //printf("Event type %d\n", event.type);
@@ -130,11 +143,11 @@ void iflist_yaml_init(void) {
             iflist_yaml_end_if();
             continue;
         }
-        
-        if (event.type == YAML_SCALAR_EVENT) {
-            yaml_char_t * key = event.data.scalar.value;
 
-            yaml_char_t * value;
+        if (event.type == YAML_SCALAR_EVENT) {
+            yaml_char_t *key = event.data.scalar.value;
+
+            yaml_char_t *value;
             yaml_parser_parse(&parser, &event);
             if (event.type != YAML_SCALAR_EVENT) {
                 printf("Extected value\n");
@@ -143,10 +156,8 @@ void iflist_yaml_init(void) {
                 value = event.data.scalar.value;
             }
 
-            iflist_yaml_key_value((char *) key, (char *) value);
+            iflist_yaml_key_value((char *)key, (char *)value);
             continue;
         }
-        
     }
-    
 }
