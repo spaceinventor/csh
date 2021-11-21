@@ -27,6 +27,7 @@
 #include "crypto.h"
 #include "tfetch.h"
 #include "csp_if_eth.h"
+#include "iflist_yaml.h"
 
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
@@ -169,7 +170,16 @@ int main(int argc, char **argv)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
+	iflist_yaml_init();
+
+	pthread_create(&router_handle, NULL, &router_task, NULL);
+
+	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
+	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
+
 	csp_iface_t * default_iface = NULL;
+#if 0
+
 	if (use_uart) {
 		csp_usart_conf_t conf = {
 			.device = uart_dev,
@@ -193,10 +203,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	pthread_create(&router_handle, NULL, &router_task, NULL);
-
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
 	while (udp_peer_idx > 0) {
 		char * udp_str = udp_peer_str[--udp_peer_idx];
@@ -267,6 +273,8 @@ int main(int argc, char **argv)
 
 		default_iface = zmq_if;
 	}
+
+#endif
 
 	extern param_t csp_rtable;
 	char saved_rtable[csp_rtable.array_size];

@@ -29,7 +29,10 @@ slash_dep = slash.get_variable('slash_dep')
 param = subproject('param')
 param_dep = param.get_variable('param_dep_whole')
 
+yaml_dep = dependency('yaml-0.1', required : true)
+
 satctl_sources = [
+	'src/iflist_yaml.c',
 	'src/satctl.c',
 	'src/time.c',
 	'src/slash_csp.c',
@@ -52,7 +55,7 @@ satctl_sources = [
 ]
 
 satctl = executable('satctl', satctl_sources,
-	dependencies : [slash_dep, csp_dep, param_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, yaml_dep],
 	link_args : ['-Wl,-Map=satctl.map', '-lm'],
 	install : true,
 )

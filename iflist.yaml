@@ -1,0 +1,14 @@
+## List of interfaces
+
+- name: "CAN0"
+  driver: "can"
+  device: "/dev/can0"
+  addr: 4
+  netmask: 8
+
+- name: "ZMQ0"
+  driver: "zmq"
+  server: "localhost"
+  addr: 16
+  netmask: 8
+  default: true
