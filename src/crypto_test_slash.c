@@ -138,7 +138,7 @@ slash_command_sub(crypto, startrx, crypto_startrx_cmd, NULL, NULL);
 static int crypto_send_cmd(struct slash *slash)
 {
 
-    int node = csp_get_address();
+    int node = 0;
     int timeout = 2000;
     char * endptr;
 

@@ -17,6 +17,7 @@
 #include <csp/interfaces/csp_if_zmqhub.h>
 #include <csp/drivers/usart.h>
 #include <csp/drivers/can_socketcan.h>
+#include <csp/csp_iflist.h>
 #include <param/param_list.h>
 #include <param/param_server.h>
 #include <param/param_collector.h>
@@ -27,7 +28,7 @@
 #include "crypto.h"
 #include "tfetch.h"
 #include "csp_if_eth.h"
-#include "iflist_yaml.h"
+
 
 #define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
 #define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
@@ -81,44 +82,15 @@ int main(int argc, char **argv)
 	int remain, index, i, c, p = 0;
 	char *ex;
 
-	uint16_t addr = SATCTL_DEFAULT_ADDRESS;
-	char *can_dev = SATCTL_DEFAULT_CAN_DEV;
-	char *uart_dev = SATCTL_DEFAULT_UART_DEV;
-	uint32_t uart_baud = SATCTL_DEFAULT_UART_BAUD;
-	int use_uart = 0;
-	int use_can = 0;
 	int use_prometheus = 0;
-	char * udp_peer_str[10];
-	int udp_peer_idx = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
-	char * tun_conf_str = NULL;
-	char * eth_ifname = NULL;
-	char * csp_zmqhub_addr[10];
-	int csp_zmqhub_idx = 0;
-
-	while ((c = getopt(argc, argv, "+hpr:b:c:u:n:v:R:t:e:z:")) != -1) {
+	
+	while ((c = getopt(argc, argv, "+hpv:R:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
-		case 'r':
-			udp_peer_str[udp_peer_idx++] = optarg;
-			break;
-		case 'c':
-			use_can = 1;
-			can_dev = optarg;
-			break;
-		case 'u':
-			use_uart = 1;
-			uart_dev = optarg;
-			break;
-		case 'b':
-			uart_baud = atoi(optarg);
-			break;
-		case 'n':
-			addr = atoi(optarg);
-			break;
 		case 'p':
 			use_prometheus = 1;
 			break;
@@ -128,15 +100,6 @@ int main(int argc, char **argv)
 		case 'v':
 			csp_version = atoi(optarg);
 			break;
-		case 't':
-			tun_conf_str = optarg;
-			break;
-		case 'e':
-			eth_ifname = optarg;
-			break;
-		case 'z':
-			csp_zmqhub_addr[csp_zmqhub_idx++] = optarg;
-			break;
 		default:
 			exit(EXIT_FAILURE);
 		}
@@ -145,23 +108,10 @@ int main(int argc, char **argv)
 	remain = argc - optind;
 	index = optind;
 
-	if (use_can == 0 && use_uart == 0 && udp_peer_idx == 0 && csp_zmqhub_addr == NULL) {
-		printf("\n");
-		printf(" *** Warning: No interfaces configured ***\n");
-		printf("  use -c for CAN\n");
-		printf("  use -u for UART\n");
-		printf("  use -r for UDP\n");
-		printf("  use -z for ZMQHUB\n");
-	}
-
-	/* Get csp config from file */
-	vmem_file_init(&vmem_csp);
-
 	/* Parameters */
 	vmem_file_init(&vmem_params);
 	param_list_store_vmem_load(&vmem_params);
 
-	csp_conf.address = addr;
 	csp_conf.version = csp_version;
 	csp_conf.hostname = "satctl";
 	csp_conf.model = "linux";
@@ -264,7 +214,7 @@ int main(int argc, char **argv)
 		char * zmq_str = csp_zmqhub_addr[--csp_zmqhub_idx];
 		printf("zmq str %s\n", zmq_str);
 		csp_iface_t * zmq_if;
-		csp_zmqhub_init(csp_get_address(), zmq_str, 0, &zmq_if);
+		csp_zmqhub_init(0, zmq_str, 0, &zmq_if);
 
 		/* Use auto incrementing names */
 		char * zmq_name = malloc(20);

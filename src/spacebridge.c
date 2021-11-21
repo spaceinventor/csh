@@ -45,7 +45,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-    csp_conf.address = 0;
 	csp_conf.version = 2;
 	csp_conf.hostname = "satctl";
 	csp_conf.model = "linux";
@@ -57,7 +56,7 @@ int main(int argc, char **argv) {
     }
 
 	csp_iface_t * zmq_if;
-	csp_zmqhub_init(csp_get_address(), csp_zmqhub_addr, 0, &zmq_if);
+	csp_zmqhub_init(0, csp_zmqhub_addr, 0, &zmq_if);
     zmq_if->name = "ZMQ";
 
     csp_rtable_print();
