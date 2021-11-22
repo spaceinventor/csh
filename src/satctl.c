@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	iflist_yaml_init();
+	iflist_yaml_init("iflist.yaml");
 
 	pthread_create(&router_handle, NULL, &router_task, NULL);
 
