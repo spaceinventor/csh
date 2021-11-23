@@ -67,7 +67,7 @@ uint16_t lwip_standard_chksum(const void *dataptr, int len) {
     return htons((uint16_t)acc);
 }
 
-static int csp_if_eth_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
+static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet) {
 
 	csp_id_prepend(packet);
 
