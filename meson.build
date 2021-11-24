@@ -1,4 +1,4 @@
-project('satctl', 'c', subproject_dir: 'lib', default_options: [
+project('spacepromt', 'c', subproject_dir: 'lib', default_options: [
 	'buildtype=release', 
 	'c_std=gnu11', 
 	'b_lto=false', 
@@ -29,8 +29,8 @@ slash_dep = slash.get_variable('slash_dep')
 param = subproject('param')
 param_dep = param.get_variable('param_dep_whole')
 
-satctl_sources = [
-	'src/satctl.c',
+spacepromt_sources = [
+	'src/spacepromt.c',
 	'src/time.c',
 	'src/slash_csp.c',
 	'src/csp_debug_param.c',
@@ -51,13 +51,13 @@ satctl_sources = [
 	'src/csp_scan.c',
 ]
 
-satctl = executable('satctl', satctl_sources,
+spacepromt = executable('spacepromt', spacepromt_sources,
 	dependencies : [slash_dep, csp_dep, param_dep],
-	link_args : ['-Wl,-Map=satctl.map', '-lm'],
+	link_args : ['-Wl,-Map=spacepromt.map', '-lm'],
 	install : true,
 )
 
-custom_target('size', output: ['dummy.txt'], command: [find_program('size'), satctl.full_path()], depends: satctl, build_by_default: true)
+custom_target('size', output: ['dummy.txt'], command: [find_program('size'), spacepromt.full_path()], depends: spacepromt, build_by_default: true)
 
 zmqproxy_sources = ['src/zmqproxy.c']
 zmqproxy = executable('zmqproxy', zmqproxy_sources,

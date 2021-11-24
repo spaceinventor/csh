@@ -30,14 +30,14 @@
 #include "csp_if_eth.h"
 
 
-#define SATCTL_PROMPT_GOOD		    "\033[96msatctl \033[90m%\033[0m "
-#define SATCTL_PROMPT_BAD		    "\033[96msatctl \033[31m!\033[0m "
-#define SATCTL_DEFAULT_CAN_DEV	    "can0"
-#define SATCTL_DEFAULT_UART_DEV	    "/dev/ttyUSB0"
-#define SATCTL_DEFAULT_UART_BAUD    1000000
-#define SATCTL_DEFAULT_ADDRESS		1
-#define SATCTL_LINE_SIZE		    128
-#define SATCTL_HISTORY_SIZE		    2048
+#define SPACEPROMT_PROMPT_GOOD		    "\033[34mspacepromt \033[90m%\033[0m "
+#define SPACEPROMT_PROMPT_BAD		    "\033[34mspacepromt \033[31m!\033[0m "
+#define SPACEPROMT_DEFAULT_CAN_DEV	    "can0"
+#define SPACEPROMT_DEFAULT_UART_DEV	    "/dev/ttyUSB0"
+#define SPACEPROMT_DEFAULT_UART_BAUD    1000000
+#define SPACEPROMT_DEFAULT_ADDRESS		1
+#define SPACEPROMT_LINE_SIZE		    128
+#define SPACEPROMT_HISTORY_SIZE		    2048
 
 VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
 VMEM_DEFINE_FILE(tfetch, "tfetc", "tfetch.vmem", 120);
@@ -48,7 +48,7 @@ VMEM_DEFINE_FILE(crypto, "crypto", "crypto.csv", 50000);
 
 void usage(void)
 {
-	printf("usage: satctl [command]\n");
+	printf("usage: spacepromt [command]\n");
 	printf("\n");
 	printf("Copyright (c) 2018 Space Inventor ApS <info@spaceinventor.com>\n");
 	printf("Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n");
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 	param_list_store_vmem_load(&vmem_params);
 
 	csp_conf.version = csp_version;
-	csp_conf.hostname = "satctl";
+	csp_conf.hostname = "spacepromt";
 	csp_conf.model = "linux";
 	csp_init();
 
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
 	pthread_t vmem_server_handle;
 	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
 
-	slash = slash_create(SATCTL_LINE_SIZE, SATCTL_HISTORY_SIZE);
+	slash = slash_create(SPACEPROMT_LINE_SIZE, SPACEPROMT_HISTORY_SIZE);
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
-		ex = malloc(SATCTL_LINE_SIZE);
+		ex = malloc(SPACEPROMT_LINE_SIZE);
 		if (!ex) {
 			fprintf(stderr, "Failed to allocate command memory");
 			exit(EXIT_FAILURE);
@@ -304,21 +304,24 @@ int main(int argc, char **argv)
 		/* Build command string */
 		for (i = 0; i < remain; i++) {
 			if (i > 0)
-				p = ex - strncat(ex, " ", SATCTL_LINE_SIZE - p);
-			p = ex - strncat(ex, argv[index + i], SATCTL_LINE_SIZE - p);
+				p = ex - strncat(ex, " ", SPACEPROMT_LINE_SIZE - p);
+			p = ex - strncat(ex, argv[index + i], SPACEPROMT_LINE_SIZE - p);
 		}
 		slash_execute(slash, ex);
 		free(ex);
 	} else {
 		printf("\n\n");
-		printf(" *******************************\n");
-		printf(" **   Satctl - Space Command  **\n");
-		printf(" *******************************\n\n");
+		printf("\033[33m");
+		printf(" *********************\n");
+		printf(" **   Space Promt   **\n");
+		printf(" *********************\n\n");
 
-		printf(" Copyright (c) 2021 Space Inventor ApS <info@space-inventor.com>\n");
-		printf(" Copyright (c) 2014 Satlab ApS <satlab@satlab.com>\n\n");
+		printf("\033[32m");
+		printf(" Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n\n");
 
-		slash_loop(slash, SATCTL_PROMPT_GOOD, SATCTL_PROMPT_BAD);
+		printf("\033[0m");
+
+		slash_loop(slash, SPACEPROMT_PROMPT_GOOD, SPACEPROMT_PROMPT_BAD);
 	}
 
 	slash_destroy(slash);
