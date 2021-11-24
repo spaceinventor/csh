@@ -1,9 +1,8 @@
 ### spaceinventor/satctl changes name to spaceinventor/spacepromt
 
-`satctl` was originally a piece of software under license from 'satlab ApS'. Since the current
+`satctl` was originally a piece of software under license from 'Satlab A/S'. Since the current
 version of 'spaceinventor/satctl' has nothing to do with satlab or the original `satctl`
 we are changing the name of both the software and the repository to avoid any misunderstanding.
-
 
 The process will be gradual to avoid too many broken links so the old repo will remain in place for a while still.
 But the software will be called `spacepromt` from now on.
