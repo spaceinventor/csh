@@ -6,7 +6,7 @@ we are changing the name of both the software and the repository to avoid any mi
 
 
 The process will be gradual to avoid too many broken links so the old repo will remain in place for a while still.
-But the sofwtare will be called `spacepromt` from now on.
+But the software will be called `spacepromt` from now on.
 
 
 ### Build
