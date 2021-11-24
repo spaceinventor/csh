@@ -22,6 +22,20 @@ static int sockfd;
 static struct ifreq if_idx;
 static struct ifreq if_mac;
 
+
+#if 0
+	/** INIT FROM MAIN */
+
+	if (eth_ifname) {
+		static csp_iface_t csp_iface_eth;
+		csp_if_eth_init(&csp_iface_eth, eth_ifname);
+		default_iface = &csp_iface_eth;
+	}
+
+
+#endif
+
+
 /**
  * lwip checksum
  *

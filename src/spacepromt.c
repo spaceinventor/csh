@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	csp_conf.model = "linux";
 	csp_init();
 
-	csp_debug_set_level(4, 1);
+	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
 	iflist_yaml_init(yamlname);
@@ -139,47 +139,6 @@ int main(int argc, char **argv)
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
-
-#if 0
-
-	while (udp_peer_idx > 0) {
-		char * udp_str = udp_peer_str[--udp_peer_idx];
-		printf("udp str %s\n", udp_str);
-
-		int lport = 9600;
-		int rport = 9600;
-		char udp_peer_ip[20];
-
-		if (sscanf(udp_str, "%d %19s %d", &lport, udp_peer_ip, &rport) != 3) {
-			printf("Invalid UDP configuration string: %s\n", udp_str);
-			printf("Should math the pattern \"<lport> <peer ip> <rport>\" exactly\n");
-			return -1;
-		}
-
-		csp_iface_t * udp_client_if = malloc(sizeof(csp_iface_t));
-		csp_if_udp_conf_t * udp_conf = malloc(sizeof(csp_if_udp_conf_t));
-		udp_conf->host = udp_peer_ip;
-		udp_conf->lport = lport;
-		udp_conf->rport = rport;
-		csp_if_udp_init(udp_client_if, udp_conf);
-
-		/* Use auto incrementing names */
-		char * udp_name = malloc(20);
-		sprintf(udp_name, "UDP%u", udp_peer_idx);
-		udp_client_if->name = udp_name;
-
-		default_iface = udp_client_if;
-	}
-
-
-	if (eth_ifname) {
-		static csp_iface_t csp_iface_eth;
-		csp_if_eth_init(&csp_iface_eth, eth_ifname);
-		default_iface = &csp_iface_eth;
-	}
-
-
-#endif
 
 	extern param_t csp_rtable;
 	char saved_rtable[csp_rtable.array_size];
