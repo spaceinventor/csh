@@ -26,7 +26,6 @@
 #include "prometheus.h"
 #include "param_sniffer.h"
 #include "crypto.h"
-#include "tfetch.h"
 #include "csp_if_eth.h"
 
 
@@ -40,7 +39,6 @@
 #define SPACEPROMT_HISTORY_SIZE		    2048
 
 VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
-VMEM_DEFINE_FILE(tfetch, "tfetc", "tfetch.vmem", 120);
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
 VMEM_DEFINE_FILE(csp, "csp", "cspcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
@@ -78,6 +76,17 @@ void * router_task(void * param) {
 	
 int main(int argc, char **argv)
 {
+
+	printf("\033[33m\n");
+	printf("  *********************\n");
+	printf("  **   Space Shell   **\n");
+	printf("  *********************\n\n");
+
+	printf("\033[32m");
+	printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n\n");
+
+	printf("\033[0m");
+
 	static struct slash *slash;
 	int remain, index, i, c, p = 0;
 	char *ex;
@@ -85,8 +94,9 @@ int main(int argc, char **argv)
 	int use_prometheus = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
+	char * yamlname = "iflist.yaml";
 	
-	while ((c = getopt(argc, argv, "+hpv:R:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpv:R:f:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -99,6 +109,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			csp_version = atoi(optarg);
+			break;
+		case 'f':
+			yamlname = optarg;
 			break;
 		default:
 			exit(EXIT_FAILURE);
@@ -117,42 +130,17 @@ int main(int argc, char **argv)
 	csp_conf.model = "linux";
 	csp_init();
 
-	//csp_debug_set_level(4, 1);
+	csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	iflist_yaml_init("iflist.yaml");
+	iflist_yaml_init(yamlname);
 
 	pthread_create(&router_handle, NULL, &router_task, NULL);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
-	csp_iface_t * default_iface = NULL;
 #if 0
-
-	if (use_uart) {
-		csp_usart_conf_t conf = {
-			.device = uart_dev,
-			.baudrate = uart_baud, /* supported on all platforms */
-			.databits = 8,
-			.stopbits = 1,
-			.paritysetting = 0,
-			.checkparity = 0
-		};
-		int error = csp_usart_open_and_add_kiss_interface(&conf, CSP_IF_KISS_DEFAULT_NAME, &default_iface);
-		if (error != CSP_ERR_NONE) {
-			csp_log_error("failed to add KISS interface [%s], error: %d", uart_dev, error);
-			exit(1);
-		}
-	}
-
-	if (use_can) {
-		int error = csp_can_socketcan_open_and_add_interface(can_dev, CSP_IF_CAN_DEFAULT_NAME, 1000000, true, &default_iface);
-		if (error != CSP_ERR_NONE) {
-			csp_log_error("failed to add CAN interface [%s], error: %d", can_dev, error);
-		}
-	}
-
 
 	while (udp_peer_idx > 0) {
 		char * udp_str = udp_peer_str[--udp_peer_idx];
@@ -183,26 +171,6 @@ int main(int argc, char **argv)
 		default_iface = udp_client_if;
 	}
 
-	if (tun_conf_str) {
-
-		int src;
-		int dst;
-
-		if (sscanf(tun_conf_str, "%d %d", &src, &dst) != 2) {
-			printf("Invalid TUN configuration string: %s\n", tun_conf_str);
-			printf("Should math the pattern \"<src> <dst>\" exactly\n");
-			return -1;
-		}
-
-		csp_iface_t * tun_if = malloc(sizeof(csp_iface_t));
-		csp_if_tun_conf_t * ifconf = malloc(sizeof(csp_if_tun_conf_t));
-
-		ifconf->tun_dst = dst;
-		ifconf->tun_src = src;
-
-		csp_if_tun_init(tun_if, ifconf);
-
-	}
 
 	if (eth_ifname) {
 		static csp_iface_t csp_iface_eth;
@@ -210,19 +178,6 @@ int main(int argc, char **argv)
 		default_iface = &csp_iface_eth;
 	}
 
-	while (csp_zmqhub_idx > 0) {
-		char * zmq_str = csp_zmqhub_addr[--csp_zmqhub_idx];
-		printf("zmq str %s\n", zmq_str);
-		csp_iface_t * zmq_if;
-		csp_zmqhub_init(0, zmq_str, 0, &zmq_if);
-
-		/* Use auto incrementing names */
-		char * zmq_name = malloc(20);
-		sprintf(zmq_name, "ZMQ%u", csp_zmqhub_idx);
-		zmq_if->name = zmq_name;
-
-		default_iface = zmq_if;
-	}
 
 #endif
 
@@ -239,15 +194,8 @@ int main(int argc, char **argv)
 		int error = csp_rtable_load(rtable);
 		if (error < 1) {
 			csp_log_error("csp_rtable_load(%s) failed, error: %d", rtable, error);
-			//exit(1);
 		}
-	} else if (default_iface) {
-		printf("Setting default route to %s\n", default_iface->name);
-		csp_rtable_set(0, 0, default_iface, CSP_NO_VIA_ADDRESS);
-	} else {
-		printf("No routing defined\n");
 	}
-
 
 	csp_socket_t *sock_csh = csp_socket(CSP_SO_NONE);
 	csp_socket_set_callback(sock_csh, csp_service_handler);
@@ -289,10 +237,6 @@ int main(int argc, char **argv)
 	vmem_file_init(&vmem_crypto);
 	crypto_key_refresh();
 
-	/* Test of time fetch */
-	vmem_file_init(&vmem_tfetch);
-	tfetch_onehz();
-
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
 		ex = malloc(SPACEPROMT_LINE_SIZE);
@@ -311,15 +255,6 @@ int main(int argc, char **argv)
 		free(ex);
 	} else {
 		printf("\n\n");
-		printf("\033[33m");
-		printf(" *********************\n");
-		printf(" **   Space Promt   **\n");
-		printf(" *********************\n\n");
-
-		printf("\033[32m");
-		printf(" Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n\n");
-
-		printf("\033[0m");
 
 		slash_loop(slash, SPACEPROMT_PROMPT_GOOD, SPACEPROMT_PROMPT_BAD);
 	}

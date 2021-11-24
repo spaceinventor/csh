@@ -126,7 +126,7 @@ void csp_if_tun_init(csp_iface_t * iface, csp_if_tun_conf_t * ifconf) {
 
 	iface->driver_data = ifconf;
 
-	printf("Setup Tunnel between %d and %d\n", ifconf->tun_src, ifconf->tun_dst);
+	printf("  Setup Tunnel between %d and %d\n", ifconf->tun_src, ifconf->tun_dst);
 
 	/* MTU is datasize */
 	iface->mtu = csp_buffer_data_size();

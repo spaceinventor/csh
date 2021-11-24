@@ -45,7 +45,6 @@ spacepromt_sources = [
 	'src/stdbuf_mon.c',
 	'src/csp_if_tun.c',
 	'src/randombytes.c',
-	'src/tfetch_once.c',
 	'src/csp_if_eth.c',
 	'src/it6942a.c',
 	'src/csp_scan.c',
