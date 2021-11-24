@@ -24,9 +24,9 @@ void csp_id_prepend(csp_packet_t * packet);
 int csp_id_strip(csp_packet_t * packet);
 int csp_id_setup_rx(csp_packet_t * packet);
 
-static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
+static int csp_if_tun_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet) {
 
-	csp_if_tun_conf_t * ifconf = ifroute->iface->driver_data;
+	csp_if_tun_conf_t * ifconf = iface->driver_data;
 
 	/* Allocate new frame */
 	csp_packet_t * new_packet = csp_buffer_get(packet->frame_length);
@@ -49,7 +49,7 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 		if (length < 0) {
 			csp_buffer_free(new_packet);
 			csp_buffer_free(packet);
-			ifroute->iface->rx_error++;
+			iface->rx_error++;
 			printf("Decryption error\n");
 			return CSP_ERR_NONE;
 		} else {
@@ -71,7 +71,7 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 		//csp_hex_dump("new packet", new_packet->data, new_packet->length);
 
 		/* Send new packet */
-		csp_qfifo_write(new_packet, ifroute->iface, NULL);
+		csp_qfifo_write(new_packet, iface, NULL);
 
 	} else {
 
@@ -113,7 +113,7 @@ static int csp_if_tun_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 		//csp_hex_dump("new frame", new_packet->frame_begin, new_packet->frame_length);
 
 		/* Send new packet */
-		csp_qfifo_write(new_packet, ifroute->iface, NULL);
+		csp_qfifo_write(new_packet, iface, NULL);
 
 	}
 
