@@ -19,8 +19,8 @@
 #include "prometheus.h"
 #include "param_sniffer.h"
 
-#define PROMPT_GOOD		    "\033[34mcsh \033[90m%\033[0m "
-#define PROMPT_BAD		    "\033[34mcsh \033[31m!\033[0m "
+#define PROMPT_GOOD		    "\033[90m%\033[0m "
+#define PROMPT_BAD		    "\033[31m!\033[0m "
 #define LINE_SIZE		    128
 #define HISTORY_SIZE		2048
 
