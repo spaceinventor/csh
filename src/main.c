@@ -29,8 +29,8 @@
 #include "csp_if_eth.h"
 
 
-#define PROMPT_GOOD		    "\033[34csh \033[90m%\033[0m "
-#define PROMPT_BAD		    "\033[34csh \033[31m!\033[0m "
+#define PROMPT_GOOD		    "\033[34mcsh \033[90m%\033[0m "
+#define PROMPT_BAD		    "\033[34mcsh \033[31m!\033[0m "
 #define LINE_SIZE		    128
 #define HISTORY_SIZE		2048
 
@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 
 	printf("\033[33m\n");
 	printf("  ***********************\n");
-	printf("  **   Cubesat Shell   **\n");
+	printf("  **     CSP   Shell   **\n");
 	printf("  ***********************\n\n");
 
 	printf("\033[32m");
