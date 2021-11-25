@@ -42,17 +42,12 @@ VMEM_DEFINE_FILE(crypto, "crypto", "crypto.csv", 50000);
 
 void usage(void)
 {
-	printf("usage: csh [command]\n");
+	printf("usage: csh -f conf.yaml [command]\n");
 	printf("\n");
 	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
 	printf("\n");
 	printf("Options:\n");
-	printf(" -c INTERFACE,\tUse INTERFACE as CAN interface\n");
-	printf(" -u INTERFACE,\tUse INTERFACE as UART interface\n");
-	printf(" -b BAUD,\tUART buad rate\n");
-	printf(" -n NODE\tUse NODE as own CSP address\n");
-	printf(" -r UDP_CONFIG\tUDP configuration string, encapsulate in brackets: \"<lport> <peer ip> <rport>\" (supports multiple) \n");
-	printf(" -z ZMQ_IP\tIP of zmqproxy node (supports multiple)\n");
+	printf(" -f\t\tPath to config file\n");
 	printf(" -p\t\tSetup prometheus node\n");
 	printf(" -R RTABLE\tOverride rtable with this string\n");
 	printf(" -h\t\tPrint this help and exit\n");
@@ -62,11 +57,20 @@ void kiss_discard(char c, void * taskwoken) {
 	putchar(c);
 }
 
-static pthread_t router_handle;
+void * param_collector_task(void * param) {
+	param_collector_loop(param);
+	return NULL;
+}
+
 void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
 	}
+}
+
+void * vmem_server_task(void * param) {
+	vmem_server_loop(param);
+	return NULL;
 }
 	
 int main(int argc, char **argv)
@@ -130,8 +134,6 @@ int main(int argc, char **argv)
 
 	iflist_yaml_init(yamlname);
 
-	pthread_create(&router_handle, NULL, &router_task, NULL);
-
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
@@ -159,13 +161,6 @@ int main(int argc, char **argv)
 	csp_socket_set_callback(sock_param, param_serve);
 	csp_bind(sock_param, PARAM_PORT_SERVER);
 
-	void * vmem_server_task(void * param) {
-		vmem_server_loop(param);
-		return NULL;
-	}
-	pthread_t vmem_server_handle;
-	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
-
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
@@ -175,21 +170,19 @@ int main(int argc, char **argv)
 	/* Start a collector task */
 	vmem_file_init(&vmem_col);
 
-	void * param_collector_task(void * param) {
-		param_collector_loop(param);
-		return NULL;
-	}
-	pthread_t param_collector_handle;
+	static pthread_t param_collector_handle;
 	pthread_create(&param_collector_handle, NULL, &param_collector_task, NULL);
+
+	static pthread_t router_handle;
+	pthread_create(&router_handle, NULL, &router_task, NULL);
+
+	static pthread_t vmem_server_handle;
+	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
 
 	if (use_prometheus) {
 		prometheus_init();
 		param_sniffer_init();
 	}
-
-	/* Crypto magic */
-	vmem_file_init(&vmem_crypto);
-	crypto_key_refresh();
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
