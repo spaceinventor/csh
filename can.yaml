@@ -1,0 +1,7 @@
+
+- name: "CAN"
+  driver: "can"
+  device: "can0"
+  addr: 66
+  netmask: 8
+  default: true

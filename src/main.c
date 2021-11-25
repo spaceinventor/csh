@@ -93,9 +93,10 @@ int main(int argc, char **argv)
 	int use_prometheus = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
-	char * yamlname = "iflist.yaml";
+	char * yamlname = "can.yaml";
+	int dfl_addr = 0;
 	
-	while ((c = getopt(argc, argv, "+hpv:R:f:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpn:v:R:f:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -108,6 +109,9 @@ int main(int argc, char **argv)
 			break;
 		case 'v':
 			csp_version = atoi(optarg);
+			break;
+		case 'n':
+			dfl_addr = atoi(optarg);
 			break;
 		case 'f':
 			yamlname = optarg;
@@ -132,7 +136,7 @@ int main(int argc, char **argv)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	iflist_yaml_init(yamlname);
+	iflist_yaml_init(yamlname, dfl_addr);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);

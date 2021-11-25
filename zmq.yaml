@@ -1,0 +1,7 @@
+
+- name: "ZMQ"
+  driver: "zmq"
+  server: "garfield"
+  addr: 1
+  netmask: 8
+  default: true
