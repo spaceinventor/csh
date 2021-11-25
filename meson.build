@@ -34,7 +34,6 @@ csh_sources = [
 	'src/time.c',
 	'src/slash_csp.c',
 	'src/csp_debug_param.c',
-	'src/csp_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',
 	'src/prometheus.c',

@@ -1,47 +1,33 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
+#include <pthread.h>
 
 #include <slash/slash.h>
 
-#include <param/param.h>
-#include <vmem/vmem_server.h>
-#include <vmem/vmem_ram.h>
-#include <vmem/vmem_file.h>
-
 #include <csp/csp.h>
-#include <csp/interfaces/csp_if_can.h>
-#include <csp/interfaces/csp_if_kiss.h>
-#include <csp/interfaces/csp_if_udp.h>
-#include <csp/interfaces/csp_if_zmqhub.h>
-#include <csp/drivers/usart.h>
-#include <csp/drivers/can_socketcan.h>
-#include <csp/csp_iflist.h>
+#include <csp/csp_yaml.h>
+
+#include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_server.h>
 #include <param/param_collector.h>
 
-#include "csp_if_tun.h"
+#include <vmem/vmem_server.h>
+#include <vmem/vmem_file.h>
+
 #include "prometheus.h"
 #include "param_sniffer.h"
-#include "crypto.h"
-#include "csp_if_eth.h"
-
 
 #define PROMPT_GOOD		    "\033[34mcsh \033[90m%\033[0m "
 #define PROMPT_BAD		    "\033[34mcsh \033[31m!\033[0m "
 #define LINE_SIZE		    128
 #define HISTORY_SIZE		2048
 
-VMEM_DEFINE_STATIC_RAM(test, "test", 100000);
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
-VMEM_DEFINE_FILE(csp, "csp", "cspcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
-VMEM_DEFINE_FILE(crypto, "crypto", "crypto.csv", 50000);
 
-void usage(void)
-{
+void usage(void) {
 	printf("usage: csh -f conf.yaml [command]\n");
 	printf("\n");
 	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
@@ -96,7 +82,7 @@ int main(int argc, char **argv)
 	char * yamlname = "can.yaml";
 	int dfl_addr = 0;
 	
-	while ((c = getopt(argc, argv, "+hpn:v:R:f:")) != -1) {
+	while ((c = getopt(argc, argv, "+hpn:v:r:f:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
@@ -104,7 +90,7 @@ int main(int argc, char **argv)
 		case 'p':
 			use_prometheus = 1;
 			break;
-		case 'R':
+		case 'r':
 			rtable = optarg;
 			break;
 		case 'v':
@@ -136,21 +122,11 @@ int main(int argc, char **argv)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	iflist_yaml_init(yamlname, dfl_addr);
+	csp_yaml_init(yamlname, dfl_addr);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	//csp_rdp_set_opt(10, 20000, 8000, 1, 5000, 9);
 
-	extern param_t csp_rtable;
-	char saved_rtable[csp_rtable.array_size];
-
-	if (!rtable) {
-		/* Read routing table from parameter system */
-		param_get_string(&csp_rtable, saved_rtable, csp_rtable.array_size);
-		rtable = saved_rtable;
-	}
-
-	if (csp_rtable_check(rtable)) {
+	if (rtable && csp_rtable_check(rtable)) {
 		int error = csp_rtable_load(rtable);
 		if (error < 1) {
 			csp_log_error("csp_rtable_load(%s) failed, error: %d", rtable, error);
