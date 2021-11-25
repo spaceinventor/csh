@@ -1,3 +1,7 @@
+### CSP Shell
+
+CSP Shell or `csh` pronounced *seashell* is a command line interpreter for running CSP and `libparam` based applications.
+
 ### spaceinventor/satctl changes name to spaceinventor/csh
 
 `satctl` was originally a piece of software under license from 'Satlab A/S'. Since the current
