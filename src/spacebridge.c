@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	}
 
 	csp_conf.version = 2;
-	csp_conf.hostname = "spacepromt";
+	csp_conf.hostname = "csh";
 	csp_conf.model = "linux";
 	csp_init();
 
