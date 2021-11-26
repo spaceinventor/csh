@@ -2,7 +2,7 @@
 #
 - name: "ZMQ"
   driver: "zmq"
-  server: "johan-desktop"
+  server: "localhost"
   addr: 2
   netmask: 8
   default: true
