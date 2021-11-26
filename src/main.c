@@ -114,6 +114,7 @@ int main(int argc, char **argv)
 	vmem_file_init(&vmem_params);
 	param_list_store_vmem_load(&vmem_params);
 
+	csp_conf.address = 0;
 	csp_conf.version = csp_version;
 	csp_conf.hostname = "csh";
 	csp_conf.model = "linux";

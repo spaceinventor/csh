@@ -1,7 +1,8 @@
-
+# Interfaces
+#
 - name: "ZMQ"
   driver: "zmq"
-  server: "garfield"
-  addr: 1
+  server: "johan-desktop"
+  addr: 2
   netmask: 8
   default: true
