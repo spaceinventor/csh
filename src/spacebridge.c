@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 
     csp_iface_t * can_if = csp_can_socketcan_init(can_dev, 1000000, true);
     if (can_if == NULL) {
-        csp_log_error("failed to add CAN interface [%s]", can_dev);
+        printf("failed to add CAN interface [%s]\n", can_dev);
     }
 
 	csp_iface_t * zmq_if;
@@ -61,7 +61,6 @@ int main(int argc, char **argv) {
 
     csp_rtable_print();
     csp_iflist_print();
-    csp_debug_set_level(CSP_PACKET, 1);
 
     csp_bridge_set_interfaces(zmq_if, can_if);
 

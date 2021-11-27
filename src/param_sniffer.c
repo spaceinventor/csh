@@ -105,14 +105,14 @@ static void * param_sniffer(void * param) {
 		/* CRC32 verified packet */
 		if (packet->id.flags & CSP_FCRC32) {
 			if (packet->length < 4) {
-				csp_log_error("Too short packet for CRC32, %u", packet->length);
+				printf("Too short packet for CRC32, %u\n", packet->length);
 				csp_buffer_free(packet);
 				continue;
 			}
 			/* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
 			if (csp_crc32_verify(packet) != 0) {
 				/* Checksum failed */
-				csp_log_error("CRC32 verification error! Discarding packet");
+				printf("CRC32 verification error! Discarding packet\n");
 				csp_buffer_free(packet);
 				continue;
 			}

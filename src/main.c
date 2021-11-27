@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	if (rtable && csp_rtable_check(rtable)) {
 		int error = csp_rtable_load(rtable);
 		if (error < 1) {
-			csp_log_error("csp_rtable_load(%s) failed, error: %d", rtable, error);
+			printf("csp_rtable_load(%s) failed, error: %d\n", rtable, error);
 		}
 	}
 
