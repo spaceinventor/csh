@@ -126,9 +126,7 @@ void crypto_test_packet_handler(csp_packet_t * packet) {
 static int crypto_startrx_cmd(struct slash *slash) {
 
     /* Server */
-    csp_socket_t *sock_crypto = csp_socket(CSP_SO_NONE);
-    csp_socket_set_callback(sock_crypto, crypto_test_packet_handler);
-    csp_bind(sock_crypto, CSP_DECRYPTOR_PORT);
+    csp_bind(crypto_test_packet_handler, CSP_DECRYPTOR_PORT);
 
     return SLASH_SUCCESS;
 }

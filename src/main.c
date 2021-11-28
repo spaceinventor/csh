@@ -134,13 +134,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-	csp_socket_t *sock_csh = csp_socket(CSP_SO_NONE);
-	csp_socket_set_callback(sock_csh, csp_service_handler);
-	csp_bind(sock_csh, CSP_ANY);
-
-	csp_socket_t *sock_param = csp_socket(CSP_SO_NONE);
-	csp_socket_set_callback(sock_param, param_serve);
-	csp_bind(sock_param, PARAM_PORT_SERVER);
+	csp_bind_callback(csp_service_handler, CSP_ANY);
+	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
 
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
