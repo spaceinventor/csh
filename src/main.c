@@ -59,8 +59,7 @@ void * vmem_server_task(void * param) {
 	return NULL;
 }
 	
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
 
 	printf("\033[33m\n");
 	printf("  ***********************\n");
