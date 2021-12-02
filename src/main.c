@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	int csp_version = 2;
 	char * rtable = NULL;
 	char * yamlname = "can.yaml";
-	int dfl_addr = 0;
+	unsigned int dfl_addr = 0;
 	
 	while ((c = getopt(argc, argv, "+hpn:v:r:f:")) != -1) {
 		switch (c) {
@@ -114,7 +114,6 @@ int main(int argc, char **argv)
 	vmem_file_init(&vmem_params);
 	param_list_store_vmem_load(&vmem_params);
 
-	csp_conf.address = 0;
 	csp_conf.version = csp_version;
 	csp_conf.hostname = "csh";
 	csp_conf.model = "linux";
@@ -123,7 +122,8 @@ int main(int argc, char **argv)
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	csp_yaml_init(yamlname, dfl_addr);
+	csp_yaml_init(yamlname, &dfl_addr);
+	param_set_local_node(dfl_addr);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 
