@@ -126,12 +126,15 @@ int main(int argc, char **argv) {
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 
+#if (CSP_HAVE_STDIO)
 	if (rtable && csp_rtable_check(rtable)) {
 		int error = csp_rtable_load(rtable);
 		if (error < 1) {
 			printf("csp_rtable_load(%s) failed, error: %d\n", rtable, error);
 		}
 	}
+#endif
+	(void) rtable;
 
 	csp_bind_callback(csp_service_handler, CSP_ANY);
 	csp_bind_callback(param_serve, PARAM_PORT_SERVER);

@@ -59,8 +59,10 @@ int main(int argc, char **argv) {
 	csp_zmqhub_init(0, csp_zmqhub_addr, 0, &zmq_if);
     zmq_if->name = "ZMQ";
 
+#if (CSP_HAVE_STDIO)
     csp_rtable_print();
     csp_iflist_print();
+#endif
 
     csp_bridge_set_interfaces(zmq_if, can_if);
 
