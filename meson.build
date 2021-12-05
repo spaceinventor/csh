@@ -20,13 +20,14 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 
 add_global_arguments('-I../include', language: 'c')
 
-csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
+#csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
+csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 
 csh_sources = [
 	'src/main.c',
-	'src/time.c',
+	#'src/time.c',
 	'src/slash_csp.c',
 	'src/csp_debug_param.c',
 	'src/base16.c',

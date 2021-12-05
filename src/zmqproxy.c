@@ -25,7 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <pthread.h>
 
 #include <csp/csp.h>
-#include <csp/arch/csp_system.h>
+
 
 int csp_id_strip(csp_packet_t * packet);
 int csp_id_setup_rx(csp_packet_t * packet);
@@ -39,9 +39,7 @@ FILE * logfile;
 
 static void * task_capture(void *ctx) {
 
-    csp_sys_set_color(COLOR_BLUE);
 	printf("Capture/logging task listening on %s\n", sub_str);
-	csp_sys_set_color(COLOR_RESET);
 
     /* Subscriber (RX) */
     void *subscriber = zmq_socket(ctx, ZMQ_SUB);
@@ -88,11 +86,9 @@ static void * task_capture(void *ctx) {
         csp_id_strip(packet);
 
         /* Print header data */
-        csp_sys_set_color(COLOR_GREEN);
         printf("Packet: Src %u, Dst %u, Dport %u, Sport %u, Pri %u, Flags 0x%02X, Size %"PRIu16"\n",
                        packet->id.src, packet->id.dst, packet->id.dport,
                        packet->id.sport, packet->id.pri, packet->id.flags, packet->length);
-        csp_sys_set_color(COLOR_RESET);
 
         if (logfile) {
         	const char * delimiter = "--------\n";
@@ -149,7 +145,6 @@ int main(int argc, char ** argv) {
     void *frontend = zmq_socket(ctx, ZMQ_XSUB);
     assert(frontend);
     assert(zmq_bind (frontend, sub_str) == 0);
-    csp_sys_set_color(COLOR_BLUE);
     printf("Subscriber task listening on %s\n", sub_str);
 
     void *backend = zmq_socket(ctx, ZMQ_XPUB);
@@ -159,8 +154,6 @@ int main(int argc, char ** argv) {
 
     pthread_t capworker;
     pthread_create(&capworker, NULL, task_capture, ctx);
-
-    csp_sys_set_color(COLOR_RESET);
 
     zmq_proxy(frontend, backend, NULL);
 
