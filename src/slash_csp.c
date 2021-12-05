@@ -26,6 +26,7 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp_autoconfig.h>
+#include <csp/csp_hooks.h>
 #include <sys/types.h>
 #include <slash/slash.h>
 #include "base16.h"
