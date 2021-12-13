@@ -171,14 +171,36 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	if (slash->argc >= 3)
 		timeout = atoi(slash->argv[2]);
 
-	struct csp_cmp_message message;
+	struct csp_cmp_message msg;
+	msg.type = CSP_CMP_REQUEST;
+	msg.code = CSP_CMP_IDENT;
+	int size = sizeof(msg.type) + sizeof(msg.code) + sizeof(msg.ident);
 
-	if (csp_cmp_ident(node, timeout, &message) != CSP_ERR_NONE) {
-		printf("No response\n");
-		return SLASH_EINVAL;
+	csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, CSP_CMP, timeout, CSP_O_CRC32);
+	if (conn == NULL) {
+		return 0;
 	}
 
-	printf("%s\n%s\n%s\n%s %s\n", message.ident.hostname, message.ident.model, message.ident.revision, message.ident.date, message.ident.time);
+	csp_packet_t * packet = csp_buffer_get(size);
+	if (packet == NULL) {
+		csp_close(conn);
+		return 0;
+	}
+
+	/* Copy the request */
+	memcpy(packet->data, &msg, size);
+	packet->length = size;
+
+	csp_send(conn, packet);
+
+	while((packet = csp_read(conn, timeout)) != NULL) {
+		memcpy(&msg, packet->data, size);
+		csp_buffer_free(packet);
+		printf("\nIDENT %hu\n", packet->id.src);
+		printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
+	}
+
+	csp_close(conn);
 
 	return SLASH_SUCCESS;
 }
