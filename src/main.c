@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/utsname.h>
 
 #include <slash/slash.h>
 
@@ -113,9 +114,20 @@ int main(int argc, char **argv) {
 	vmem_file_init(&vmem_params);
 	param_list_store_vmem_load(&vmem_params);
 
+	static char hostname[100];
+	gethostname(hostname, 100);
+
+	static char domainname[100];
+	int res = getdomainname(domainname, 100);
+	(void) res;
+
+	struct utsname info;
+	uname(&info);
+
+	csp_conf.hostname = info.nodename;
+	csp_conf.model = info.version;
+	csp_conf.revision = info.release;
 	csp_conf.version = csp_version;
-	csp_conf.hostname = "csh";
-	csp_conf.model = "linux";
 	csp_init();
 
 	//csp_debug_set_level(4, 1);
