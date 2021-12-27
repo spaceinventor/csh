@@ -128,6 +128,7 @@ int main(int argc, char **argv) {
 	csp_conf.model = info.version;
 	csp_conf.revision = info.release;
 	csp_conf.version = csp_version;
+	csp_conf.dedup = CSP_DEDUP_ALL;
 	csp_init();
 
 	//csp_debug_set_level(4, 1);

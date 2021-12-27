@@ -1,7 +1,8 @@
 project('csh', 'c', subproject_dir: 'lib', default_options: [
 	'buildtype=release', 
 	'c_std=gnu11', 
-	'b_lto=false', 
+	'b_lto=false',
+	'default_library=shared',
 	'csp:packet_padding_bytes=42', 
 	'csp:buffer_count=100',
 	'csp:buffer_size=2048',
