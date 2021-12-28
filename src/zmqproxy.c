@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <pthread.h>
 
 #include <csp/csp.h>
+#include <csp/interfaces/csp_if_zmqhub.h>
 
 
 int csp_id_strip(csp_packet_t * packet);
@@ -47,7 +48,7 @@ static void * task_capture(void *ctx) {
     assert(zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0) == 0);
 
     /* Allocated 'raw' CSP packet */
-    csp_packet_t * packet = malloc(1024);
+    csp_packet_t * packet = malloc(CSP_ZMQ_MTU + 16);
     assert(packet != NULL);
 
     if (logfile_name) {
@@ -60,7 +61,7 @@ static void * task_capture(void *ctx) {
 
     while (1) {
     	zmq_msg_t msg;
-        zmq_msg_init_size(&msg, 1024);
+        zmq_msg_init_size(&msg, CSP_ZMQ_MTU + 16);
 
         /* Receive data */
         if (zmq_msg_recv(&msg, subscriber, 0) < 0) {
