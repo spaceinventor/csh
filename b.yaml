@@ -1,0 +1,16 @@
+# Interfaces
+#
+- name: "ZMQ0"
+  driver: "zmq"
+  server: "localhost"
+  addr: 2
+  netmask: 8
+  promisc: false
+  #default: true
+
+- name: "ZMQ1"
+  driver: "zmq"
+  server: "erp.space-inventor.com"
+  addr: 2
+  netmask: 8
+  promisc: false

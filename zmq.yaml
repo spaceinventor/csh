@@ -2,7 +2,8 @@
 #
 - name: "ZMQ"
   driver: "zmq"
-  server: "garfield"
+  server: "localhost"
   addr: 2
   netmask: 8
   default: true
+  promisc: false
