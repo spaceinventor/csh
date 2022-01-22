@@ -27,6 +27,8 @@
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
+VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
+
 
 void usage(void) {
 	printf("usage: csh -f conf.yaml [command]\n");
@@ -146,7 +148,8 @@ int main(int argc, char **argv) {
 	}
 	param_set_local_node(dfl_addr);
 
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
+	//csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
+	csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
 
 #if (CSP_HAVE_STDIO)
 	if (rtable && csp_rtable_check(rtable)) {
@@ -166,6 +169,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
+
+	vmem_file_init(&vmem_dummy);
 
 	/* Start a collector task */
 	vmem_file_init(&vmem_col);
