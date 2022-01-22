@@ -148,9 +148,10 @@ int main(int argc, char **argv) {
 	}
 	param_set_local_node(dfl_addr);
 
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
+	//csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
 	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
+	csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
 
 #if (CSP_HAVE_STDIO)
 	if (rtable && csp_rtable_check(rtable)) {
