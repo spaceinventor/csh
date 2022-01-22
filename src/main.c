@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 	csp_conf.model = info.version;
 	csp_conf.revision = info.release;
 	csp_conf.version = csp_version;
-	csp_conf.dedup = CSP_DEDUP_ALL;
+	csp_conf.dedup = CSP_DEDUP_OFF;
 	csp_init();
 
 	//csp_debug_set_level(4, 1);
@@ -148,8 +148,9 @@ int main(int argc, char **argv) {
 	}
 	param_set_local_node(dfl_addr);
 
-	//csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
+	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
+	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
+	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
 
 #if (CSP_HAVE_STDIO)
 	if (rtable && csp_rtable_check(rtable)) {
