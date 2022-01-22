@@ -20,8 +20,8 @@
 #include "prometheus.h"
 #include "param_sniffer.h"
 
-#define PROMPT_GOOD		    "\033[90m%\033[0m "
-#define PROMPT_BAD		    "\033[31m!\033[0m "
+#define PROMPT_GOOD		    "\033[96mcmd %\033[0m "
+#define PROMPT_BAD		    "\033[91mcmd !\033[0m "
 #define LINE_SIZE		    128
 #define HISTORY_SIZE		2048
 
@@ -79,7 +79,8 @@ int main(int argc, char **argv) {
 	int use_prometheus = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
-	char * yamlname = "can.yaml";
+	char * yamlname = "csh.yaml";
+	char * dirname = getenv("HOME");
 	unsigned int dfl_addr = 0;
 	
 	while ((c = getopt(argc, argv, "+hpn:v:r:f:")) != -1) {
@@ -100,6 +101,7 @@ int main(int argc, char **argv) {
 			dfl_addr = atoi(optarg);
 			break;
 		case 'f':
+			dirname = "";
 			yamlname = optarg;
 			break;
 		default:
@@ -134,7 +136,14 @@ int main(int argc, char **argv) {
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	csp_yaml_init(yamlname, &dfl_addr);
+	if (strlen(dirname)) {
+		char buildpath[100];
+		snprintf(buildpath, 100, "%s/%s", dirname, yamlname);
+		csp_yaml_init(buildpath, &dfl_addr);
+	} else {
+		csp_yaml_init(yamlname, &dfl_addr);
+
+	}
 	param_set_local_node(dfl_addr);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
