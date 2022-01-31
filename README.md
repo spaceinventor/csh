@@ -28,7 +28,7 @@ link /usr/sbin/ninja /usr/local/lib/python3.5/dist-packages/ninja
 
 Build
 ```
-git clone git@github.com:spaceinventor/satctl.git
+git clone https://github.com/spaceinventor/csh.git
 cd csh
 git submodule update --init --recursive
 
