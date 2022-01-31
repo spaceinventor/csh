@@ -20,13 +20,15 @@
 #include "prometheus.h"
 #include "param_sniffer.h"
 
-#define PROMPT_GOOD		    "\033[90m%\033[0m "
-#define PROMPT_BAD		    "\033[31m!\033[0m "
+#define PROMPT_GOOD		    "\033[96mcmd %\033[0m "
+#define PROMPT_BAD		    "\033[91mcmd !\033[0m "
 #define LINE_SIZE		    128
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
+VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
+
 
 void usage(void) {
 	printf("usage: csh -f conf.yaml [command]\n");
@@ -79,7 +81,8 @@ int main(int argc, char **argv) {
 	int use_prometheus = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
-	char * yamlname = "can.yaml";
+	char * yamlname = "csh.yaml";
+	char * dirname = getenv("HOME");
 	unsigned int dfl_addr = 0;
 	
 	while ((c = getopt(argc, argv, "+hpn:v:r:f:")) != -1) {
@@ -100,6 +103,7 @@ int main(int argc, char **argv) {
 			dfl_addr = atoi(optarg);
 			break;
 		case 'f':
+			dirname = "";
 			yamlname = optarg;
 			break;
 		default:
@@ -128,16 +132,27 @@ int main(int argc, char **argv) {
 	csp_conf.model = info.version;
 	csp_conf.revision = info.release;
 	csp_conf.version = csp_version;
-	csp_conf.dedup = CSP_DEDUP_ALL;
+	csp_conf.dedup = CSP_DEDUP_OFF;
 	csp_init();
 
 	//csp_debug_set_level(4, 1);
 	//csp_debug_set_level(5, 1);
 
-	csp_yaml_init(yamlname, &dfl_addr);
+	if (strlen(dirname)) {
+		char buildpath[100];
+		snprintf(buildpath, 100, "%s/%s", dirname, yamlname);
+		csp_yaml_init(buildpath, &dfl_addr);
+	} else {
+		csp_yaml_init(yamlname, &dfl_addr);
+
+	}
 	param_set_local_node(dfl_addr);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
+	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
+	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
+	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
+	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
 
 #if (CSP_HAVE_STDIO)
 	if (rtable && csp_rtable_check(rtable)) {
@@ -157,6 +172,8 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
+
+	vmem_file_init(&vmem_dummy);
 
 	/* Start a collector task */
 	vmem_file_init(&vmem_col);
