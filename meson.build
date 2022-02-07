@@ -41,6 +41,7 @@ csh_sources = [
 	'src/it6942a.c',
 	'src/csp_scan.c',
 	'src/spaceboot_slash.c',
+	'src/nav.c',
 ]
 
 csh = executable('csh', csh_sources,
