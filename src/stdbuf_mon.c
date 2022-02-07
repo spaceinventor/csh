@@ -29,7 +29,7 @@ static vmem_list_t stdbuf_get_base(int node, int timeout) {
 
 	csp_packet_t * packet = csp_buffer_get(sizeof(vmem_request_t));
 	vmem_request_t * request = (void *) packet->data;
-	request->version = VMEM_VERSION;
+	request->version = 1;
 	request->type = VMEM_SERVER_LIST;
 	packet->length = sizeof(vmem_request_t);
 
