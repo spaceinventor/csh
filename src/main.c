@@ -64,19 +64,8 @@ void * vmem_server_task(void * param) {
 	
 int main(int argc, char **argv) {
 
-	printf("\033[33m\n");
-	printf("  ***********************\n");
-	printf("  **     CSP   Shell   **\n");
-	printf("  ***********************\n\n");
-
-	printf("\033[32m");
-	printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n\n");
-
-	printf("\033[0m");
-
 	static struct slash *slash;
 	int remain, index, i, c, p = 0;
-	char *ex;
 
 	int use_prometheus = 0;
 	int csp_version = 2;
@@ -113,6 +102,24 @@ int main(int argc, char **argv) {
 
 	remain = argc - optind;
 	index = optind;
+
+	if (remain == 0) {
+		printf("\033[33m\n");
+		printf("  ***********************\n");
+		printf("  **     CSP   Shell   **\n");
+		printf("  ***********************\n\n");
+
+		printf("\033[32m");
+		printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n\n");
+
+		printf("\033[0m");
+	} else {
+		printf("\033[33m\n");
+		printf("  CSP shell batch: ");
+		printf("\033[0m");
+		printf("\n");
+		
+	}
 
 	/* Parameters */
 	vmem_file_init(&vmem_params);
@@ -194,11 +201,7 @@ int main(int argc, char **argv) {
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
-		ex = malloc(LINE_SIZE);
-		if (!ex) {
-			fprintf(stderr, "Failed to allocate command memory");
-			exit(EXIT_FAILURE);
-		}
+		char ex[LINE_SIZE] = {};
 
 		/* Build command string */
 		for (i = 0; i < remain; i++) {
@@ -206,14 +209,21 @@ int main(int argc, char **argv) {
 				p = ex - strncat(ex, " ", LINE_SIZE - p);
 			p = ex - strncat(ex, argv[index + i], LINE_SIZE - p);
 		}
+
+		usleep(500000);
+		printf("\n");
+		strcpy(slash->buffer, ex);
+		slash->length = strlen(slash->buffer);
+		slash_refresh(slash, 1);
+		printf("\n");
 		slash_execute(slash, ex);
-		free(ex);
 	} else {
 		printf("\n\n");
 
 		slash_loop(slash, PROMPT_GOOD, PROMPT_BAD);
 	}
 
+	printf("\n");
 	slash_destroy(slash);
 
 	return 0;
