@@ -60,46 +60,22 @@ static vmem_list_t stdbuf_get_base(int node, int timeout) {
 	return ret;
 }
 
-static int stdbuf_get(csp_conn_t * conn, uint32_t base, int from, int to, int timeout) {
+static int stdbuf_get(uint16_t node, uint32_t base, int from, int to, int timeout) {
 
 	int len = to - from;
 	if (len > 200)
 		len = 200;
 
 	struct csp_cmp_message message;
-	message.type = CSP_CMP_REQUEST;
-	message.code = CSP_CMP_PEEK;
 	message.peek.addr = htobe32(base + from);
 	message.peek.len = len;
 
-	csp_packet_t * packet = csp_buffer_get(0);
-	if (packet == NULL)
-		return 0;
-
-	
-
-	/* Copy the request */
-	memcpy(packet->data, &message, 7);
-	packet->length = 7;
-
-	//csp_hex_dump("send", packet->data, packet->length);
-
-	csp_send(conn, packet);
-	packet = NULL;
-
-	packet = csp_read(conn, timeout);
-
-	if (packet == NULL)
-		return 0;
-
-	//csp_hex_dump("recv", packet->data, packet->length);
-
-	if (packet->length < 7) {
-		csp_buffer_free(packet);
+	if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {
 		return 0;
 	}
 
-	int ignore __attribute__((unused)) = write(fileno(stdout), &packet->data[7], len);
+	int ignore __attribute__((unused)) = write(fileno(stdout), message.peek.data, len);
+
 	return len;
 
 }
@@ -150,10 +126,6 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	printf("Monitoring stdbuf on node %u, base %x, size %u\n", node, vmem.vaddr, vmem.size);
 
-	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, CSP_CMP, 0, CSP_SO_NONE);
-	if (conn == NULL)
-		return SLASH_ENOMEM;
-
 	while(1) {
 
 		param_pull_queue(&pull_q, 0, node, 100);
@@ -163,10 +135,10 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		int got = 0;
 		if (out < in) {
 			//printf("Get from %u to %u\n", out, in);
-			got = stdbuf_get(conn, vmem.vaddr, out, in, 100);
+			got = stdbuf_get(node, vmem.vaddr, out, in, 100);
 		} else if (out > in) {
 			//printf("Get from %u to %u\n", out, vmem.size);
-			got = stdbuf_get(conn, vmem.vaddr, out, vmem.size, 100);
+			got = stdbuf_get(node, vmem.vaddr, out, vmem.size, 100);
 		}
 
 		uint16_t out_push = out + got;
@@ -183,8 +155,6 @@ static int stdbuf_mon_slash(struct slash *slash) {
 		}
 
 	};
-
-	csp_close(conn);
 
 	return SLASH_SUCCESS;
 }

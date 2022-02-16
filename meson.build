@@ -1,5 +1,5 @@
 project('csh', 'c', subproject_dir: 'lib', default_options: [
-	'buildtype=release', 
+	'buildtype=debug', 
 	'c_std=gnu11', 
 	'b_lto=false',
 	'default_library=static',
@@ -36,6 +36,7 @@ csh_sources = [
 	'src/param_sniffer.c',
 	'src/prometheus.c',
 	'src/stdbuf_mon.c',
+	'src/stdbuf_client.c',
 	'src/randombytes.c',
 	'src/csp_if_eth.c',
 	'src/it6942a.c',
