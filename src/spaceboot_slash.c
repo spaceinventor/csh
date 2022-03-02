@@ -165,7 +165,7 @@ static void upload(int node, int address, char * data, int len) {
 }
 #endif
 
-static void upload_and_verify(int node, int address, char * data, int len) {
+static int upload_and_verify(int node, int address, char * data, int len) {
 
 	unsigned int timeout = 10000;
 	printf("  Upload %u bytes to node %u addr 0x%x\n", len, node, address);
@@ -178,10 +178,12 @@ static void upload_and_verify(int node, int address, char * data, int len) {
 		if (datain[i] == data[i])
 			continue;
 		printf("Diff at %x: %hhx != %hhx\n", address + i, data[i], datain[i]);
-		exit(EXIT_FAILURE);
+		free(datain);
+		return SLASH_EINVAL;
 	}
 
 	free(datain);
+	return SLASH_SUCCESS;
 }
 
 static int slash_csp_program(struct slash * slash) {
@@ -242,9 +244,7 @@ static int slash_csp_program(struct slash * slash) {
         return SLASH_EUSAGE;
     }
 
-    upload_and_verify(node, vmem.vaddr, data, len);
-
-	return SLASH_SUCCESS;
+    return upload_and_verify(node, vmem.vaddr, data, len);
 }
 
 slash_command(program, slash_csp_program, "<node> <slot> <filename> ", "program");
