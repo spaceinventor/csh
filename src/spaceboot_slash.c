@@ -187,12 +187,13 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 }
 
 static int slash_csp_program(struct slash * slash) {
-	if (slash->argc < 4)
+	if (!((slash->argc == 4) || (slash->argc == 5)))
 		return SLASH_EUSAGE;
 
 	unsigned int node = atoi(slash->argv[1]);
 	unsigned int slot = atoi(slash->argv[2]);
 	char * path = slash->argv[3];
+	unsigned int retries = (slash->argc == 5) ? atoi(slash->argv[4]) : 1;
 
 	char * data;
 	int len;
@@ -244,7 +245,15 @@ static int slash_csp_program(struct slash * slash) {
         return SLASH_EUSAGE;
     }
 
-    return upload_and_verify(node, vmem.vaddr, data, len);
+	int ret = SLASH_SUCCESS;
+	do {
+		ret = upload_and_verify(node, vmem.vaddr, data, len);
+		retries--;
+		if ((ret != SLASH_SUCCESS) && retries) {
+			printf("\nError %d. Retrying (%d)\n\n", ret, retries);
+		}
+	} while ((ret != SLASH_SUCCESS) && retries);
+    return ret;
 }
 
-slash_command(program, slash_csp_program, "<node> <slot> <filename> ", "program");
+slash_command(program, slash_csp_program, "<node> <slot> <filename> [<max retires>]", "program");
