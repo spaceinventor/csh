@@ -194,10 +194,13 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	csp_send(conn, packet);
 
 	while((packet = csp_read(conn, timeout)) != NULL) {
-		memcpy(&msg, packet->data, size);
+		memcpy(&msg, packet->data, packet->length < size ? packet->length : size);
+		if (msg.code == CSP_CMP_IDENT) {
+			printf("PHM%u plen:%u type:%u code:%u\n", __LINE__, packet->length, (unsigned)(msg.type), (unsigned)(msg.code));
+			printf("\nIDENT %hu\n", packet->id.src);
+			printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
+		}
 		csp_buffer_free(packet);
-		printf("\nIDENT %hu\n", packet->id.src);
-		printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
 	}
 
 	csp_close(conn);
