@@ -20,17 +20,18 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 
-static void ping(int node) {
+static int ping(int node) {
 
 	struct csp_cmp_message message = {};
 	if (csp_cmp_ident(node, 1000, &message) != CSP_ERR_NONE) {
 		printf("Cannot ping system\n");
-		exit(EXIT_FAILURE);
+		return SLASH_EINVAL;
 	}
 	printf("  | %s\n  | %s\n  | %s\n  | %s %s\n", message.ident.hostname, message.ident.model, message.ident.revision, message.ident.date, message.ident.time);
+	return SLASH_SUCCESS;
 }
 
-static void reset_to_flash(int node, int flash, int times, int type) {
+static int reset_to_flash(int node, int flash, int times, int type) {
 
 	param_t * boot_img[4];
 	/* Setup remote parameters */
@@ -68,7 +69,7 @@ static void reset_to_flash(int node, int flash, int times, int type) {
 	}
 	printf("\n");
 
-	ping(node);
+	return ping(node);
 }
 
 static int slash_csp_switch(struct slash * slash) {
@@ -86,9 +87,7 @@ static int slash_csp_switch(struct slash * slash) {
 	int type = 0;
 	if (slot >= 2)
 		type = 1;
-	reset_to_flash(node, slot, times, type);
-
-	return SLASH_SUCCESS;
+	return reset_to_flash(node, slot, times, type);
 }
 
 slash_command(switch, slash_csp_switch, "<node> <slot> [times]", "switch");
@@ -347,7 +346,9 @@ static int slash_csp_program(struct slash * slash) {
     printf("\033[31m\n");
     printf("ABOUT TO PROGRAM:\n");
     printf("\033[0m\n");
-    ping(node);
+    if (ping(node) != SLASH_SUCCESS) {
+		return SLASH_EINVAL;
+	}
     printf("\n");
 
 	char * c = slash_readline(slash, "Type 'yes' + enter to continue: ");
