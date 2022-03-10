@@ -1,8 +1,11 @@
 
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <string.h>
 
 #include <slash/slash.h>
 #include <param/param.h>
@@ -143,8 +146,6 @@ static int image_get(char * filename, char ** data, int * len) {
 	struct stat file_stat;
 	fstat(fd->_fileno, &file_stat);
 
-	printf("  Open %s size %zu\n", filename, file_stat.st_size);
-
 	/* Copy to memory:
 	 * Note we ignore the memory leak because the application will terminate immediately after using the data */
 	*data = malloc(file_stat.st_size);
@@ -164,6 +165,108 @@ static void upload(int node, int address, char * data, int len) {
 	usleep(100000);
 }
 #endif
+
+
+#define BIN_PATH_MAX_ENTRIES 10
+#define BIN_PATH_MAX_SIZE 100
+
+struct bin_info_t {
+	uint32_t addr_min;
+	uint32_t addr_max;
+	unsigned count;
+	char entries[BIN_PATH_MAX_ENTRIES][BIN_PATH_MAX_SIZE];
+} bin_info;
+
+static char wpath[BIN_PATH_MAX_SIZE];
+
+// Binary file byte offset of entry point address.
+// C21: 4, E70: 2C4
+static const uint32_t entry_offsets[] = { 4, 0x2c4 };
+
+bool is_valid_binary(const char * path, struct bin_info_t * binf)
+{
+	int len = strlen(path);
+	if ((len <= 4) || (strcmp(&(path[len-4]), ".bin") != 0)) {
+		return false;
+	}
+
+	char * data;
+	if (image_get((char*)path, &data, &len) < 0) {
+		return false;
+	}
+
+	if (binf->addr_min + len <= binf->addr_max) {
+		uint32_t addr = 0;
+		for (size_t i = 0; i < sizeof(entry_offsets)/sizeof(uint32_t); i++) {
+			addr = *((uint32_t *) &data[entry_offsets[i]]);
+			if ((binf->addr_min <= addr) && (addr <= binf->addr_max)) {
+				free(data);
+				return true;
+			}
+		}
+	}
+	free(data);
+	return false;
+}
+
+static bool dir_callback(const char * path, const char * last_entry, void * custom) 
+{
+	//return strncmp(last_entry, "build", 5) == 0;
+	return true;
+}
+
+static void file_callback(const char * path, const char * last_entry, void * custom)
+{
+    struct bin_info_t * binf = (struct bin_info_t *)custom; 
+	if (binf && is_valid_binary(path, binf)) {
+		if (binf->count < BIN_PATH_MAX_ENTRIES) {
+			strncpy(binf->entries[binf->count], path, BIN_PATH_MAX_SIZE);
+			binf->count++;
+		}
+		else {
+			printf("More than %u binaries found. Searched stopped.\n", BIN_PATH_MAX_ENTRIES);
+		}
+	}
+}
+
+static void walk_dir(char * path, size_t path_size, unsigned depth, 
+					 bool (*dir_cb)(const char *, const char *, void *), 
+					 void (*file_cb)(const char *, const char *, void *), 
+					 void * custom)
+{
+    DIR * p = opendir(path);
+	if (p == 0) {
+		return;
+	}
+
+    struct dirent * entry;
+
+    while ((entry = readdir(p)) != NULL) {
+		bool isdir = (entry->d_type == DT_DIR);
+		bool isfile = (entry->d_type == DT_REG);
+
+  		// Ignore '.', '..' and hidden entries
+        if (((isdir && depth) || isfile) && (entry->d_name[0] != '.')) {
+			size_t path_len = strlen(path);
+			strncat(path, "/", path_size);
+			strncat(path, entry->d_name, path_size);
+
+        	if (isdir) {
+				if (dir_cb && dir_cb(path, entry->d_name, custom)) {
+					walk_dir(path, path_size, depth-1, dir_cb, file_cb, custom);
+				}
+			} 
+			else {
+				if (file_cb) {
+					file_cb(path, entry->d_name, custom);
+				}
+			}
+			
+			path[path_len] = 0;
+		}
+    }
+    closedir(p);
+}
 
 static int upload_and_verify(int node, int address, char * data, int len) {
 
@@ -187,19 +290,12 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 }
 
 static int slash_csp_program(struct slash * slash) {
-	if (!((slash->argc == 4) || (slash->argc == 5)))
+	if (!((slash->argc == 3) || (slash->argc == 4)))
 		return SLASH_EUSAGE;
 
 	unsigned int node = atoi(slash->argv[1]);
 	unsigned int slot = atoi(slash->argv[2]);
-	char * path = slash->argv[3];
-	unsigned int retries = (slash->argc == 5) ? atoi(slash->argv[4]) : 1;
-
-	char * data;
-	int len;
-	if (image_get(path, &data, &len) < 0) {
-		return SLASH_EIO;
-	}
+	char * arg_path = (slash->argc >= 4) ? slash->argv[3] : 0;
 
 	char vmem_name[5];
 	snprintf(vmem_name, 5, "fl%u", slot);
@@ -216,17 +312,37 @@ static int slash_csp_program(struct slash * slash) {
 		printf("    Size: %u\n", vmem.size);
 	}
 
-	if (len > vmem.size) {
-		printf("Software image too large for vmem\n");
-		return SLASH_EINVAL;
+	if (arg_path) {
+		strncpy(bin_info.entries[0], arg_path, BIN_PATH_MAX_SIZE);
+		bin_info.count = 0;
+	}
+	else {
+		printf("  Searching for valid binaries\n");
+		strcpy(wpath, ".");
+		bin_info.addr_min = vmem.vaddr;
+		bin_info.addr_max = vmem.vaddr + vmem.size;
+		bin_info.count = 0;
+		walk_dir(wpath, BIN_PATH_MAX_SIZE, 10, dir_callback, file_callback, &bin_info);
+		
+		if (bin_info.count) {
+			for (unsigned i = 0; i < bin_info.count; i++) {
+				printf("  %u: %s\n", i, bin_info.entries[i]);
+			}
+		}
+		else {
+			printf("\033[31m\n");
+			printf("  Found no valid binary for the selected slot.\n");
+			printf("\033[0m\n");
+			return SLASH_EINVAL;
+		}
 	}
 
-    uint32_t mainaddr = *((uint32_t *) &data[4]);
-    
-    if ((mainaddr < vmem.vaddr) || (mainaddr > vmem.vaddr + vmem.size)) {
-        printf("  Main from %s is outside %s at 0x%x\n", path, vmem.name, mainaddr);
-        return SLASH_EINVAL;
-    }
+	int index = 0;
+	if (bin_info.count > 1) {
+		char * c = slash_readline(slash, "Type number to select file: ");
+		index = atoi(c);
+	}
+	char * path = bin_info.entries[index];
 
     printf("\033[31m\n");
     printf("ABOUT TO PROGRAM:\n");
@@ -234,26 +350,19 @@ static int slash_csp_program(struct slash * slash) {
     ping(node);
     printf("\n");
 
-    printf("\033[32m\n");
-    printf("  Main from %s is within %s at 0x%x\n", path, vmem.name, mainaddr);
-    printf("\033[0m\n");
-
-	char *c = slash_readline(slash, "Type 'yes' + enter to continue: ");
+	char * c = slash_readline(slash, "Type 'yes' + enter to continue: ");
     
     if (strcmp(c, "yes") != 0) {
         printf("Abort\n");
         return SLASH_EUSAGE;
     }
 
-	int ret = SLASH_SUCCESS;
-	do {
-		ret = upload_and_verify(node, vmem.vaddr, data, len);
-		retries--;
-		if ((ret != SLASH_SUCCESS) && retries) {
-			printf("\nError %d. Retrying (%d)\n\n", ret, retries);
-		}
-	} while ((ret != SLASH_SUCCESS) && retries);
-    return ret;
+	char * data;
+	int len;
+	if (image_get(path, &data, &len) < 0) {
+		return SLASH_EIO;
+	}
+	return upload_and_verify(node, vmem.vaddr, data, len);
 }
 
-slash_command(program, slash_csp_program, "<node> <slot> <filename> [<max retires>]", "program");
+slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program");
