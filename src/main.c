@@ -120,6 +120,10 @@ int main(int argc, char **argv) {
 		printf("\n");
 		
 	}
+	srand(time(NULL));
+	
+	void serial_init(void);
+	serial_init();
 
 	/* Parameters */
 	vmem_file_init(&vmem_params);
