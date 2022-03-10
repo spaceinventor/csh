@@ -23,7 +23,7 @@
 static int ping(int node) {
 
 	struct csp_cmp_message message = {};
-	if (csp_cmp_ident(node, 1000, &message) != CSP_ERR_NONE) {
+	if (csp_cmp_ident(node, 3000, &message) != CSP_ERR_NONE) {
 		printf("Cannot ping system\n");
 		return 0;
 	}
