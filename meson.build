@@ -22,7 +22,6 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 
 add_global_arguments('-I../include', language: 'c')
 
-#csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
@@ -63,3 +62,5 @@ spacebridge = executable('spacebridge', spacebridge_sources,
 	dependencies : [csp_dep],
 	install : true,
 )
+
+install_data('yaml/caninit', install_dir : get_option('bindir'))

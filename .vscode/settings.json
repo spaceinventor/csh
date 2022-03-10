@@ -6,4 +6,12 @@
 		"*.c": "c",
 		"random": "c"
 	},
+	"files.exclude": {
+		"**/.gitignore": true,
+		"**/.gitmodules": true,
+		"**/.vscode": true,
+		"build":true,
+		"configure":true,
+		"pack":true,
+	  },
 }

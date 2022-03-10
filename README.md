@@ -53,3 +53,15 @@ And
 Then on instance 1 type `ping 2`
 
 note: you need to setup the two different configuration files, so they can speak to eachother.
+
+
+
+Setup can as non root
+=====================
+
+Give permission for 'csh' to access network configuration
+in order to setup the CAN interface baudrate and +up
+When the file is deleted (rebuild) setcap needs to be run
+again
+
+    sudo setcap cap_net_raw,cap_net_admin+ep ./builddir/csh
