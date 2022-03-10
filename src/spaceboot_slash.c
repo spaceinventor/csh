@@ -349,7 +349,7 @@ static int slash_csp_program(struct slash * slash) {
     printf("\033[31m\n");
     printf("ABOUT TO PROGRAM:\n");
     printf("\033[0m\n");
-    if (ping(node) != SLASH_SUCCESS) {
+    if (ping(node) == 0) {
 		return SLASH_EINVAL;
 	}
     printf("\n");
