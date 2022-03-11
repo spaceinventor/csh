@@ -3,10 +3,10 @@
 - name: "ZMQ0"
   driver: "zmq"
   server: "localhost"
-  addr: 2
+  addr: 81
   netmask: 8
   promisc: false
-  #default: true
+  default: true
 
 - name: "ZMQ1"
   driver: "zmq"

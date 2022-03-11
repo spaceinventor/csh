@@ -23,15 +23,15 @@
 static int ping(int node) {
 
 	struct csp_cmp_message message = {};
-	if (csp_cmp_ident(node, 1000, &message) != CSP_ERR_NONE) {
+	if (csp_cmp_ident(node, 3000, &message) != CSP_ERR_NONE) {
 		printf("Cannot ping system\n");
-		return SLASH_EINVAL;
+		return 0;
 	}
 	printf("  | %s\n  | %s\n  | %s\n  | %s %s\n", message.ident.hostname, message.ident.model, message.ident.revision, message.ident.date, message.ident.time);
-	return SLASH_SUCCESS;
+	return 1;
 }
 
-static int reset_to_flash(int node, int flash, int times, int type) {
+static void reset_to_flash(int node, int flash, int times, int type) {
 
 	param_t * boot_img[4];
 	/* Setup remote parameters */
@@ -55,7 +55,7 @@ static int reset_to_flash(int node, int flash, int times, int type) {
 		param_queue_add(&queue, boot_img[3], 0, &zero);
 	}
 	param_queue_add(&queue, boot_img[flash], 0, &times);
-	param_push_queue(&queue, 1, node, 1000);
+	param_push_queue(&queue, 1, node, 1000, 0);
 
 	printf("  Rebooting");
 	csp_reboot(node);
@@ -69,7 +69,7 @@ static int reset_to_flash(int node, int flash, int times, int type) {
 	}
 	printf("\n");
 
-	return ping(node);
+	ping(node);
 }
 
 static int slash_csp_switch(struct slash * slash) {
@@ -87,7 +87,10 @@ static int slash_csp_switch(struct slash * slash) {
 	int type = 0;
 	if (slot >= 2)
 		type = 1;
-	return reset_to_flash(node, slot, times, type);
+
+	reset_to_flash(node, slot, times, type);
+
+	return SLASH_SUCCESS;
 }
 
 slash_command(switch, slash_csp_switch, "<node> <slot> [times]", "switch");
@@ -356,7 +359,7 @@ static int slash_csp_program(struct slash * slash) {
     printf("\033[31m\n");
     printf("ABOUT TO PROGRAM: %s\n", path);
     printf("\033[0m\n");
-    if (ping(node) != SLASH_SUCCESS) {
+    if (ping(node) == 0) {
 		return SLASH_EINVAL;
 	}
     printf("\n");
