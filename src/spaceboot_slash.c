@@ -210,7 +210,6 @@ bool is_valid_binary(const char * path, struct bin_info_t * binf)
 
 static bool dir_callback(const char * path, const char * last_entry, void * custom) 
 {
-	//return strncmp(last_entry, "build", 5) == 0;
 	return true;
 }
 
@@ -237,19 +236,24 @@ static void walk_dir(char * path, size_t path_size, unsigned depth,
 	if (p == 0) {
 		return;
 	}
-
+	
     struct dirent * entry;
+	struct stat stat_info;
 
     while ((entry = readdir(p)) != NULL) {
-		bool isdir = (entry->d_type == DT_DIR);
-		bool isfile = (entry->d_type == DT_REG);
+		// Save path length
+		size_t path_len = strlen(path);
+
+		strncat(path, "/", path_size);
+		strncat(path, entry->d_name, path_size);
+
+		// entry->d_type is not set on some file systems, like sshfs mount of si
+		lstat(path, &stat_info);
+		bool isdir = S_ISDIR(stat_info.st_mode);
+		bool isfile = S_ISREG(stat_info.st_mode);
 
   		// Ignore '.', '..' and hidden entries
         if (((isdir && depth) || isfile) && (entry->d_name[0] != '.')) {
-			size_t path_len = strlen(path);
-			strncat(path, "/", path_size);
-			strncat(path, entry->d_name, path_size);
-
         	if (isdir) {
 				if (dir_cb && dir_cb(path, entry->d_name, custom)) {
 					walk_dir(path, path_size, depth-1, dir_cb, file_cb, custom);
@@ -260,9 +264,10 @@ static void walk_dir(char * path, size_t path_size, unsigned depth,
 					file_cb(path, entry->d_name, custom);
 				}
 			}
-			
-			path[path_len] = 0;
 		}
+
+		// Restore path length
+		path[path_len] = 0;
     }
     closedir(p);
 }
@@ -339,12 +344,17 @@ static int slash_csp_program(struct slash * slash) {
 	int index = 0;
 	if (bin_info.count > 1) {
 		char * c = slash_readline(slash, "Type number to select file: ");
+		if (strlen(c) == 0) {
+	        printf("Abort\n");
+	        return SLASH_EUSAGE;
+		}
 		index = atoi(c);
 	}
+	
 	char * path = bin_info.entries[index];
 
     printf("\033[31m\n");
-    printf("ABOUT TO PROGRAM:\n");
+    printf("ABOUT TO PROGRAM: %s\n", path);
     printf("\033[0m\n");
     if (ping(node) != SLASH_SUCCESS) {
 		return SLASH_EINVAL;
