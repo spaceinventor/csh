@@ -157,7 +157,6 @@ int main(int argc, char **argv) {
 		csp_yaml_init(yamlname, &dfl_addr);
 
 	}
-	param_set_local_node(dfl_addr);
 
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
