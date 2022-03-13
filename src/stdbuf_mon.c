@@ -111,13 +111,13 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	param_t * stdbuf_in = param_list_find_id(node, 28);
 	if (stdbuf_in == NULL) {
-		stdbuf_in = param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", 9);
+		stdbuf_in = param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", NULL, NULL, -1);
 		param_list_add(stdbuf_in);
 	}
 
 	param_t * stdbuf_out = param_list_find_id(node, 29);
 	if (stdbuf_out == NULL) {
-		stdbuf_out = param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", 10);
+		stdbuf_out = param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", NULL, NULL, -1);
 		param_list_add(stdbuf_out);
 	}
 
