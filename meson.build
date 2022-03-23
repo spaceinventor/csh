@@ -44,6 +44,9 @@ csh_sources = [
 	'src/serial.c',
 ]
 
+csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
+
+
 csh = executable('csh', csh_sources,
 	dependencies : [slash_dep, csp_dep, param_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],

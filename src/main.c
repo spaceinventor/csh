@@ -20,6 +20,8 @@
 #include "prometheus.h"
 #include "param_sniffer.h"
 
+extern const char *version_string;
+
 #define PROMPT_GOOD		    "\033[96mcmd %\033[0m "
 #define PROMPT_BAD		    "\033[91mcmd !\033[0m "
 #define LINE_SIZE		    128
@@ -110,7 +112,8 @@ int main(int argc, char **argv) {
 		printf("  ***********************\n\n");
 
 		printf("\033[32m");
-		printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n\n");
+		printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
+		printf("  Compiled: %s git: %s\n\n", __DATE__, version_string);
 
 		printf("\033[0m");
 	} else {
