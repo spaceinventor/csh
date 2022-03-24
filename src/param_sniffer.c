@@ -131,9 +131,21 @@ static void * param_sniffer(void * param) {
 		    queue_version = 2;
 		}
 
+		printf("Queue version %d\n", queue_version);
+
 		param_queue_t queue;
 		param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
-        PARAM_QUEUE_FOREACH(param, reader, (&queue), offset)
+		queue.last_node = packet->id.src;
+
+		mpack_reader_t reader;
+		mpack_reader_init_data(&reader, queue.buffer, queue.used);
+		while(reader.data < reader.end) {
+			int id, node, offset = -1;
+			param_deserialize_id(&reader, &id, &node, &offset, &queue);
+			if (node == 0) {
+				node = packet->id.src;
+			}
+			param_t * param = param_list_find_id(node, id);
 			if (param) {	
 				param_sniffer_log(NULL, &queue, param, offset, &reader);
 			}
