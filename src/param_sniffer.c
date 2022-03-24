@@ -131,8 +131,6 @@ static void * param_sniffer(void * param) {
 		    queue_version = 2;
 		}
 
-		printf("Queue version %d\n", queue_version);
-
 		param_queue_t queue;
 		param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
 		queue.last_node = packet->id.src;
