@@ -11,7 +11,7 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 
 	uint16_t node = atoi(slash->argv[1]);
 
-	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, 15, 0, CSP_SO_NONE);
+	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, 15, 0, CSP_O_CRC32);
 	if (conn == NULL)
 		return SLASH_ENOMEM;
 
