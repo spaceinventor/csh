@@ -39,8 +39,10 @@ void usage(void) {
 	printf("\n");
 	printf("Options:\n");
 	printf(" -f\t\tPath to config file\n");
+	printf(" -n NODE\tUse NODE as own CSP address on the default interface\n");
+	printf(" -v VERSION\tUse VERSION as CSP version (1 or 2)\n");
 	printf(" -p\t\tSetup prometheus node\n");
-	printf(" -R RTABLE\tOverride rtable with this string\n");
+	printf(" -r RTABLE\tOverride rtable with this string\n");
 	printf(" -h\t\tPrint this help and exit\n");
 }
 
