@@ -380,3 +380,89 @@ static int slash_csp_program(struct slash * slash) {
 }
 
 slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program");
+
+
+static int slash_sps(struct slash * slash) {
+	if (slash->argc < 4)
+		return SLASH_EUSAGE;
+
+	unsigned int node = atoi(slash->argv[1]);
+	unsigned int from = atoi(slash->argv[2]);
+	unsigned int to = atoi(slash->argv[3]);
+
+	int type = 0;
+	if (from >= 2)
+		type = 1;
+	if (to >= 2)
+		type = 1;
+
+	reset_to_flash(node, from, 1, type);
+
+	char vmem_name[5];
+	snprintf(vmem_name, 5, "fl%u", to);
+	printf("  Requesting VMEM name: %s...\n", vmem_name);
+
+	vmem_list_t vmem = vmem_list_find(node, 5000, vmem_name, strlen(vmem_name));
+	if (vmem.size == 0) {
+		printf("Failed to find vmem on subsystem\n");
+		return SLASH_EINVAL;
+	} else {
+		printf("  Found vmem\n");
+		printf("    Base address: 0x%x\n", vmem.vaddr);
+		printf("    Size: %u\n", vmem.size);
+	}
+
+	printf("  Searching for valid binaries\n");
+	strcpy(wpath, ".");
+	bin_info.addr_min = vmem.vaddr;
+	bin_info.addr_max = vmem.vaddr + vmem.size;
+	bin_info.count = 0;
+	walk_dir(wpath, BIN_PATH_MAX_SIZE, 10, dir_callback, file_callback, &bin_info);
+	
+	if (bin_info.count) {
+		for (unsigned i = 0; i < bin_info.count; i++) {
+			printf("  %u: %s\n", i, bin_info.entries[i]);
+		}
+	}
+	else {
+		printf("\033[31m\n");
+		printf("  Found no valid binary for the selected slot.\n");
+		printf("\033[0m\n");
+		return SLASH_EINVAL;
+	}
+
+	int index = 0;
+	if (bin_info.count > 1) {
+		char * c = slash_readline(slash, "Type number to select file: ");
+		if (strlen(c) == 0) {
+	        printf("Abort\n");
+	        return SLASH_EUSAGE;
+		}
+		index = atoi(c);
+	}
+	
+	char * path = bin_info.entries[index];
+
+    printf("\033[31m\n");
+    printf("ABOUT TO PROGRAM: %s\n", path);
+    printf("\033[0m\n");
+    if (ping(node) == 0) {
+		return SLASH_EINVAL;
+	}
+    printf("\n");
+
+	char * data;
+	int len;
+	if (image_get(path, &data, &len) < 0) {
+		return SLASH_EIO;
+	}
+	
+	int result = upload_and_verify(node, vmem.vaddr, data, len);
+	if (result == SLASH_SUCCESS) {
+		reset_to_flash(node, to, 1, type);
+	}
+
+	return result;
+}
+
+slash_command(sps, slash_sps, "<node> <from> <to> [filename]", "switch program switch");
