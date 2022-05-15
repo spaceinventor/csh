@@ -19,17 +19,50 @@
 
 #include "prometheus.h"
 #include "param_sniffer.h"
+#include "known_hosts.h"
 
 extern const char *version_string;
 
-#define PROMPT_GOOD		    "\033[96mcmd %\033[0m "
-#define PROMPT_BAD		    "\033[91mcmd !\033[0m "
+#define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    128
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
 VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
+
+int slash_prompt(struct slash * slash) {
+
+	int len = 0;
+
+	char * prompt = "\e[0;38;5;231;48;5;22;1m ";
+	slash_write(slash, prompt, strlen(prompt));
+	len += 1;
+
+	struct utsname info;
+	uname(&info);
+	slash_write(slash, info.nodename, strlen(info.nodename));
+	len += strlen(info.nodename);
+	
+	prompt = "\e[0;38;5;22;48;5;240;22m \e[0;38;5;252;48;5;240;1m";
+	slash_write(slash, prompt, strlen(prompt));
+	len += 2;
+
+	extern int param_slash_node;
+	char nodebuf[20];
+	if (known_hosts_get_name(param_slash_node, nodebuf, sizeof(nodebuf)) == 0) {
+		snprintf(nodebuf, 20, "%d", param_slash_node);
+	}
+	slash_write(slash, nodebuf, strlen(nodebuf));
+	len += strlen(nodebuf);
+
+	prompt = " \e[0;38;5;240;49;22m \e[0m";
+	slash_write(slash, prompt, strlen(prompt));
+	len += 3;
+
+	return len;
+
+}
 
 
 void usage(void) {
@@ -228,7 +261,7 @@ int main(int argc, char **argv) {
 	} else {
 		printf("\n\n");
 
-		slash_loop(slash, PROMPT_GOOD, PROMPT_BAD);
+		slash_loop(slash);
 	}
 
 	printf("\n");

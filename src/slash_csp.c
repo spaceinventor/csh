@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <slash/slash.h>
 #include "base16.h"
+#include "known_hosts.h"
 
 slash_command_group(csp, "Cubesat Space Protocol");
 
@@ -50,7 +51,9 @@ static int slash_csp_ping(struct slash *slash)
 	if ((slash->argc <= 1) || (slash->argc > 4))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);	
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 3)
@@ -80,7 +83,10 @@ static int slash_csp_reboot(struct slash *slash)
 	if (slash->argc != 2)
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
+
 	csp_reboot(node);
 
 	return SLASH_SUCCESS;
@@ -93,7 +99,9 @@ static int slash_csp_ps(struct slash *slash)
 	if ((slash->argc < 2) || (slash->argc > 3))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 3)
@@ -111,7 +119,9 @@ static int slash_csp_memfree(struct slash *slash)
 	if ((slash->argc < 2) || (slash->argc > 3))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 3)
@@ -129,7 +139,9 @@ static int slash_csp_buffree(struct slash *slash)
 	if ((slash->argc < 2) || (slash->argc > 3))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 3)
@@ -147,7 +159,9 @@ static int slash_csp_uptime(struct slash *slash)
 	if ((slash->argc < 2) || (slash->argc > 3))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 3)
@@ -165,7 +179,9 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	if ((slash->argc < 2) || (slash->argc > 3))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 3)
@@ -198,6 +214,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 		if (msg.code == CSP_CMP_IDENT) {
 			printf("\nIDENT %hu\n", packet->id.src);
 			printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
+			known_hosts_add(packet->id.src, msg.ident.hostname);
 		}
 		csp_buffer_free(packet);
 	}
@@ -215,7 +232,10 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 	if ((slash->argc < 6) || (slash->argc > 7))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
+
 	unsigned int dest_node = atoi(slash->argv[2]);
 	unsigned int netmask = atoi(slash->argv[3]);
 	char * interface = slash->argv[4];
@@ -249,7 +269,9 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 	if ((slash->argc < 3) || (slash->argc > 5))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
 
 	unsigned int timeout = 1000;
 	if (slash->argc >= 4)
@@ -300,7 +322,10 @@ static int slash_csp_cmp_peek(struct slash *slash)
 	if ((slash->argc < 4) || (slash->argc > 5))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
+
 	unsigned int address;
 	sscanf(slash->argv[2], "%x", &address);
 	unsigned int len = atoi(slash->argv[3]);
@@ -332,7 +357,10 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	if ((slash->argc < 4) || (slash->argc > 5))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
+
 	unsigned int address;
 	sscanf(slash->argv[2], "%x", &address);
 	unsigned int timeout = 1000;
@@ -367,7 +395,10 @@ static int slash_csp_cmp_time(struct slash *slash)
 	if ((slash->argc < 3) || (slash->argc > 4))
 		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
+	unsigned int node = known_hosts_get_node(slash->argv[1]);
+	if (node == 0)
+		node = atoi(slash->argv[1]);
+		
 	int timestamp = atoi(slash->argv[2]);
 	unsigned int timeout = 1000;
 	if (slash->argc > 3)

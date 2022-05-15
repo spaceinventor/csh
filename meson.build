@@ -42,6 +42,7 @@ csh_sources = [
 	'src/spaceboot_slash.c',
 	'src/nav.c',
 	'src/serial.c',
+	'src/known_hosts.c',
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])

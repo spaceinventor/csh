@@ -346,7 +346,8 @@ static int slash_csp_program(struct slash * slash) {
 
 	int index = 0;
 	if (bin_info.count > 1) {
-		char * c = slash_readline(slash, "Type number to select file: ");
+		printf("Type number to select file: ");
+		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
 	        return SLASH_EUSAGE;
@@ -364,7 +365,8 @@ static int slash_csp_program(struct slash * slash) {
 	}
     printf("\n");
 
-	char * c = slash_readline(slash, "Type 'yes' + enter to continue: ");
+	printf("Type 'yes' + enter to continue: ");
+	char * c = slash_readline(slash);
     
     if (strcmp(c, "yes") != 0) {
         printf("Abort\n");
