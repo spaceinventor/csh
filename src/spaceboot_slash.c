@@ -435,7 +435,8 @@ static int slash_sps(struct slash * slash) {
 
 	int index = 0;
 	if (bin_info.count > 1) {
-		char * c = slash_readline(slash, "Type number to select file: ");
+		printf("Type number to select file: ");
+		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
 	        return SLASH_EUSAGE;
