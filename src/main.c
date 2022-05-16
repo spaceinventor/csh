@@ -44,21 +44,31 @@ int slash_prompt(struct slash * slash) {
 	slash_write(slash, info.nodename, strlen(info.nodename));
 	len += strlen(info.nodename);
 	
-	prompt = "\e[0;38;5;22;48;5;240;22m \e[0;38;5;252;48;5;240;1m";
-	slash_write(slash, prompt, strlen(prompt));
-	len += 2;
-
 	extern int param_slash_node;
-	char nodebuf[20];
-	if (known_hosts_get_name(param_slash_node, nodebuf, sizeof(nodebuf)) == 0) {
-		snprintf(nodebuf, 20, "%d", param_slash_node);
-	}
-	slash_write(slash, nodebuf, strlen(nodebuf));
-	len += strlen(nodebuf);
+	
+	if (param_slash_node == 0) {
 
-	prompt = " \e[0;38;5;240;49;22m \e[0m";
-	slash_write(slash, prompt, strlen(prompt));
-	len += 3;
+		prompt = " \e[0m\e[0;38;5;22m \e[0m";
+		slash_write(slash, prompt, strlen(prompt));
+		len += 3;
+
+	} else {
+		prompt = " \e[0;38;5;22;48;5;240;22m \e[0;38;5;252;48;5;240;1m";
+		slash_write(slash, prompt, strlen(prompt));
+		len += 3;
+
+		char nodebuf[20];
+		if (known_hosts_get_name(param_slash_node, nodebuf, sizeof(nodebuf)) == 0) {
+			snprintf(nodebuf, 20, "%d", param_slash_node);
+		}
+		slash_write(slash, nodebuf, strlen(nodebuf));
+		len += strlen(nodebuf);
+
+		prompt = " \e[0;38;5;240;49;22m \e[0m";
+		slash_write(slash, prompt, strlen(prompt));
+		len += 3;
+
+	}
 
 	return len;
 
