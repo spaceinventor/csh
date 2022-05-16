@@ -5,6 +5,7 @@
 #include <sys/utsname.h>
 
 #include <slash/slash.h>
+#include <slash/dflopt.h>
 
 #include <csp/csp.h>
 #include <csp/csp_yaml.h>
@@ -43,10 +44,8 @@ int slash_prompt(struct slash * slash) {
 	uname(&info);
 	slash_write(slash, info.nodename, strlen(info.nodename));
 	len += strlen(info.nodename);
-	
-	extern int param_slash_node;
-	
-	if (param_slash_node == 0) {
+		
+	if (slash_dfl_node == 0) {
 
 		prompt = " \e[0m\e[0;38;5;22m \e[0m";
 		slash_write(slash, prompt, strlen(prompt));
@@ -58,8 +57,8 @@ int slash_prompt(struct slash * slash) {
 		len += 3;
 
 		char nodebuf[20];
-		if (known_hosts_get_name(param_slash_node, nodebuf, sizeof(nodebuf)) == 0) {
-			snprintf(nodebuf, 20, "%d", param_slash_node);
+		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)) == 0) {
+			snprintf(nodebuf, 20, "%d", slash_dfl_node);
 		}
 		slash_write(slash, nodebuf, strlen(nodebuf));
 		len += strlen(nodebuf);
