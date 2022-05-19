@@ -8,6 +8,8 @@
 #include <string.h>
 
 #include <slash/slash.h>
+#include <slash/dflopt.h>
+#include <slash/optparse.h>
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_client.h>
@@ -73,16 +75,29 @@ static void reset_to_flash(int node, int flash, int times, int type) {
 }
 
 static int slash_csp_switch(struct slash * slash) {
-	if (slash->argc < 3)
-		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
-	unsigned int slot = atoi(slash->argv[2]);
 
+	unsigned int node = slash_dfl_node;
 	unsigned int times = 1;
-	if (slash->argc > 3) {
-		times = atoi(slash->argv[3]);
+
+    optparse_t * parser = optparse_new("switch", "<slot>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 'c', "count", "NUM", 0, &times, "number of times to boot into this slow (deafult = 1)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Expect slot */
+	if (++argi >= slash->argc) {
+		printf("missing slot number\n");
+		return SLASH_EINVAL;
 	}
+
+	unsigned int slot = atoi(slash->argv[argi]);
 
 	int type = 0;
 	if (slot >= 2)
@@ -93,7 +108,7 @@ static int slash_csp_switch(struct slash * slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(switch, slash_csp_switch, "<node> <slot> [times]", "switch");
+slash_command(switch, slash_csp_switch, "<slot>", "switch");
 
 static vmem_list_t vmem_list_find(int node, int timeout, char * name, int namelen) {
 	vmem_list_t ret = {};
@@ -247,8 +262,8 @@ static void walk_dir(char * path, size_t path_size, unsigned depth,
 		// Save path length
 		size_t path_len = strlen(path);
 
-		strncat(path, "/", path_size);
-		strncat(path, entry->d_name, path_size);
+		strncat(path, "/", path_size - strlen(path));
+		strncat(path, entry->d_name, path_size - strlen(path));
 
 		// entry->d_type is not set on some file systems, like sshfs mount of si
 		lstat(path, &stat_info);
@@ -297,12 +312,45 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 }
 
 static int slash_csp_program(struct slash * slash) {
-	if (!((slash->argc == 3) || (slash->argc == 4)))
-		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
-	unsigned int slot = atoi(slash->argv[2]);
-	char * arg_path = (slash->argc >= 4) ? slash->argv[3] : 0;
+	unsigned int node = slash_dfl_node;
+	char * filename = NULL;
+
+    optparse_t * parser = optparse_new("program", "<slot>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO");
+
+	/* RDPOPT */
+	unsigned int window = 3;
+	unsigned int conn_timeout = 10000;
+	unsigned int packet_timeout = 5000;
+	unsigned int ack_timeout = 2000;
+	unsigned int ack_count = 2;
+	optparse_add_unsigned(parser, 'w', "window", "NUM", 0, &window, "rdp window (default = 3 packets)");
+	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10 seconds)");
+	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5 seconds)");
+	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2 seconds)");
+	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &ack_count, "rdp ack for each (default = 2 packets)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	printf("Setting rdp options: %u %u %u %u %u\n", window, conn_timeout, packet_timeout, ack_timeout, ack_count);
+	csp_rdp_set_opt(window, conn_timeout, packet_timeout, 1, ack_timeout, ack_count);
+
+	printf("node 1 %d\n", slash_dfl_node);
+
+	/* Expect slot */
+	if (++argi >= slash->argc) {
+		printf("missing slot number\n");
+		return SLASH_EINVAL;
+	}
+
+	unsigned int slot = atoi(slash->argv[argi]);
 
 	char vmem_name[5];
 	snprintf(vmem_name, 5, "fl%u", slot);
@@ -319,8 +367,8 @@ static int slash_csp_program(struct slash * slash) {
 		printf("    Size: %u\n", vmem.size);
 	}
 
-	if (arg_path) {
-		strncpy(bin_info.entries[0], arg_path, BIN_PATH_MAX_SIZE);
+	if (filename) {
+		strncpy(bin_info.entries[0], filename, BIN_PATH_MAX_SIZE);
 		bin_info.count = 0;
 	}
 	else {
@@ -329,8 +377,9 @@ static int slash_csp_program(struct slash * slash) {
 		bin_info.addr_min = vmem.vaddr;
 		bin_info.addr_max = vmem.vaddr + vmem.size;
 		bin_info.count = 0;
-		walk_dir(wpath, BIN_PATH_MAX_SIZE, 10, dir_callback, file_callback, &bin_info);
-		
+			printf("node 3 %d\n", slash_dfl_node);
+		walk_dir(wpath, BIN_PATH_MAX_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
+			printf("node 4 %d\n", slash_dfl_node);
 		if (bin_info.count) {
 			for (unsigned i = 0; i < bin_info.count; i++) {
 				printf("  %u: %s\n", i, bin_info.entries[i]);
@@ -343,6 +392,8 @@ static int slash_csp_program(struct slash * slash) {
 			return SLASH_EINVAL;
 		}
 	}
+
+	printf("node 2 %d\n", slash_dfl_node);
 
 	int index = 0;
 	if (bin_info.count > 1) {
@@ -385,12 +436,49 @@ slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program")
 
 
 static int slash_sps(struct slash * slash) {
-	if (slash->argc < 4)
-		return SLASH_EUSAGE;
 
-	unsigned int node = atoi(slash->argv[1]);
-	unsigned int from = atoi(slash->argv[2]);
-	unsigned int to = atoi(slash->argv[3]);
+	unsigned int node = slash_dfl_node;
+
+    optparse_t * parser = optparse_new("program", "<slot>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+
+	/* RDPOPT */
+	unsigned int window = 3;
+	unsigned int conn_timeout = 10000;
+	unsigned int packet_timeout = 5000;
+	unsigned int ack_timeout = 2000;
+	unsigned int ack_count = 2;
+	optparse_add_unsigned(parser, 'w', "window", "NUM", 0, &window, "rdp window (default = 3 packets)");
+	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10 seconds)");
+	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5 seconds)");
+	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2 seconds)");
+	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &ack_count, "rdp ack for each (default = 2 packets)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	printf("Setting rdp options: %u %u %u %u %u\n", window, conn_timeout, packet_timeout, ack_timeout, ack_count);
+	csp_rdp_set_opt(window, conn_timeout, packet_timeout, 1, ack_timeout, ack_count);
+
+	/* Expect from slot */
+	if (++argi >= slash->argc) {
+		printf("missing from number\n");
+		return SLASH_EINVAL;
+	}
+
+	unsigned int from = atoi(slash->argv[argi]);
+
+	/* Expect to slot */
+	if (++argi >= slash->argc) {
+		printf("missing to number\n");
+		return SLASH_EINVAL;
+	}
+
+	unsigned int to = atoi(slash->argv[argi]);
 
 	int type = 0;
 	if (from >= 2)

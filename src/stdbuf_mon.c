@@ -17,6 +17,8 @@
 #include <sys/types.h>
 #include <csp/csp_cmp.h>
 #include <slash/slash.h>
+#include <slash/dflopt.h>
+#include <slash/optparse.h>
 
 
 
@@ -82,15 +84,22 @@ static int stdbuf_get(uint16_t node, uint32_t base, int from, int to, int timeou
 
 static int stdbuf_mon_slash(struct slash *slash) {
 
-	if (slash->argc < 2)
-		return SLASH_EUSAGE;
 
-	int version = 2;
-	uint16_t node = atoi(slash->argv[1]);
-    if (slash->argc >= 3)
-        version = atoi(slash->argv[2]);
+    unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
+	unsigned int version = 2;
 
-    printf("Using paramver %u\n", version);
+    optparse_t * parser = optparse_new("stdbuf2", "");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "paramversion (default = 2)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	/* Pull buffer */
 	char pull_buf[25];
