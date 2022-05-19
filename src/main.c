@@ -14,6 +14,7 @@
 #include <param/param_list.h>
 #include <param/param_server.h>
 #include <param/param_collector.h>
+#include <param/param_queue.h>
 
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
@@ -35,39 +36,75 @@ VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 int slash_prompt(struct slash * slash) {
 
 	int len = 0;
+	int fore = 255;
+	int back = 33;
 
-	char * prompt = "\e[0;38;5;231;48;5;22;1m ";
-	slash_write(slash, prompt, strlen(prompt));
+	fflush(stdout);
+	printf("\e[0;38;5;%u;48;5;%u;1m ", fore, back);
 	len += 1;
 
 	struct utsname info;
 	uname(&info);
-	slash_write(slash, info.nodename, strlen(info.nodename));
+	printf("%s", info.nodename);
 	len += strlen(info.nodename);
 		
-	if (slash_dfl_node == 0) {
+	if (slash_dfl_node != 0) {
 
-		prompt = " \e[0m\e[0;38;5;22m \e[0m";
-		slash_write(slash, prompt, strlen(prompt));
-		len += 3;
-
-	} else {
-		prompt = " \e[0;38;5;22;48;5;240;22m \e[0;38;5;252;48;5;240;1m";
-		slash_write(slash, prompt, strlen(prompt));
+		fore = back;
+		back = 240;
+		printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+		fore = 255;
+		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
 		len += 3;
 
 		char nodebuf[20];
 		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)) == 0) {
 			snprintf(nodebuf, 20, "%d", slash_dfl_node);
 		}
-		slash_write(slash, nodebuf, strlen(nodebuf));
+		printf("%s", nodebuf);
 		len += strlen(nodebuf);
 
-		prompt = " \e[0;38;5;240;49;22m \e[0m";
-		slash_write(slash, prompt, strlen(prompt));
+	}
+
+	extern param_queue_t param_queue;
+	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
+
+		fore = back;
+		back = 34;
+		printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+		fore = 255;
+		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
 		len += 3;
 
+		printf("\u2193 %s", param_queue.name);
+		len += 2 + strlen(param_queue.name);
+
 	}
+
+	extern param_queue_t param_queue;
+	if (param_queue.type == PARAM_QUEUE_TYPE_SET) {
+
+		fore = back;
+		back = 124;
+		printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+		fore = 255;
+		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+		len += 3;
+
+		printf("\u2191 %s", param_queue.name);
+		len += 2 + strlen(param_queue.name);
+
+	}
+
+	/* End of breadcrumb */
+	fore = back;
+	printf(" \e[0m\e[0;38;5;%um \e[0m", fore);
+	len += 3;
+
+
+
+
+	fflush(stdout);
 
 	return len;
 
