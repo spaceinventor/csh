@@ -29,6 +29,8 @@
 #include <csp/csp_hooks.h>
 #include <sys/types.h>
 #include <slash/slash.h>
+#include <slash/optparse.h>
+#include <slash/dflopt.h>
 #include "base16.h"
 #include "known_hosts.h"
 
@@ -48,20 +50,22 @@ slash_command(info, slash_csp_info, NULL, "Show CSP info");
 
 static int slash_csp_ping(struct slash *slash)
 {
-	if ((slash->argc <= 1) || (slash->argc > 4))
-		return SLASH_EUSAGE;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);	
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
+    unsigned int size = 0;
 
-	unsigned int timeout = 1000;
-	if (slash->argc >= 3)
-		timeout = atoi(slash->argv[2]);
+    optparse_t * parser = optparse_new("ping", "");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+	optparse_add_unsigned(parser, 's', "size", "NUM", 0, &size, "size (default = 0)");
 
-	unsigned int size = 1;
-	if (slash->argc >= 4)
-		size = atoi(slash->argv[3]);
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	slash_printf(slash, "Ping node %u size %u timeout %u: ", node, size, timeout);
 
@@ -80,12 +84,18 @@ slash_command(ping, slash_csp_ping, "<node> [timeout] [size]", "Ping a system");
 
 static int slash_csp_reboot(struct slash *slash)
 {
-	if (slash->argc != 2)
-		return SLASH_EUSAGE;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	unsigned int node = slash_dfl_node;
+
+    optparse_t * parser = optparse_new("reboot", "");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	csp_reboot(node);
 
@@ -94,98 +104,71 @@ static int slash_csp_reboot(struct slash *slash)
 
 slash_command(reboot, slash_csp_reboot, "<node>", "Reboot a node");
 
-static int slash_csp_ps(struct slash *slash)
-{
-	if ((slash->argc < 2) || (slash->argc > 3))
-		return SLASH_EUSAGE;
-
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
-
-	unsigned int timeout = 1000;
-	if (slash->argc >= 3)
-		timeout = atoi(slash->argv[2]);
-
-	csp_ps(node, timeout);
-
-	return SLASH_SUCCESS;
-}
-
-slash_command(ps, slash_csp_ps, "<node> [timeout]", "Process list");
-
-static int slash_csp_memfree(struct slash *slash)
-{
-	if ((slash->argc < 2) || (slash->argc > 3))
-		return SLASH_EUSAGE;
-
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
-
-	unsigned int timeout = 1000;
-	if (slash->argc >= 3)
-		timeout = atoi(slash->argv[2]);
-
-	csp_memfree(node, timeout);
-
-	return SLASH_SUCCESS;
-}
-
-slash_command(memfree, slash_csp_memfree, "<node> [timeout]", "Memfree");
-
 static int slash_csp_buffree(struct slash *slash)
 {
-	if ((slash->argc < 2) || (slash->argc > 3))
-		return SLASH_EUSAGE;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
 
-	unsigned int timeout = 1000;
-	if (slash->argc >= 3)
-		timeout = atoi(slash->argv[2]);
+    optparse_t * parser = optparse_new("ping", "");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	csp_buf_free(node, timeout);
 
 	return SLASH_SUCCESS;
 }
 
-slash_command(buffree, slash_csp_buffree, "<node> [timeout]", "Memfree");
+slash_command(buffree, slash_csp_buffree, "", "");
 
 static int slash_csp_uptime(struct slash *slash)
 {
-	if ((slash->argc < 2) || (slash->argc > 3))
-		return SLASH_EUSAGE;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
 
-	unsigned int timeout = 1000;
-	if (slash->argc >= 3)
-		timeout = atoi(slash->argv[2]);
+    optparse_t * parser = optparse_new("uptime", "");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	csp_uptime(node, timeout);
 
 	return SLASH_SUCCESS;
 }
 
-slash_command(uptime, slash_csp_uptime, "<node> [timeout]", "Memfree");
+slash_command(uptime, slash_csp_uptime, "", "");
 
 static int slash_csp_cmp_ident(struct slash *slash)
 {
-	if ((slash->argc < 2) || (slash->argc > 3))
-		return SLASH_EUSAGE;
+	
+	
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+    optparse_t * parser = optparse_new("ident", "");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
-	unsigned int timeout = 1000;
-	if (slash->argc >= 3)
-		timeout = atoi(slash->argv[2]);
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	struct csp_cmp_message msg;
 	msg.type = CSP_CMP_REQUEST;
@@ -229,22 +212,58 @@ slash_command(ident, slash_csp_cmp_ident, "<node> [timeout]", "Ident");
 
 static int slash_csp_cmp_route_set(struct slash *slash)
 {
-	if ((slash->argc < 6) || (slash->argc > 7))
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
+
+    optparse_t * parser = optparse_new("route_set", "<dest_node> <netmask> <interface>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Expect dest_node */
+	if (++argi >= slash->argc) {
+		printf("missing dest_node\n");
+		return SLASH_EINVAL;
+	}
+
+	char * endptr;
+	unsigned int dest_node = strtoul(slash->argv[argi], &endptr, 10);
+	if (*endptr != '\0') {
+		printf("Failed to parse dest_node\n");
 		return SLASH_EUSAGE;
+	}
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	/* Expect netmask */
+	if (++argi >= slash->argc) {
+		printf("missing netmask\n");
+		return SLASH_EINVAL;
+	}
 
-	unsigned int dest_node = atoi(slash->argv[2]);
-	unsigned int netmask = atoi(slash->argv[3]);
-	char * interface = slash->argv[4];
-	unsigned int next_hop_via = atoi(slash->argv[5]);
-	unsigned int timeout = 1000;
-	if (slash->argc >= 7)
-		timeout = atoi(slash->argv[6]);
+	unsigned int netmask = strtoul(slash->argv[argi], &endptr, 10);
+	if (*endptr != '\0') {
+		printf("Failed to parse netmask\n");
+		return SLASH_EUSAGE;
+	}
+
+	/* Expect ifname */
+	if (++argi >= slash->argc) {
+		printf("missing interface name\n");
+		return SLASH_EINVAL;
+	}
+
+	char * interface = slash->argv[argi];
+
+	unsigned int next_hop_via = 255;
 
 	struct csp_cmp_message message;
+
+	printf("node %d, timeout %d, dest_node %d, netmask %d, ifname %s\n", node, timeout, dest_node, netmask, interface);
 
 	message.route_set_v2.dest_node = htobe16(dest_node);
 	message.route_set_v2.next_hop_via = htobe16(next_hop_via);
@@ -261,25 +280,37 @@ static int slash_csp_cmp_route_set(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(route_set, slash_csp_cmp_route_set, "<node> <dest_node> <netmask> <interface> <mac> [timeout]", "Route set");
+slash_command(route_set, slash_csp_cmp_route_set, "<dest_node> <netmask> <interface>", "Route set");
 
 
 static int slash_csp_cmp_ifstat(struct slash *slash)
 {
-	if ((slash->argc < 3) || (slash->argc > 5))
-		return SLASH_EUSAGE;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
 
-	unsigned int timeout = 1000;
-	if (slash->argc >= 4)
-		timeout = atoi(slash->argv[3]);
+    optparse_t * parser = optparse_new("ifstat", "<ifname>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Expect ifname */
+	if (++argi >= slash->argc) {
+		printf("missing interface name\n");
+		return SLASH_EINVAL;
+	}
+
+	char * interface = slash->argv[argi];
 
 	struct csp_cmp_message message;
 
-	strncpy(message.if_stats.interface, slash->argv[2], CSP_CMP_ROUTE_IFACE_LEN - 1);
+	strncpy(message.if_stats.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
 
 	if (csp_cmp_if_stats(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
@@ -319,59 +350,107 @@ slash_command(ifstat, slash_csp_cmp_ifstat, "<node> <interface> [timeout]", "Ide
 
 static int slash_csp_cmp_peek(struct slash *slash)
 {
-	if ((slash->argc < 4) || (slash->argc > 5))
+
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
+
+    optparse_t * parser = optparse_new("peek", "<addr> <len>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Expect address */
+	if (++argi >= slash->argc) {
+		printf("missing address\n");
+		return SLASH_EINVAL;
+	}
+
+	char * endptr;
+	uint32_t address = strtoul(slash->argv[argi], &endptr, 16);
+	if (*endptr != '\0') {
+		printf("Failed to parse address\n");
 		return SLASH_EUSAGE;
+	}
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	
+	/* Expect length */
+	if (++argi >= slash->argc) {
+		printf("missing length\n");
+		return SLASH_EINVAL;
+	}
 
-	unsigned int address;
-	sscanf(slash->argv[2], "%x", &address);
-	unsigned int len = atoi(slash->argv[3]);
-
-	unsigned int timeout = 1000;
-	if (slash->argc > 4)
-		timeout = atoi(slash->argv[4]);
+	unsigned int length = strtoul(slash->argv[argi], &endptr, 10);
+	if (*endptr != '\0') {
+		printf("Failed to parse length\n");
+		return SLASH_EUSAGE;
+	}
 
 	struct csp_cmp_message message;
 
 	message.peek.addr = htobe32(address);
-	message.peek.len = len;
+	message.peek.len = length;
 
 	if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
 		return SLASH_EINVAL;
 	}
 
-	printf("Peek at address %p len %u\n", (void *) (intptr_t) address, len);
-	csp_hex_dump(NULL, message.peek.data, len);
+	printf("Peek at address %p len %u\n", (void *) (intptr_t) address, length);
+	csp_hex_dump(NULL, message.peek.data, length);
 
 	return SLASH_SUCCESS;
 }
 
-slash_command(peek, slash_csp_cmp_peek, "<node> <address> <len> [timeout]", "Peek");
+slash_command(peek, slash_csp_cmp_peek, "<address> <len>", "Peek");
 
 static int slash_csp_cmp_poke(struct slash *slash)
 {
-	if ((slash->argc < 4) || (slash->argc > 5))
+	
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
+
+    optparse_t * parser = optparse_new("poke", "<addr> <data base16>");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Expect address */
+	if (++argi >= slash->argc) {
+		printf("missing address\n");
+		return SLASH_EINVAL;
+	}
+
+	char * endptr;
+	uint32_t address = strtoul(slash->argv[argi], &endptr, 16);
+	if (*endptr != '\0') {
+		printf("Failed to parse address\n");
 		return SLASH_EUSAGE;
+	}
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
+	/* Expect data */
+	if (++argi >= slash->argc) {
+		printf("missing data\n");
+		return SLASH_EINVAL;
+	}
 
-	unsigned int address;
-	sscanf(slash->argv[2], "%x", &address);
-	unsigned int timeout = 1000;
-	if (slash->argc > 4)
-		timeout = atoi(slash->argv[4]);
 
 	struct csp_cmp_message message;
 
 	message.poke.addr = htobe32(address);
 
-	int outlen = base16_decode(slash->argv[3], (uint8_t *) message.poke.data);
+	int outlen = base16_decode(slash->argv[argi], (uint8_t *) message.poke.data);
 
 	message.poke.len = outlen;
 
@@ -388,28 +467,38 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(poke, slash_csp_cmp_poke, "<node> <address> <data> [timeout]", "Poke");
+slash_command(poke, slash_csp_cmp_poke, "<address> <data>", "Poke");
 
 static int slash_csp_cmp_time(struct slash *slash)
 {
-	if ((slash->argc < 3) || (slash->argc > 4))
-		return SLASH_EUSAGE;
+	unsigned int node = slash_dfl_node;
+    unsigned int timeout = slash_dfl_timeout;
+	int sync = 0;
 
-	unsigned int node = known_hosts_get_node(slash->argv[1]);
-	if (node == 0)
-		node = atoi(slash->argv[1]);
-		
-	int timestamp = atoi(slash->argv[2]);
-	unsigned int timeout = 1000;
-	if (slash->argc > 3)
-		timeout = atoi(slash->argv[3]);
+    optparse_t * parser = optparse_new("time", "[timestamp]");
+    optparse_add_help(parser);
+	optparse_add_set(parser, 's', "sync", 1, &sync, "sync time");
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Optional timestamp */
+	int timestamp = 0;
+	if (++argi < slash->argc) {
+		timestamp = atoi(slash->argv[argi]);
+	}
+	
 	struct csp_cmp_message message;
 
 	csp_timestamp_t localtime;
 	csp_clock_get_time(&localtime);
 
-	if (timestamp == -1) {
+	if (sync) {
 		message.clock.tv_sec = htobe32(localtime.tv_sec);
 		message.clock.tv_nsec = htobe32(localtime.tv_nsec);
 	} else {
@@ -434,22 +523,3 @@ static int slash_csp_cmp_time(struct slash *slash)
 }
 
 slash_command(time, slash_csp_cmp_time, "<node> <timestamp (0 GET, -1 SETLOCAL)> [timeout]", "Time");
-
-static int slash_csp_rdpopt(struct slash *slash)
-{
-	if (slash->argc < 6)
-		return SLASH_EUSAGE;
-
-	unsigned int window = atoi(slash->argv[1]);
-	unsigned int conn_timeout = atoi(slash->argv[2]);
-	unsigned int packet_timeout = atoi(slash->argv[3]);
-	unsigned int ack_timeout = atoi(slash->argv[4]);
-	unsigned int ack_count = atoi(slash->argv[5]);
-
-	printf("Setting rdp options: %u %u %u %u %u\n", window, conn_timeout, packet_timeout, ack_timeout, ack_count);
-	csp_rdp_set_opt(window, conn_timeout, packet_timeout, 1, ack_timeout, ack_count);
-
-	return SLASH_SUCCESS;
-}
-
-slash_command(rdpopt, slash_csp_rdpopt, "<window> <conn_to> <packet_to> <ack_to> <ack_count>", NULL);
