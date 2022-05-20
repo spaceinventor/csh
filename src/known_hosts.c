@@ -63,6 +63,9 @@ int known_hosts_get_name(int find_host, char * name, int buflen) {
 
 int known_hosts_get_node(char * find_name) {
 
+    if (find_name == NULL)
+        return 0;
+
     for (int i = 0; i < MAX_HOSTS; i++) {
 
         if (strncmp(find_name, known_hosts[i].name, MAX_NAMELEN) == 0) {
