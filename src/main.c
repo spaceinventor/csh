@@ -286,6 +286,18 @@ int main(int argc, char **argv) {
 		param_sniffer_init();
 	}
 
+	/** Persist hosts file */
+	char * homedir = getenv("HOME");
+    char path[100];
+
+	if (strlen(homedir)) {
+        snprintf(path, 100, "%s/csh_hosts", homedir);
+    } else {
+        snprintf(path, 100, "csh_hosts");
+    }
+
+	slash_run(slash, path);
+
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
 		char ex[LINE_SIZE] = {};

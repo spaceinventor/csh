@@ -7,83 +7,55 @@
 #include <string.h>
 
 #include <slash/slash.h>
+#include <slash/optparse.h>
+#include <slash/dflopt.h>
 
-void known_hosts_add(int find_host, char * new_name) {
+#define MAX_HOSTS 100
+#define MAX_NAMELEN 50
 
-    char * dirname = getenv("HOME");
-    char oldpath[100];
-    char newpath[100];
+struct host_s {
+    int node;
+    char name[MAX_NAMELEN];
+} known_hosts[100];
 
-	if (strlen(dirname)) {
-        snprintf(oldpath, 100, "%s/csh_hosts", dirname);
-        snprintf(newpath, 100, "%s/csh_hosts.new", dirname);
-    } else {
-        snprintf(oldpath, 100, "csh_hosts");
-        snprintf(newpath, 100, "csh_hosts.new");
+void known_hosts_del(int host) {
+
+    for (int i = 0; i < MAX_HOSTS; i++) {
+
+        if (known_hosts[i].node == host) {
+            known_hosts[i].node = 0;
+        }
+
     }
 
-    /* Read from file */
-	FILE * old = fopen(oldpath, "r");
+}
 
-    /* Read from file */
-	FILE * new = fopen(newpath, "w");
-	if (new == NULL) {
-        if (old != NULL)
-            fclose(old);
-		return;
-    }
+void known_hosts_add(int addr, char * new_name) {
 
-    if (old != NULL) {
-        int host;
-        char name[20];
-        while(fscanf(old, "%d,%20s\n", &host, name) == 2) {
-            if (find_host != host) {
-                fprintf(new, "%d,%s\n", host, name);
-            }
+    known_hosts_del(addr);
+
+    /* Search for empty slot */
+    for (int i = 0; i < MAX_HOSTS; i++) {
+        if (known_hosts[i].node == 0) {
+            known_hosts[i].node = addr;
+            strncpy(known_hosts[i].name, new_name, MAX_NAMELEN);
+            break;
         }
     }
-
-    fprintf(new, "%d,%20s\n", find_host, new_name);
-
-    if (old != NULL)
-        fclose(old);
-    
-    fclose(new);
-
-    remove(oldpath);
-    rename(newpath, oldpath);
 
 }
 
 int known_hosts_get_name(int find_host, char * name, int buflen) {
 
-    if (buflen < 20) {
-        return 0;
-    }
+    for (int i = 0; i < MAX_HOSTS; i++) {
 
-    char * dirname = getenv("HOME");
-    char path[100];
-
-	if (strlen(dirname)) {
-        snprintf(path, 100, "%s/csh_hosts", dirname);
-    } else {
-        snprintf(path, 100, "csh_hosts");
-    }
-
-    /* Read from file */
-	FILE * stream = fopen(path, "r");
-	if (stream == NULL)
-		return 0;
-
-    int host;
-    while(fscanf(stream, "%d,%20s\n", &host, name) == 2) {
-        if (find_host == host) {
-            fclose(stream);
+        if (known_hosts[i].node == find_host) {
+            strncpy(name, known_hosts[i].name, buflen);
             return 1;
         }
+
     }
 
-    fclose(stream);
     return 0;
 
 }
@@ -91,6 +63,24 @@ int known_hosts_get_name(int find_host, char * name, int buflen) {
 
 int known_hosts_get_node(char * find_name) {
 
+    for (int i = 0; i < MAX_HOSTS; i++) {
+
+        if (strncmp(find_name, known_hosts[i].name, MAX_NAMELEN) == 0) {
+            return known_hosts[i].node;
+        }
+
+    }
+
+    return 0;
+
+}
+
+
+static int cmd_node_save(struct slash *slash)
+{
+    
+    FILE * out = stdout;
+
     char * dirname = getenv("HOME");
     char path[100];
 
@@ -100,50 +90,70 @@ int known_hosts_get_node(char * find_name) {
         snprintf(path, 100, "csh_hosts");
     }
 
-    /* Read from file */
-	FILE * stream = fopen(path, "r");
-	if (stream == NULL)
-		return 0;
+    /* write to file */
+	FILE * fd = fopen(path, "w");
+    if (fd) {
+        out = fd;
+    }
 
-    int host;
-    char name[20];
-    while(fscanf(stream, "%d,%20s\n", &host, name) == 2) {
-        if (strcmp(find_name, name) == 0) {
-            fclose(stream);
-            return host;
+    /* Search for empty slot */
+    for (int i = 0; i < MAX_HOSTS; i++) {
+        if (known_hosts[i].node != 0) {
+            fprintf(out, "node add -n %d %s\n", known_hosts[i].node, known_hosts[i].name);
+            printf("node add -n %d %s\n", known_hosts[i].node, known_hosts[i].name);
         }
     }
 
-    fclose(stream);
-    return 0;
-
-}
-
-
-static int cmd_hosts(struct slash *slash)
-{
-	char * dirname = getenv("HOME");
-    char path[100];
-
-	if (strlen(dirname)) {
-        snprintf(path, 100, "%s/csh_hosts", dirname);
-    } else {
-        snprintf(path, 100, "csh_hosts");
+    if (fd) {
+        fclose(fd);
     }
 
-    /* Read from file */
-	FILE * stream = fopen(path, "r");
-	if (stream == NULL)
-		return 0;
 
-    int host;
-    char name[20];
-    while(fscanf(stream, "%d,%20s\n", &host, name) == 2) {
-        printf("%d\t%s\n", host, name);
-    }
-
-    fclose(stream);
     return SLASH_SUCCESS;
 }
 
-slash_command(hosts, cmd_hosts, NULL, NULL);
+slash_command_sub(node, save, cmd_node_save, NULL, NULL);
+
+
+static int cmd_nodes(struct slash *slash)
+{
+    /* Search for empty slot */
+    for (int i = 0; i < MAX_HOSTS; i++) {
+        if (known_hosts[i].node != 0) {
+            printf("node add -n %d %s\n", known_hosts[i].node, known_hosts[i].name);
+        }
+    }
+
+    return SLASH_SUCCESS;
+}
+
+slash_command_sub(node, list, cmd_nodes, NULL, NULL);
+
+static int cmd_hosts_add(struct slash *slash)
+{
+
+    int node = slash_dfl_node;
+
+    optparse_t * parser = optparse_new("hosts add", "<name>");
+    optparse_add_help(parser);
+    optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	/* Check if name is present */
+	if (++argi >= slash->argc) {
+		printf("missing parameter name\n");
+		return SLASH_EINVAL;
+	}
+
+	char * name = slash->argv[argi];
+
+    known_hosts_add(node, name);
+    return SLASH_SUCCESS;
+}
+
+slash_command_sub(node, add, cmd_hosts_add, NULL, NULL);
