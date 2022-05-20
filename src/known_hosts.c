@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <slash/slash.h>
+
 void known_hosts_add(int find_host, char * new_name) {
 
     char * dirname = getenv("HOME");
@@ -116,3 +118,32 @@ int known_hosts_get_node(char * find_name) {
     return 0;
 
 }
+
+
+static int cmd_hosts(struct slash *slash)
+{
+	char * dirname = getenv("HOME");
+    char path[100];
+
+	if (strlen(dirname)) {
+        snprintf(path, 100, "%s/csh_hosts", dirname);
+    } else {
+        snprintf(path, 100, "csh_hosts");
+    }
+
+    /* Read from file */
+	FILE * stream = fopen(path, "r");
+	if (stream == NULL)
+		return 0;
+
+    int host;
+    char name[20];
+    while(fscanf(stream, "%d,%20s\n", &host, name) == 2) {
+        printf("%d\t%s\n", host, name);
+    }
+
+    fclose(stream);
+    return SLASH_SUCCESS;
+}
+
+slash_command(hosts, cmd_hosts, NULL, NULL);
