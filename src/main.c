@@ -296,7 +296,7 @@ int main(int argc, char **argv) {
         snprintf(path, 100, "csh_hosts");
     }
 
-	slash_run(slash, path);
+	slash_run(slash, path, 0);
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
