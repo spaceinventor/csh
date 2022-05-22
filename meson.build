@@ -26,6 +26,7 @@ csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 gtk_dep = dependency('gtk4')
+adw_dep = dependency('libadwaita-1')
 
 csh_sources = [
 	'src/main.c',
@@ -44,18 +45,20 @@ csh_sources = [
 	'src/nav.c',
 	'src/serial.c',
 	'src/known_hosts.c',
-	'src/gtktest.c',
+	'src/ui/csh.c',
+	'src/ui/csh_window.c',
+	'src/ui/pages/welcome/csh-page-welcome.c',
 ]
 
 gnome = import('gnome')
 
-csh_sources += gnome.compile_resources('gresource', 'src/gresource.xml', source_dir: 'src', c_name: 'res')
+csh_sources += gnome.compile_resources('csh-resources', 'src/ui/csh.gresources.xml', source_dir: 'src/ui', c_name: 'csh')
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, gtk_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, gtk_dep, adw_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )

@@ -1,4 +1,5 @@
 #include <gtk/gtk.h>
+#include <libadwaita-1/adwaita.h>
 
 #include <slash/slash.h>
 
@@ -120,9 +121,3 @@ example_app_new(void) {
 						NULL);
 }
 
-static int cmd_gtk_test(struct slash * slash) {
-	g_application_run(G_APPLICATION(example_app_new()), slash->argc, slash->argv);
-	return SLASH_SUCCESS;
-}
-
-slash_command_sub(gtk, test, cmd_gtk_test, NULL, NULL);
