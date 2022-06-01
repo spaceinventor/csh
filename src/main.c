@@ -30,7 +30,6 @@ extern const char *version_string;
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
-VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
 int slash_prompt(struct slash * slash) {
@@ -208,10 +207,6 @@ int main(int argc, char **argv) {
 	
 	void serial_init(void);
 	serial_init();
-
-	/* Parameters */
-	vmem_file_init(&vmem_params);
-	param_list_store_vmem_load(&vmem_params);
 
 	static char hostname[100];
 	gethostname(hostname, 100);
