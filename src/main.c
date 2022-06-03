@@ -15,6 +15,7 @@
 #include <param/param_server.h>
 #include <param/param_collector.h>
 #include <param/param_queue.h>
+#include <param/param_commands.h>
 
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
@@ -30,6 +31,7 @@ extern const char *version_string;
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
+VMEM_DEFINE_FILE(commands, "col", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
 int slash_prompt(struct slash * slash) {
@@ -126,11 +128,6 @@ void usage(void) {
 
 void kiss_discard(char c, void * taskwoken) {
 	putchar(c);
-}
-
-void * param_collector_task(void * param) {
-	param_collector_loop(param);
-	return NULL;
 }
 
 void * router_task(void * param) {
@@ -264,12 +261,6 @@ int main(int argc, char **argv) {
 
 	vmem_file_init(&vmem_dummy);
 
-	/* Start a collector task */
-	vmem_file_init(&vmem_col);
-
-	static pthread_t param_collector_handle;
-	pthread_create(&param_collector_handle, NULL, &param_collector_task, NULL);
-
 	static pthread_t router_handle;
 	pthread_create(&router_handle, NULL, &router_task, NULL);
 
@@ -290,6 +281,9 @@ int main(int argc, char **argv) {
     } else {
         snprintf(path, 100, "csh_hosts");
     }
+
+	vmem_file_init(&vmem_commands);
+	param_command_server_init();
 
 	slash_run(slash, path, 0);
 

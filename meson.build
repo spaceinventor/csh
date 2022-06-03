@@ -13,11 +13,11 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 	'csp:port_max_bind=16',
 	'param:have_fopen=true', 
 	'param:slash=true', 
-	'param:commands=false',
+	'param:commands=true',
 	'param:scheduler=false',
-	'param:commands_client=false',
-	'param:scheduler_client=false',
-	'param:collector=true', 
+	'param:commands_client=true',
+	'param:scheduler_client=true',
+	'param:collector=false', 
 	'param:list_dynamic=true'])
 
 add_global_arguments('-I../include', language: 'c')
