@@ -14,7 +14,7 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 	'param:have_fopen=true', 
 	'param:slash=true', 
 	'param:commands=true',
-	'param:scheduler=false',
+	'param:scheduler=true',
 	'param:commands_client=true',
 	'param:scheduler_client=true',
 	'param:collector=false', 

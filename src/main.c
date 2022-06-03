@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/utsname.h>
+#include <time.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
@@ -16,6 +17,7 @@
 #include <param/param_collector.h>
 #include <param/param_queue.h>
 #include <param/param_commands.h>
+#include <param/param_scheduler.h>
 
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
@@ -31,7 +33,8 @@ extern const char *version_string;
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
-VMEM_DEFINE_FILE(commands, "col", "commands.vmem", 2048);
+VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
+VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
 int slash_prompt(struct slash * slash) {
@@ -112,6 +115,13 @@ int slash_prompt(struct slash * slash) {
 }
 
 
+uint64_t clock_get_nsec(void) {
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return ts.tv_sec * 1E9 + ts.tv_nsec;
+}
+
+
 void usage(void) {
 	printf("usage: csh -f conf.yaml [command]\n");
 	printf("\n");
@@ -140,6 +150,16 @@ void * vmem_server_task(void * param) {
 	vmem_server_loop(param);
 	return NULL;
 }
+
+
+void * onehz_task(void * param) {
+	while(1) {
+		param_schedule_server_update();
+		sleep(1);
+	}
+	return NULL;
+}
+
 	
 int main(int argc, char **argv) {
 
@@ -267,6 +287,9 @@ int main(int argc, char **argv) {
 	static pthread_t vmem_server_handle;
 	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
 
+	static pthread_t onehz_handle;
+	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
+
 	if (use_prometheus) {
 		prometheus_init();
 		param_sniffer_init();
@@ -284,6 +307,7 @@ int main(int argc, char **argv) {
 
 	vmem_file_init(&vmem_commands);
 	param_command_server_init();
+	param_schedule_server_init();
 
 	slash_run(slash, path, 0);
 
