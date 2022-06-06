@@ -25,6 +25,7 @@ add_global_arguments('-I../include', language: 'c')
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+libelf_dep = dependency('libelf', required: false)
 
 csh_sources = [
 	'src/main.c',
@@ -45,11 +46,15 @@ csh_sources = [
 	'src/known_hosts.c',
 ]
 
+if libelf_dep.found()
+	csh_sources += 'src/elfparse.c'
+endif
+
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )
