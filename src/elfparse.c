@@ -222,10 +222,11 @@ void elfparse_32arm(Elf * elf, intptr_t start, intptr_t stop, int verbose) {
         uint32_t docstr;
         uint32_t addr;
         uint32_t vmem;
-        uint32_t array_size;
+        int32_t array_size;
         uint32_t array_step;
         uint32_t callback_ptr;
         uint32_t timestamp;
+		uint32_t next;
     } param_format_1;
 
     /* Packing formats are different on different platforms */
@@ -347,12 +348,12 @@ void elfparse_32arm(Elf * elf, intptr_t start, intptr_t stop, int verbose) {
 static int elfparse(struct slash * slash) {
 
     int verbose = 4;
-    int param_parser = 0;
+    int param_parser = 1;
 
 	optparse_t * parser = optparse_new("elf param", "<file>");
 	optparse_add_help(parser);
     optparse_add_int(parser, 'v', "verbose", "LEVEL", 10, &verbose, "1 = normal, 2 = extra");
-    optparse_add_int(parser, 'p', "parser", "TYPE", 10, &param_parser, "0 = native, 1 = 32-bit (default)");
+    optparse_add_int(parser, 'p', "parser", "TYPE", 10, &param_parser, "0 = native, 1 = 32-bit (default), 2 = 32-bit + dyn");
 
 	int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
 	if (argi < 0) {
