@@ -1,0 +1,7 @@
+- name: "KISS"
+  driver: "kiss"
+  device: "/dev/ttyUSB0"
+  baudrate: 115200
+  addr: 10
+  netmask: 8
+  default: true
