@@ -1,5 +1,4 @@
-# Interfaces
-#
+
 - name: "ZMQ"
   driver: "zmq"
   server: "localhost"

@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/utsname.h>
+#include <time.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
@@ -15,6 +16,8 @@
 #include <param/param_server.h>
 #include <param/param_collector.h>
 #include <param/param_queue.h>
+#include <param/param_commands.h>
+#include <param/param_scheduler.h>
 
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
@@ -30,7 +33,8 @@ extern const char *version_string;
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
-VMEM_DEFINE_FILE(params, "param", "params.csv", 50000);
+VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
+VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
 int slash_prompt(struct slash * slash) {
@@ -111,6 +115,13 @@ int slash_prompt(struct slash * slash) {
 }
 
 
+uint64_t clock_get_nsec(void) {
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return ts.tv_sec * 1E9 + ts.tv_nsec;
+}
+
+
 void usage(void) {
 	printf("usage: csh -f conf.yaml [command]\n");
 	printf("\n");
@@ -129,11 +140,6 @@ void kiss_discard(char c, void * taskwoken) {
 	putchar(c);
 }
 
-void * param_collector_task(void * param) {
-	param_collector_loop(param);
-	return NULL;
-}
-
 void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
@@ -144,6 +150,16 @@ void * vmem_server_task(void * param) {
 	vmem_server_loop(param);
 	return NULL;
 }
+
+
+void * onehz_task(void * param) {
+	while(1) {
+		param_schedule_server_update();
+		sleep(1);
+	}
+	return NULL;
+}
+
 	
 int main(int argc, char **argv) {
 
@@ -209,10 +225,6 @@ int main(int argc, char **argv) {
 	void serial_init(void);
 	serial_init();
 
-	/* Parameters */
-	vmem_file_init(&vmem_params);
-	param_list_store_vmem_load(&vmem_params);
-
 	static char hostname[100];
 	gethostname(hostname, 100);
 
@@ -269,17 +281,14 @@ int main(int argc, char **argv) {
 
 	vmem_file_init(&vmem_dummy);
 
-	/* Start a collector task */
-	vmem_file_init(&vmem_col);
-
-	static pthread_t param_collector_handle;
-	pthread_create(&param_collector_handle, NULL, &param_collector_task, NULL);
-
 	static pthread_t router_handle;
 	pthread_create(&router_handle, NULL, &router_task, NULL);
 
 	static pthread_t vmem_server_handle;
 	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
+
+	static pthread_t onehz_handle;
+	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
 
 	if (use_prometheus) {
 		prometheus_init();
@@ -295,6 +304,10 @@ int main(int argc, char **argv) {
     } else {
         snprintf(path, 100, "csh_hosts");
     }
+
+	vmem_file_init(&vmem_commands);
+	param_command_server_init();
+	param_schedule_server_init();
 
 	slash_run(slash, path, 0);
 

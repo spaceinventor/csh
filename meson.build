@@ -13,11 +13,11 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 	'csp:port_max_bind=16',
 	'param:have_fopen=true', 
 	'param:slash=true', 
-	'param:commands=false',
-	'param:scheduler=false',
-	'param:commands_client=false',
-	'param:scheduler_client=false',
-	'param:collector=true', 
+	'param:commands=true',
+	'param:scheduler=true',
+	'param:commands_client=true',
+	'param:scheduler_client=true',
+	'param:collector=false', 
 	'param:list_dynamic=true'])
 
 add_global_arguments('-I../include', language: 'c')
@@ -25,6 +25,7 @@ add_global_arguments('-I../include', language: 'c')
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+libelf_dep = dependency('libelf', required: false)
 gtk_dep = dependency('gtk4')
 adw_dep = dependency('libadwaita-1')
 
@@ -50,6 +51,9 @@ csh_sources = [
 	'src/ui/pages/welcome/csh-page-welcome.c',
 ]
 
+if libelf_dep.found()
+	csh_sources += 'src/elfparse.c'
+endif
 gnome = import('gnome')
 
 csh_sources += gnome.compile_resources('csh-resources', 'src/ui/csh.gresources.xml', source_dir: 'src/ui', c_name: 'csh')
@@ -58,7 +62,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, gtk_dep, adw_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, gtk_dep, adw_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )
