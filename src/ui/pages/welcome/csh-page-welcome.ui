@@ -6,7 +6,7 @@
     <property name="child">
       <object class="AdwStatusPage">
         <property name="icon-name">satellite-svgrepo-com</property>
-        <property name="title" translatable="yes">Welcome to CSH UI Demo</property>
+        <property name="title" translatable="yes">Welcoeeeme to CSH UI Demo</property>
         <property name="description" translatable="yes">This is a test of writing GTK-4 user interface for CSH.</property>
       </object>
     </property>

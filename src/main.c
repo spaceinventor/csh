@@ -202,6 +202,7 @@ int main(int argc, char **argv) {
 	remain = argc - optind;
 	index = optind;
 
+
 	if (remain == 0) {
 		printf("\033[33m\n");
 		printf("  ***********************\n");
