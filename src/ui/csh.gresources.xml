@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/com/spaceinventor/csh">
-    <file preprocess="xml-stripblanks">csh_window.ui</file>
-    <file preprocess="xml-stripblanks">pages/welcome/csh-page-welcome.ui</file>
-    <file preprocess="xml-stripblanks">pages/whlctl/csh-page-whlctl.ui</file>
-    <file preprocess="xml-stripblanks" alias="icons/scalable/apps/satellite-svgrepo-com.svg">data/satellite-svgrepo-com.svg</file>
+    <file preprocess="xml-stripblanks">csh-page-whlctl.ui</file>
   </gresource>
 </gresources>
