@@ -44,10 +44,10 @@
                                                         </object>
                                                     </child>
                                                     <child>
-                                                        <object class="AdwActionRow" id="pidp">
+                                                        <object class="AdwActionRow">
                                                             <property name="title">Proportional gain</property>
                                                             <child>
-                                                                <object class="GtkSpinButton">
+                                                                <object class="GtkSpinButton" id="pidp">
                                                                     <property name="valign">center</property>
                                                                     <property name="value">0.02</property>
                                                                     <property name="digits">2</property>
@@ -65,10 +65,10 @@
                                                         </object>
                                                     </child>
                                                     <child>
-                                                        <object class="AdwActionRow" id="pidi">
+                                                        <object class="AdwActionRow">
                                                             <property name="title">Integral gain</property>
                                                             <child>
-                                                                <object class="GtkSpinButton">
+                                                                <object class="GtkSpinButton" id="pidi">
                                                                     <property name="valign">center</property>
                                                                     <property name="value">100</property>
                                                                     <property name="digits">2</property>
