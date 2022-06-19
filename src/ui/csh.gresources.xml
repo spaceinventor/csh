@@ -2,5 +2,6 @@
 <gresources>
   <gresource prefix="/com/spaceinventor/csh">
     <file preprocess="xml-stripblanks">csh-page-whlctl.ui</file>
+    <file preprocess="xml-stripblanks">si-param-label.ui</file>
   </gresource>
 </gresources>

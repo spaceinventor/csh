@@ -48,6 +48,7 @@ csh_sources = [
 	'src/known_hosts.c',
 	'src/ui/csh.c',
     'src/ui/csh-page-whlctl.c',
+    'src/ui/si-param-label.c',
 ]
 
 if libelf_dep.found()

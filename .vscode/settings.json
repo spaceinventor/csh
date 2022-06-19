@@ -2,9 +2,10 @@
 	"mesonbuild.buildFolder": "builddir",
 	"mesonbuild.configureOnOpen": false,
 	"files.associations": {
-		"*.h": "c",
-		"*.c": "c",
-	},
+        "*.h": "c",
+        "*.c": "c",
+        "random": "c"
+    },
 	"files.exclude": {
 		"**/.gitignore": true,
 		"**/.gitmodules": true,
