@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<interface domain="si">
+    <requires lib="gtk" version="4.0" />
+    <template class="SiParamLabel" parent="GtkWidget">
+        <child>
+            <object class="GtkLabel" id="label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label">Hesdfld</property>
+                <property name="use_markup">True</property>
+            </object>
+        </child>
+    </template>
+</interface>B
