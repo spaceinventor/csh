@@ -32,6 +32,55 @@
                                     <object class="GtkBox">
                                         <property name="spacing">12</property>
                                         <property name="orientation">vertical</property>
+                                        
+                                        
+                                        <child>
+                                            <object class="AdwPreferencesGroup">
+                                                <property name="title">GPS live data</property>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Timestamp</property>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">210</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Lattitude</property>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">215</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Longitude</property>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">216</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Number of sats</property>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">213</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+
+                                        
                                         <child>
                                             <object class="AdwPreferencesGroup">
                                                 <property name="title">Speed Controller</property>
@@ -87,20 +136,11 @@
                                                                 </child>
                                                             </object>
                                                         </child>
-                                                        <child>
-                                                            <object class="AdwActionRow">
-                                                                <property name="title">Parameter test</property>
-                                                                <child>
-                                                                    <object class="SiParamLabel" id="param2">
-                                                                        <property name="param_id">210</property>
-                                                                    </object>
-                                                                </child>
-                                                            </object>
-                                                        </child>
                                                     </object>
                                                 </child>
                                             </object>
                                         </child>
+
                                         <child>
                                             <object class="AdwPreferencesGroup">
                                                 <property name="title">Resume after reboot</property>

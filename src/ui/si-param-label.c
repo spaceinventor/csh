@@ -45,7 +45,6 @@ static void si_param_label_get_property(GObject * object, guint property_id, GVa
 }
 
 static void si_param_label_set_property(GObject * object, guint property_id, const GValue * value, GParamSpec * pspec) {
-    printf("set property\n");
     SiParamLabel * self = SI_PARAM_LABEL(object);
 	switch (property_id) {
 		case PROP_PARAM_ID:
@@ -88,7 +87,6 @@ static int time_handler(void * object) {
         return 1;
 
     param_t * param = param_list_find_id(220, self->param_id);
-    //printf("list find %p %d %d\n", param, 220, self->param_id);
     if (param == NULL)
         return 1;
 
@@ -103,5 +101,5 @@ static int time_handler(void * object) {
 
 static void si_param_label_init(SiParamLabel * self) {
 	gtk_widget_init_template(GTK_WIDGET(self));
-    g_timeout_add(200, time_handler, self);
+    g_timeout_add(1000, time_handler, self);
 }
