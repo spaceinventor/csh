@@ -49,6 +49,7 @@ csh_sources = [
 	'src/ui/csh.c',
     'src/ui/csh-page-whlctl.c',
     'src/ui/si-param-label.c',
+	'src/ui/si-param-button.c',
 ]
 
 if libelf_dep.found()

@@ -91,6 +91,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH0</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">0</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">0</property>
@@ -113,13 +124,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">0</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">0</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -130,6 +147,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH1</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">1</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">1</property>
@@ -152,13 +180,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">1</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">1</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -170,6 +204,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH2</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">2</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">2</property>
@@ -192,13 +237,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">2</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">2</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -210,6 +261,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH3</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">3</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">3</property>
@@ -232,13 +294,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">3</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">3</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -250,6 +318,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH4</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">4</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">4</property>
@@ -272,13 +351,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">4</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">4</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -290,6 +375,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH5</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">5</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">5</property>
@@ -312,13 +408,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">5</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">5</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -330,6 +432,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH6</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">6</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">6</property>
@@ -352,13 +465,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">6</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">6</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -370,6 +489,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH7</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">7</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">7</property>
@@ -392,13 +522,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">7</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">7</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -410,6 +546,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH8</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">8</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">8</property>
@@ -432,13 +579,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">8</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">8</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -450,6 +603,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH9</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">9</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">9</property>
@@ -472,13 +636,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">9</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">9</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -490,6 +660,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH10</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">10</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">10</property>
@@ -512,13 +693,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">10</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">10</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
@@ -530,6 +717,17 @@
                                                     <object class="AdwActionRow">
                                                         <property name="title">CH11</property>
                                                         <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">State: </property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="SiParamLabel">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">11</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">414</property>
                                                                 <property name="param_offset">11</property>
@@ -552,13 +750,19 @@
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">11</property>
+                                                                <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
                                                         </child>
                                                         <child>
-                                                            <object class="GtkButton">
+                                                            <object class="SiParamButton">
+                                                                <property name="param_id">200</property>
+                                                                <property name="param_offset">11</property>
+                                                                <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
                                                             </object>
