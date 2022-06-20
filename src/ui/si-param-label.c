@@ -56,9 +56,13 @@ static void si_param_label_set_property(GObject * object, guint property_id, con
 }
 
 static void si_param_label_dispose (GObject *object) {
+    if (object == NULL)
+        return;
     SiParamLabel * self = SI_PARAM_LABEL(object);
-    if (self->label)
-        gtk_widget_unparent (GTK_WIDGET (self->label));
+    if (self->label) {
+        gtk_widget_unparent(GTK_WIDGET(self->label));
+        self->label = NULL;
+    }
     G_OBJECT_CLASS (si_param_label_parent_class)->dispose(object);
 }
 
@@ -82,7 +86,16 @@ static void si_param_label_class_init(SiParamLabelClass * klass) {
 }
 
 static int time_handler(void * object) {
+
+    if (object == NULL)
+        return 0;
+
     SiParamLabel * self = SI_PARAM_LABEL(object);
+
+    if (self->label == 0) {
+        return 0;
+    }
+
     if (self->param_id == 0)
         return 1;
 
@@ -94,6 +107,7 @@ static int time_handler(void * object) {
     param_value_str(param, self->param_offset, buf, 100);
 
     gtk_label_set_text(self->label, buf);
+
     return 1;
 }
 

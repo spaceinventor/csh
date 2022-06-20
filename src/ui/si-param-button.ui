@@ -4,7 +4,10 @@
     <requires lib="gtk" version="4.0" />
     <template class="SiParamButton" parent="GtkWidget">
         <child>
-            <object class="GtkButton" id="button"/>
+            <object class="GtkButton" id="button">
+                <signal name="clicked" handler="clicked_cb"/>
+                <property name="label" bind-source="SiParamButton" bind-property="label" bind-flags="sync-create"/>
+            </object>
         </child>
     </template>
 </interface>

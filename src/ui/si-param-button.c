@@ -12,6 +12,7 @@ struct _SiParamButton {
 	int param_id;
     int param_offset;
     int setvalue;
+    char * label;
     GtkButton * button;
 };
 
@@ -41,7 +42,7 @@ static void si_param_button_get_property(GObject * object, guint property_id, GV
 			g_value_set_int(value, self->setvalue);
 			break;
         case PROP_PARAM_LABEL:
-            g_value_set_string(value, gtk_button_get_label(self->button));
+            g_value_set_string(value, self->label);
 			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -62,19 +63,34 @@ static void si_param_button_set_property(GObject * object, guint property_id, co
 			self->setvalue = g_value_get_int(value);
 			break;
         case PROP_PARAM_LABEL:
-            gtk_button_set_label(self->button, g_value_get_string(value));
+            g_clear_pointer(&self->label, g_free);
+            self->label = g_strdup(g_value_get_string(value));
 			break;
     	default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
 			break;
 	}
+    g_object_notify_by_pspec (G_OBJECT (self), props[property_id]);
 }
 
 static void si_param_button_dispose (GObject *object) {
     SiParamButton * self = SI_PARAM_BUTTON(object);
     if (self->button)
         gtk_widget_unparent (GTK_WIDGET (self->button));
-    G_OBJECT_CLASS (si_param_button_parent_class)->dispose(object);
+    G_OBJECT_CLASS(si_param_button_parent_class)->dispose(object);
+}
+
+
+static void clicked_cb(GtkWidget * button) {
+    SiParamButton * self = SI_PARAM_BUTTON(gtk_widget_get_parent(button));
+    if (self->param_id == 0)
+        return;
+
+    param_t * param = param_list_find_id(6, self->param_id);
+    if (param == NULL)
+        return;
+
+    param_push_single(param, self->param_offset, &self->setvalue, 1, 6, 100, 2);
 }
 
 
@@ -95,23 +111,10 @@ static void si_param_button_class_init(SiParamButtonClass * klass) {
     gtk_widget_class_set_layout_manager_type (widget_class, GTK_TYPE_BIN_LAYOUT);
 	gtk_widget_class_set_template_from_resource(widget_class, "/com/spaceinventor/csh/si-param-button.ui");
     gtk_widget_class_bind_template_child(widget_class, SiParamButton, button);
+    gtk_widget_class_bind_template_callback(widget_class, clicked_cb);
 
-}
-
-static void print_hello_clicked(GtkWidget *widget, gpointer data) {
-
-    SiParamButton * self = SI_PARAM_BUTTON(gtk_widget_get_parent(widget));
-    if (self->param_id == 0)
-        return;
-
-    param_t * param = param_list_find_id(6, self->param_id);
-    if (param == NULL)
-        return;
-
-    param_push_single(param, self->param_offset, &self->setvalue, 1, 6, 100, 2);
 }
 
 static void si_param_button_init(SiParamButton * self) {
 	gtk_widget_init_template(GTK_WIDGET(self));
-    g_signal_connect (self->button, "clicked", G_CALLBACK (print_hello_clicked), NULL);
 }

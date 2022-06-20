@@ -26,8 +26,8 @@ static int time_handler(void * object) {
 
 
 static void csh_page_whlctl_init(CshPageWhlctl * self) {
-    si_param_label_get_type();
-    si_param_button_get_type();
+    g_type_ensure(PARAM_LABEL);
+    g_type_ensure(PARAM_BUTTON);
 	gtk_widget_init_template(GTK_WIDGET(self));
     g_timeout_add(100, time_handler, self);
 }
