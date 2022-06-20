@@ -45,6 +45,11 @@
                                                                 <property name="param_offset">0</property>
                                                             </object>
                                                         </child>
+                                                        <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">mV</property>
+                                                            </object>
+                                                        </child>
                                                     </object>
                                                 </child>
                                                 <child>
@@ -66,6 +71,11 @@
                                                             <object class="SiParamLabel">
                                                                 <property name="param_id">30</property>
                                                                 <property name="param_offset">0</property>
+                                                            </object>
+                                                        </child>
+                                                        <child>
+                                                            <object class="GtkLabel">
+                                                                <property name="label">1/100 °C</property>
                                                             </object>
                                                         </child>
                                                     </object>
