@@ -130,6 +130,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -139,6 +140,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -186,6 +188,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -195,6 +198,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -243,6 +247,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -252,6 +257,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -300,6 +306,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -309,6 +316,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -357,6 +365,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -366,6 +375,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -414,6 +424,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -423,6 +434,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -471,6 +483,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -480,6 +493,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -528,6 +542,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -537,6 +552,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -585,6 +601,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -594,6 +611,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -642,6 +660,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -651,6 +670,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -699,6 +719,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -708,6 +729,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
@@ -756,6 +778,7 @@
                                                                 <property name="setvalue">1</property>
                                                                 <property name="label">On</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="success"/></style>
                                                             </object>
                                                         </child>
                                                         <child>
@@ -765,6 +788,7 @@
                                                                 <property name="setvalue">0</property>
                                                                 <property name="label">Off</property>
                                                                 <property name="valign">GTK_ALIGN_CENTER</property>
+                                                                <style><class name="error"/></style>
                                                             </object>
                                                         </child>
                                                     </object>
