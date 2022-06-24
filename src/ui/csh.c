@@ -3,6 +3,9 @@
 
 #include <slash/slash.h>
 
+#include <param/param.h>
+#include <param/param_client.h>
+
 #include "csh-page-whlctl.h"
 
 static AdwApplication * app;
@@ -20,9 +23,18 @@ void * ui_task(void * param) {
 	return NULL;
 }
 
+void * data_task(void * param) {
+	while(1) {
+		param_pull_all(0, 6, PM_TELEM, PM_REMOTE | PM_HWREG, 100, 2);
+		usleep(100000);
+	}
+}
+
 static int cmd_ui(struct slash * slash) {
 	static pthread_t ui_handle;
 	pthread_create(&ui_handle, NULL, &ui_task, NULL);
+	static pthread_t data_handle;
+	pthread_create(&data_handle, NULL, &data_task, NULL);
 	return SLASH_SUCCESS;
 }
 

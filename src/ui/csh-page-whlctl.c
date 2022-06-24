@@ -19,15 +19,9 @@ static void csh_page_whlctl_class_init(CshPageWhlctlClass * klass) {
 }
 
 
-static int time_handler(void * object) {
-    param_pull_all(0, 6, PM_TELEM, PM_REMOTE | PM_HWREG, 100, 2);
-    return 1;
-}
-
 
 static void csh_page_whlctl_init(CshPageWhlctl * self) {
     g_type_ensure(PARAM_LABEL);
     g_type_ensure(PARAM_BUTTON);
 	gtk_widget_init_template(GTK_WIDGET(self));
-    g_timeout_add(100, time_handler, self);
 }
