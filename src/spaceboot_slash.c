@@ -113,7 +113,7 @@ slash_command(switch, slash_csp_switch, "<slot>", "switch");
 static vmem_list_t vmem_list_find(int node, int timeout, char * name, int namelen) {
 	vmem_list_t ret = {};
 
-	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, CSP_O_NONE);
+	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, CSP_O_CRC32);
 	if (conn == NULL)
 		return ret;
 
