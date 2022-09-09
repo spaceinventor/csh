@@ -55,7 +55,7 @@ static int slash_csp_ping(struct slash *slash)
     unsigned int timeout = slash_dfl_timeout;
     unsigned int size = 0;
 
-    optparse_t * parser = optparse_new("ping", "");
+    optparse_t * parser = optparse_new("ping", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
@@ -66,6 +66,10 @@ static int slash_csp_ping(struct slash *slash)
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
+
+	if (++argi < slash->argc) {
+		node = atoi(slash->argv[argi]);
+	}
 
 	slash_printf(slash, "Ping node %u size %u timeout %u: ", node, size, timeout);
 
@@ -80,14 +84,14 @@ static int slash_csp_ping(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(ping, slash_csp_ping, "<node> [timeout] [size]", "Ping a system");
+slash_command(ping, slash_csp_ping, "[node]", "Ping a system");
 
 static int slash_csp_reboot(struct slash *slash)
 {
 
 	unsigned int node = slash_dfl_node;
 
-    optparse_t * parser = optparse_new("reboot", "");
+    optparse_t * parser = optparse_new("reboot", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 
@@ -97,12 +101,17 @@ static int slash_csp_reboot(struct slash *slash)
 	    return SLASH_EINVAL;
     }
 
+   	if (++argi < slash->argc) {
+		node = atoi(slash->argv[argi]);
+	}
+
+
 	csp_reboot(node);
 
 	return SLASH_SUCCESS;
 }
 
-slash_command(reboot, slash_csp_reboot, "<node>", "Reboot a node");
+slash_command(reboot, slash_csp_reboot, "[node]", "Reboot a node");
 
 static int slash_csp_buffree(struct slash *slash)
 {
@@ -110,7 +119,7 @@ static int slash_csp_buffree(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("ping", "");
+    optparse_t * parser = optparse_new("buffree", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
@@ -121,12 +130,17 @@ static int slash_csp_buffree(struct slash *slash)
 	    return SLASH_EINVAL;
     }
 
+   	if (++argi < slash->argc) {
+		node = atoi(slash->argv[argi]);
+	}
+
+
 	csp_buf_free(node, timeout);
 
 	return SLASH_SUCCESS;
 }
 
-slash_command(buffree, slash_csp_buffree, "", "");
+slash_command(buffree, slash_csp_buffree, "[node]", "");
 
 static int slash_csp_uptime(struct slash *slash)
 {
@@ -134,7 +148,7 @@ static int slash_csp_uptime(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("uptime", "");
+    optparse_t * parser = optparse_new("uptime", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
@@ -145,12 +159,17 @@ static int slash_csp_uptime(struct slash *slash)
 	    return SLASH_EINVAL;
     }
 
+   	if (++argi < slash->argc) {
+		node = atoi(slash->argv[argi]);
+	}
+
+
 	csp_uptime(node, timeout);
 
 	return SLASH_SUCCESS;
 }
 
-slash_command(uptime, slash_csp_uptime, "", "");
+slash_command(uptime, slash_csp_uptime, "[node]", "");
 
 static int slash_csp_cmp_ident(struct slash *slash)
 {
@@ -159,7 +178,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("ident", "");
+    optparse_t * parser = optparse_new("ident", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
@@ -169,6 +188,10 @@ static int slash_csp_cmp_ident(struct slash *slash)
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
+
+	if (++argi < slash->argc) {
+		node = atoi(slash->argv[argi]);
+	}
 
 	struct csp_cmp_message msg;
 	msg.type = CSP_CMP_REQUEST;
@@ -207,7 +230,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(ident, slash_csp_cmp_ident, "<node> [timeout]", "Ident");
+slash_command(ident, slash_csp_cmp_ident, "[node]", "Ident");
 
 
 static int slash_csp_cmp_route_set(struct slash *slash)

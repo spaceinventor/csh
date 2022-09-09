@@ -17,7 +17,7 @@ But the software will be called `csh` (pronounced 'seashell') from now on.
 Requirements: build-essential, libsocketcan-dev, can-utils, libzmq3-dev, libyaml-dev, meson, pkg-config, libgtk-4-dev, libadwaita-1-dev
 
 ```
-sudo apt-get install build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config libgtk-4-dev libadwaita-1-dev
+sudo apt-get install build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config python3-pip
 sudo pip3 install meson ninja
 ```
 
