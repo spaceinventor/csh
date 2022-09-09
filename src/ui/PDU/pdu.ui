@@ -1,0 +1,221 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<interface>
+    <requires lib="gtk" version="4.0"/>
+    <requires lib="libadwaita" version="1.0"/>
+    <template class="PduPage" parent="AdwApplicationWindow">
+        <child>
+            <object class="GtkBox">
+                <property name="accessible-role">note</property>
+                <property name="orientation">vertical</property>
+                <child>
+                    <object class="AdwHeaderBar"/>
+                </child>
+                <child>
+                    <object class="GtkBox">
+                        <property name="halign">center</property>
+                        <property name="margin-bottom">24</property>
+                        <property name="margin-end">24</property>
+                        <property name="margin-start">24</property>
+                        <property name="margin-top">12</property>
+                        <property name="orientation">vertical</property>
+                        <property name="valign">center</property>
+                        <property name="vexpand">True</property>
+                        <property name="width-request">300</property>
+                        <child>
+                            <object class="AdwClamp">
+                                <property name="tightening-threshold">500</property>
+                                <child>
+                                    <object class="GtkBox">
+                                        <property name="orientation">vertical</property>
+                                        <property name="spacing">12</property>
+                                        <child>
+                                            <object class="AdwPreferencesGroup">
+                                                <property name="title">PDU</property>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 0</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">0</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 1</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">1</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 2</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">2</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 3</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">3</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 4</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">4</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 5</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">5</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 6</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">6</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 7</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">7</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 8</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">8</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 9</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">9</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 10</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">10</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 11</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">11</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 12</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">12</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 13</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">13</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 14</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">14</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">Channel 15</property>
+                                                        <child>
+                                                            <object class="SiParamSwitch">
+                                                                <property name="param_id">666</property>
+                                                                <property name="param_offset">15</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </template>
+</interface>

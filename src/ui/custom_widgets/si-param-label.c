@@ -80,7 +80,7 @@ static void si_param_label_class_init(SiParamLabelClass * klass) {
 	
     GtkWidgetClass * widget_class = GTK_WIDGET_CLASS(klass);
     gtk_widget_class_set_layout_manager_type (widget_class, GTK_TYPE_BIN_LAYOUT);
-	gtk_widget_class_set_template_from_resource(widget_class, "/com/spaceinventor/csh/si-param-label.ui");
+	gtk_widget_class_set_template_from_resource(widget_class, "/com/spaceinventor/csh/custom_widgets/si-param-label.ui");
     gtk_widget_class_bind_template_child(widget_class, SiParamLabel, label);
 
 }
@@ -105,7 +105,7 @@ static int time_handler(void * object) {
 
     char buf[100];
     param_value_str(param, self->param_offset, buf, 100);
-
+    
     gtk_label_set_text(self->label, buf);
 
     return 1;
@@ -114,4 +114,5 @@ static int time_handler(void * object) {
 static void si_param_label_init(SiParamLabel * self) {
 	gtk_widget_init_template(GTK_WIDGET(self));
     g_timeout_add(100, time_handler, self);
+    
 }

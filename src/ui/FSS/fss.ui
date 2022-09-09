@@ -1,0 +1,282 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<interface>
+    <requires lib="gtk" version="4.0"/>
+    <requires lib="libadwaita" version="1.0"/>
+    <template class="FssPage" parent="AdwApplicationWindow">
+        <property name="halign">start</property>
+        <property name="valign">start</property>
+        <child>
+            <object class="GtkBox">
+                <property name="halign">start</property>
+                <property name="orientation">vertical</property>
+                <child>
+                    <object class="AdwHeaderBar">
+                        <child>
+                            <object class="GtkButton">
+                                <signal name="clicked" handler="dialog_box"></signal>
+                                <property name="accessible-role">meter</property>
+                                <property name="label">Show Queue</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkBox">
+                        <child>
+                            <object class="GtkBox">
+                                <property name="orientation">vertical</property>
+                                <child>
+                                    <object class="GtkBox">
+                                        <child>
+                                            <object class="AdwPreferencesGroup">
+                                                <property name="margin-bottom">10</property>
+                                                <property name="margin-end">10</property>
+                                                <property name="margin-start">10</property>
+                                                <property name="margin-top">10</property>
+                                                <property name="title">Alpha</property>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">a:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton">
+                                                                <property name="param_id">51</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">b:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton">
+                                                                <property name="param_id">52</property>
+                                                            </object>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">c:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">s:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">s0:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                        <child>
+                                            <object class="AdwPreferencesGroup">
+                                                <property name="margin-bottom">10</property>
+                                                <property name="margin-end">10</property>
+                                                <property name="margin-start">10</property>
+                                                <property name="margin-top">10</property>
+                                                <property name="title">Beta</property>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">a:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">b:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">c:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">s:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                                <child>
+                                                    <object class="AdwActionRow">
+                                                        <property name="title">s0:</property>
+                                                        <child>
+                                                            <object class="SiSubmitEntryButton"/>
+                                                        </child>
+                                                    </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                                <child>
+                                    <object class="GtkSeparator"/>
+                                </child>
+                                <child>
+                                    <object class="GtkBox">
+                                    <property name="halign">center</property>
+                                        <child>
+                                            <object class="GtkBox">
+                                                <child>
+                                                <object class="GtkBox">
+                                                    <property name="margin-bottom">10</property>
+                                                    <property name="margin-end">10</property>
+                                                    <property name="margin-start">10</property>
+                                                    <property name="margin-top">10</property>
+                                                    <property name="orientation">vertical</property>
+                                                    <child>
+                                                        <object class="GtkLabel">
+                                                            <property name="label">Threshold adc</property>
+                                                            <property name="margin-end">5</property>
+                                                            <property name="margin-start">5</property>
+                                                            <property name="margin-top">5</property>
+                                                        </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkSeparator">
+                                                        <property name="margin-bottom">5</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkEntry">
+                                                        <property name="halign">start</property>
+                                                        <property name="margin-bottom">5</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                        <property name="placeholder-text">current_threshold_adc</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkButton">
+                                                        <property name="halign">center</property>
+                                                        <property name="label">SET</property>
+                                                        <property name="margin-bottom">5</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                        <property name="valign">center</property>
+                                                    </object>
+                                                    </child>
+                                                </object>
+                                                </child>
+                                                <child>
+                                                <object class="GtkBox">
+                                                    <property name="margin-bottom">10</property>
+                                                    <property name="margin-end">10</property>
+                                                    <property name="margin-start">10</property>
+                                                    <property name="margin-top">10</property>
+                                                    <property name="orientation">vertical</property>
+                                                    <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="label">Peak adc</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkSeparator">
+                                                        <property name="margin-bottom">5</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkEntry">
+                                                        <property name="halign">start</property>
+                                                        <property name="margin-bottom">5</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                        <property name="placeholder-text">current_peak_adc</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkButton">
+                                                        <property name="halign">center</property>
+                                                        <property name="label">SET</property>
+                                                        <property name="margin-bottom">5</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                        <property name="valign">center</property>
+                                                    </object>
+                                                    </child>
+                                                </object>
+                                                </child>
+                                                <child>
+                                                <object class="GtkBox">
+                                                    <property name="margin-bottom">10</property>
+                                                    <property name="margin-end">10</property>
+                                                    <property name="margin-start">10</property>
+                                                    <property name="margin-top">10</property>
+                                                    <property name="orientation">vertical</property>
+                                                    <child>
+                                                    <object class="GtkLabel">
+                                                        <property name="label">Threshold pct</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkSeparator">
+                                                        <property name="margin-bottom">5</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkEntry">
+                                                        <property name="halign">start</property>
+                                                        <property name="margin-bottom">5</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                        <property name="placeholder-text">current_threshold_pct</property>
+                                                    </object>
+                                                    </child>
+                                                    <child>
+                                                    <object class="GtkButton">
+                                                        <property name="halign">center</property>
+                                                        <property name="label">SET</property>
+                                                        <property name="margin-bottom">5</property>
+                                                        <property name="margin-end">5</property>
+                                                        <property name="margin-start">5</property>
+                                                        <property name="margin-top">5</property>
+                                                        <property name="valign">center</property>
+                                                    </object>
+                                                    </child>
+                                                </object>
+                                                </child>
+                                            </object>
+                                        </child>
+                                    </object>
+                                </child>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </template>
+</interface>

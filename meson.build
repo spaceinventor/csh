@@ -47,9 +47,15 @@ csh_sources = [
 	'src/serial.c',
 	'src/known_hosts.c',
 	'src/ui/csh.c',
-    'src/ui/csh-page-whlctl.c',
-    'src/ui/si-param-label.c',
-	'src/ui/si-param-button.c',
+    'src/ui/csh-page.c',
+    'src/ui/FSS/fss.c',
+    'src/ui/PDU/pdu.c',
+    'src/ui/WHEEL/csh-page-whlctl.c',
+    'src/ui/custom_widgets/si-node-hostname-label.c',
+    'src/ui/custom_widgets/si-param-label.c',
+	'src/ui/custom_widgets/si-param-button.c',
+	'src/ui/custom_widgets/si-param-switch.c',
+	'src/ui/custom_widgets/si-submit-entry-button.c',
 ]
 
 if libelf_dep.found()

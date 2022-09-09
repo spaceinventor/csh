@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/com/spaceinventor/csh">
-    <file preprocess="xml-stripblanks">csh-page-whlctl.ui</file>
-    <file preprocess="xml-stripblanks">si-param-label.ui</file>
-    <file preprocess="xml-stripblanks">si-param-button.ui</file>
+    <file preprocess="xml-stripblanks">csh-page.ui</file>
+    <file preprocess="xml-stripblanks">WHEEL/csh-page-whlctl.ui</file>
+    <file preprocess="xml-stripblanks">FSS/fss.ui</file>
+    <file preprocess="xml-stripblanks">PDU/pdu.ui</file>
+    <file preprocess="xml-stripblanks">custom_widgets/si-node-hostname-label.ui</file>
+    <file preprocess="xml-stripblanks">custom_widgets/si-param-label.ui</file>
+    <file preprocess="xml-stripblanks">custom_widgets/si-param-button.ui</file>
+    <file preprocess="xml-stripblanks">custom_widgets/si-param-switch.ui</file>
+    <file preprocess="xml-stripblanks">custom_widgets/si-submit-entry-button.ui</file>
   </gresource>
 </gresources>

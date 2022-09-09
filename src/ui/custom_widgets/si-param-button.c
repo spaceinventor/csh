@@ -28,7 +28,6 @@ enum {
 };
 static GParamSpec * props[PROP_LAST_PROP];
 
-
 static void si_param_button_get_property(GObject * object, guint property_id, GValue * value, GParamSpec * pspec) {
 	SiParamButton * self = SI_PARAM_BUTTON(object);
 	switch (property_id) {
@@ -95,7 +94,6 @@ static void clicked_cb(GtkWidget * button) {
 
 
 static void si_param_button_class_init(SiParamButtonClass * klass) {
-
     /* Properties */
     GObjectClass *object_class = G_OBJECT_CLASS (klass);
     object_class->set_property = si_param_button_set_property;
@@ -109,7 +107,7 @@ static void si_param_button_class_init(SiParamButtonClass * klass) {
 	
     GtkWidgetClass * widget_class = GTK_WIDGET_CLASS(klass);
     gtk_widget_class_set_layout_manager_type (widget_class, GTK_TYPE_BIN_LAYOUT);
-	gtk_widget_class_set_template_from_resource(widget_class, "/com/spaceinventor/csh/si-param-button.ui");
+	gtk_widget_class_set_template_from_resource(widget_class, "/com/spaceinventor/csh/custom_widgets/si-param-button.ui");
     gtk_widget_class_bind_template_child(widget_class, SiParamButton, button);
     gtk_widget_class_bind_template_callback(widget_class, clicked_cb);
 

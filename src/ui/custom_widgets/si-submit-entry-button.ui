@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<interface domain="si">
+    <requires lib="gtk" version="4.0" />
+    <template class="SiSubmitEntryButton" parent="GtkWidget">
+        <child>
+            <object class="GtkBox" id="box">
+                <property name="orientation">horizontal</property>
+                <property name="spacing">12</property>
+                <child>
+                    <object class="GtkEntry" id="entry">
+                        <property name="halign">start</property>
+                        <property name="valign">center</property>
+                        <property name="placeholder-text">...</property>
+                        
+                    </object>
+                </child>
+                <child>
+                    <object class="GtkButton" id="button">
+                        <!-- <signal name="clicked" handler="clicked_cb"/> -->
+                        <property name="valign">center</property>
+                        <property name="label">SET</property>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </template>
+</interface>
