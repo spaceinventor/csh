@@ -36,7 +36,7 @@
                                                         <property name="title">Channel 0</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">0</property>
                                                             </object>
                                                         </child>
@@ -47,7 +47,7 @@
                                                         <property name="title">Channel 1</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">1</property>
                                                             </object>
                                                         </child>
@@ -58,7 +58,7 @@
                                                         <property name="title">Channel 2</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">2</property>
                                                             </object>
                                                         </child>
@@ -69,7 +69,7 @@
                                                         <property name="title">Channel 3</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">3</property>
                                                             </object>
                                                         </child>
@@ -80,7 +80,7 @@
                                                         <property name="title">Channel 4</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">4</property>
                                                             </object>
                                                         </child>
@@ -91,7 +91,7 @@
                                                         <property name="title">Channel 5</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">5</property>
                                                             </object>
                                                         </child>
@@ -102,7 +102,7 @@
                                                         <property name="title">Channel 6</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">6</property>
                                                             </object>
                                                         </child>
@@ -113,7 +113,7 @@
                                                         <property name="title">Channel 7</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">7</property>
                                                             </object>
                                                         </child>
@@ -124,7 +124,7 @@
                                                         <property name="title">Channel 8</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">8</property>
                                                             </object>
                                                         </child>
@@ -135,7 +135,7 @@
                                                         <property name="title">Channel 9</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">9</property>
                                                             </object>
                                                         </child>
@@ -146,7 +146,7 @@
                                                         <property name="title">Channel 10</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">10</property>
                                                             </object>
                                                         </child>
@@ -157,7 +157,7 @@
                                                         <property name="title">Channel 11</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">11</property>
                                                             </object>
                                                         </child>
@@ -168,7 +168,7 @@
                                                         <property name="title">Channel 12</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">12</property>
                                                             </object>
                                                         </child>
@@ -179,7 +179,7 @@
                                                         <property name="title">Channel 13</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">13</property>
                                                             </object>
                                                         </child>
@@ -190,7 +190,7 @@
                                                         <property name="title">Channel 14</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">14</property>
                                                             </object>
                                                         </child>
@@ -201,7 +201,7 @@
                                                         <property name="title">Channel 15</property>
                                                         <child>
                                                             <object class="SiParamSwitch">
-                                                                <property name="param_id">666</property>
+                                                                <property name="param_id">120</property>
                                                                 <property name="param_offset">15</property>
                                                             </object>
                                                         </child>
