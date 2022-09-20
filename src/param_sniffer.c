@@ -139,7 +139,8 @@ static void * param_sniffer(void * param) {
 		mpack_reader_init_data(&reader, queue.buffer, queue.used);
 		while(reader.data < reader.end) {
 			int id, node, offset = -1;
-			param_deserialize_id(&reader, &id, &node, &offset, &queue);
+			long unsigned int timestamp = 0;
+			param_deserialize_id(&reader, &id, &node, &timestamp, &offset, &queue);
 			if (node == 0) {
 				node = packet->id.src;
 			}
