@@ -37,6 +37,14 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
+#define PARAMID_TELEM1					 302
+#define PARAMID_TELEM2					 303
+
+uint16_t _telem1 = 0;
+uint16_t _telem2 = 0;
+PARAM_DEFINE_STATIC_RAM(PARAMID_TELEM1,      telem1,        PARAM_TYPE_UINT16, -1, 0, PM_TELEM, NULL, "", &_telem1, NULL);
+PARAM_DEFINE_STATIC_RAM(PARAMID_TELEM2,      telem2,        PARAM_TYPE_UINT16, -1, 0, PM_TELEM, NULL, "", &_telem2, NULL);
+
 int slash_prompt(struct slash * slash) {
 
 	int len = 0;

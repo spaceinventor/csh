@@ -44,6 +44,7 @@ csh_sources = [
 	'src/nav.c',
 	'src/serial.c',
 	'src/known_hosts.c',
+	'src/hk_retrieve.c',
 ]
 
 if libelf_dep.found()
