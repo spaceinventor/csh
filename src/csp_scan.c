@@ -17,6 +17,7 @@ static int csp_scan(struct slash *slash)
             if (csp_cmp_ident(i, 100, &message) == CSP_ERR_NONE) {
                 printf("%s\n%s\n%s\n%s %s\n", message.ident.hostname, message.ident.model, message.ident.revision, message.ident.date, message.ident.time);
             }
+            printf("\n");
 
         }
 
