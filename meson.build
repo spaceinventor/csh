@@ -22,6 +22,7 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 
 add_global_arguments('-I../include', language: 'c')
 
+csp_ftp_dep = dependency('csp_ftp', fallback: ['csp_ftp', 'csp_ftp_dep'], required: true)
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
@@ -31,6 +32,7 @@ csh_sources = [
 	'src/main.c',
 	#'src/time.c',
 	'src/slash_csp.c',
+	'src/ftp_slash.c',
 	'src/csp_debug_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',
@@ -55,7 +57,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep],
+	dependencies : [slash_dep, csp_dep, csp_ftp_dep, param_dep, libelf_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )
@@ -64,13 +66,13 @@ custom_target('size', output: ['dummy.txt'], command: [find_program('size'), csh
 
 zmqproxy_sources = ['src/zmqproxy.c']
 zmqproxy = executable('zmqproxy', zmqproxy_sources,
-	dependencies : [csp_dep],
+	dependencies : [csp_dep, csp_ftp_dep],
 	install : true,
 )
 
 spacebridge_sources = ['src/spacebridge.c']
 spacebridge = executable('spacebridge', spacebridge_sources,
-	dependencies : [csp_dep],
+	dependencies : [csp_dep, csp_ftp_dep],
 	install : true,
 )
 

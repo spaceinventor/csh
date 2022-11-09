@@ -4,6 +4,7 @@
 	"files.associations": {
 		"*.h": "c",
 		"*.c": "c",
+		"type_traits": "c"
 	},
 	"files.exclude": {
 		"**/.gitignore": true,

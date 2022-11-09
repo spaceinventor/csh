@@ -1,0 +1,14 @@
+
+- name: "CAN1"
+  driver: "can"
+  device: "can0"
+  addr: 1
+  netmask: 8
+  default: true
+
+- name: "CAN2"
+  driver: "can"
+  device: "can0"
+  addr: 2
+  netmask: 16
+  default: true
