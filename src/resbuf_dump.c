@@ -99,19 +99,19 @@ static int resbuf_dump_slash(struct slash *slash) {
 
 	vmem_download(node, 1000, vmem.vaddr, vmem.size, data, 2);
 
-	csp_hex_dump("data", data, 200);
+	//csp_hex_dump("data", data, 200);
 
 	uint16_t in;
 	memcpy(&in, &data[0], sizeof(in));
 	uint16_t out;
 	memcpy(&out, &data[2], sizeof(out));
 
-	if (in > vmem.size - 4)
-		return SLASH_EINVAL;
-	if (out > vmem.size - 4)
-		return SLASH_EINVAL;
-
 	printf("Got resbuf size %u in %u out %u\n", vmem.size, in, out);
+
+	if (in > vmem.size)
+		return SLASH_EINVAL;
+	if (out > vmem.size)
+		return SLASH_EINVAL;
 
 	while(1) {
 		fprintf(fpout, "%c", data[out++]);
