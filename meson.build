@@ -29,7 +29,6 @@ libelf_dep = dependency('libelf', required: false)
 
 csh_sources = [
 	'src/main.c',
-	#'src/time.c',
 	'src/slash_csp.c',
 	'src/csp_debug_param.c',
 	'src/base16.c',
