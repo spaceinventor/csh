@@ -1,0 +1,15 @@
+- name: "CAN"
+  driver: "can"
+  device: "can0"
+  addr: 39
+  netmask: 8
+  promisc: true
+
+- name: "KISS"
+  driver: "kiss"
+  device: "/dev/ttyS0"
+  baudrate: 115200
+  addr: 7
+  netmask: 8
+  promisc: true
+
