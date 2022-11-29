@@ -4,12 +4,13 @@
   addr: 39
   netmask: 8
   promisc: true
+  default: true
 
 - name: "KISS"
   driver: "kiss"
   device: "/dev/ttyS0"
   baudrate: 115200
-  addr: 7
+  addr: 164
   netmask: 8
   promisc: true
 
