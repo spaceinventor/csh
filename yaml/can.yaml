@@ -1,7 +1,7 @@
 
 - name: "CAN"
   driver: "can"
-  device: "vcan0"
-  addr: 1
+  device: "can0"
+  addr: 32
   netmask: 8
   default: true
