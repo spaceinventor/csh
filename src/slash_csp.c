@@ -113,6 +113,33 @@ static int slash_csp_reboot(struct slash *slash)
 
 slash_command(reboot, slash_csp_reboot, "[node]", "Reboot a node");
 
+static int slash_csp_shutdown(struct slash *slash)
+{
+
+	unsigned int node = slash_dfl_node;
+
+    optparse_t * parser = optparse_new("shutdown", "[node]");
+    optparse_add_help(parser);
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+   	if (++argi < slash->argc) {
+		node = atoi(slash->argv[argi]);
+	}
+
+
+	csp_shutdown(node);
+
+	return SLASH_SUCCESS;
+}
+
+slash_command(shutdown, slash_csp_shutdown, "[node]", "Shutdown a node");
+
 static int slash_csp_buffree(struct slash *slash)
 {
 
