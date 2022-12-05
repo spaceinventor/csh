@@ -75,6 +75,7 @@ static int hk_retrieve(struct slash *slash) {
     }
 
     do {
+        csp_buffer_free(packet);
         packet = csp_read(conn, 1000);
         if (packet == NULL) {
             printf("No response\n");
@@ -111,6 +112,7 @@ static int hk_retrieve(struct slash *slash) {
     	}
 
     } while ((packet->data[4] & (1 << 7)) == 0);
+    csp_buffer_free(packet);
 
     fprintf(file, "\n");
 
