@@ -115,7 +115,11 @@ static int hk_retrieve(struct slash *slash) {
     csp_buffer_free(packet);
 
     fprintf(file, "\n");
-
+    if (file != stdout) {
+        fflush(file);
+        fclose(file);
+    }
+    
 	csp_close(conn);
     return SLASH_SUCCESS;
 }
