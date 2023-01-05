@@ -20,6 +20,7 @@
 #include <slash/slash.h>
 #include <slash/dflopt.h>
 #include <slash/optparse.h>
+#include <time.h>
 
 
 
@@ -71,7 +72,7 @@ static int resbuf_dump_slash(struct slash *slash) {
     optparse_t * parser = optparse_new("resbuf", "");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-	optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file");
+	optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file, or 'timestamp' for timestamped file in cwd");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -81,13 +82,23 @@ static int resbuf_dump_slash(struct slash *slash) {
 
 	FILE * fpout = stdout;
 
-    if (filename) {
-	    FILE * fp = fopen(filename, "w");
-        if (fp) {
-            fpout = fp;
-            printf("Writing to file %s\n", filename);
-        }
-    }
+	if(filename) {
+		if (strcmp(filename, "timestamp") == 0) {
+			time_t t = time(NULL);
+			struct tm tm = *localtime(&t);
+			char timestamp[16];
+			strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", &tm);
+			char filename2[32];
+			snprintf(filename2, sizeof(filename2), "%04u_%s.txt", node, timestamp);
+			filename = filename2;
+		}
+
+		FILE *fp = fopen(filename, "w");
+		if (fp) {
+			fpout = fp;
+			printf("Writing to file %s\n", filename);
+		}
+	}
 
 	vmem_list_t vmem = resbuf_get_base(node, 1000);
 	if (vmem.size == 0 || vmem.vaddr == 0) {
