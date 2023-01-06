@@ -89,7 +89,7 @@ static int resbuf_dump_slash(struct slash *slash) {
 			char timestamp[16];
 			strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", &tm);
 			char filename2[32];
-			snprintf(filename2, sizeof(filename2), "%04u_%s.txt", node, timestamp);
+			snprintf(filename2, sizeof(filename2), "%u_%s.txt", node, timestamp);
 			filename = filename2;
 		}
 
