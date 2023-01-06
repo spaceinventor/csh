@@ -10,6 +10,7 @@
 
 #include <csp/csp.h>
 #include <csp/csp_yaml.h>
+#include <csp/csp_hooks.h>
 
 #include <param/param.h>
 #include <param/param_list.h>
@@ -162,7 +163,9 @@ void * vmem_server_task(void * param) {
 
 void * onehz_task(void * param) {
 	while(1) {
-		param_schedule_server_update();
+		csp_timestamp_t scheduler_time = {};
+        csp_clock_get_time(&scheduler_time);
+        param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
 		sleep(1);
 	}
 	return NULL;

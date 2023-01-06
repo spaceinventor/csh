@@ -45,6 +45,8 @@ csh_sources = [
 	'src/serial.c',
 	'src/known_hosts.c',
 	'src/hk_retrieve.c',
+	'src/scheduler_lock.c',
+	'src/commands_lock.c',
 ]
 
 if libelf_dep.found()
