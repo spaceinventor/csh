@@ -26,6 +26,7 @@ csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 libelf_dep = dependency('libelf', required: false)
+libcurl_dep = dependency('libcurl')
 
 csh_sources = [
 	'src/main.c',
@@ -57,7 +58,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, libcurl_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )
