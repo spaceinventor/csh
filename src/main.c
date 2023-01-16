@@ -161,6 +161,11 @@ void * ftp_server_task(void * param) {
 	return NULL;
 }
 
+void * vmem_server_task(void * param) {
+	vmem_server_loop(param);
+	return NULL;
+}
+
 void * onehz_task(void * param) {
 	while(1) {
 		param_schedule_server_update();
@@ -296,6 +301,9 @@ int main(int argc, char **argv) {
 	static pthread_t ftp_server_handle;
 	pthread_create(&ftp_server_handle, NULL, &ftp_server_task, NULL);
 
+	static pthread_t vmem_server_handle;
+	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
+
 	static pthread_t onehz_handle;
 	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
 
@@ -348,10 +356,12 @@ int main(int argc, char **argv) {
 	slash_destroy(slash);
 
 	pthread_cancel(router_handle);
+	pthread_cancel(vmem_server_handle);
 	pthread_cancel(ftp_server_handle);
 	pthread_cancel(onehz_handle);
 
 	pthread_join(router_handle, NULL);
+	pthread_join(vmem_server_handle, NULL);
 	pthread_join(ftp_server_handle, NULL);
 	pthread_join(onehz_handle, NULL);
 
