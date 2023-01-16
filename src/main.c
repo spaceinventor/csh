@@ -72,7 +72,13 @@ int slash_prompt(struct slash * slash) {
 
 		char nodebuf[20];
 		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)) == 0) {
+			/* Failed to find hostname, only print node */
 			snprintf(nodebuf, 20, "%d", slash_dfl_node);
+		} else {
+			/* Found hostname, now append node */
+			char nodenumbuf[7];
+			snprintf(nodenumbuf, 7, "@%d", slash_dfl_node);
+			strncat(nodebuf, nodenumbuf, 20-strnlen(nodebuf, 20));
 		}
 		printf("%s", nodebuf);
 		len += strlen(nodebuf);
