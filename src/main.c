@@ -30,7 +30,7 @@
 extern const char *version_string;
 
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
-#define LINE_SIZE		    128
+#define LINE_SIZE		    512
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
