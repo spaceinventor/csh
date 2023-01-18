@@ -5,14 +5,12 @@
 #include <param/param_scheduler.h>
 #include <time.h>
 
-static sem_t commands_lock = {0};
+int si_lock_take(void* lock, int block_time_ms) {
 
-int param_commands_lock_take(int block_time_ms) {
-
-		int ret;
+	int ret;
 
 	if (block_time_ms == -1) {
-		ret = sem_wait(&commands_lock);
+		ret = sem_wait(lock);
 	} else {
 		struct timespec ts;
 		if (clock_gettime(CLOCK_REALTIME, &ts)) {
@@ -30,7 +28,7 @@ int param_commands_lock_take(int block_time_ms) {
 
 		ts.tv_nsec = (ts.tv_nsec + nsec) % 1000000000;
 
-		ret = sem_timedwait(&commands_lock, &ts);
+		ret = sem_timedwait(lock, &ts);
 	}
 
 	if (ret != 0)
@@ -39,22 +37,37 @@ int param_commands_lock_take(int block_time_ms) {
 	return 0;
 }
 
-void param_commands_lock_give(void) {
+int si_lock_give(void* lock) {
+
 	int value;
-	sem_getvalue(&commands_lock, &value);
+	sem_getvalue(lock, &value);
 	if (value > 0) {
-		return;
+		return 0;
 	}
 
-	if (sem_post(&commands_lock) == 0) {
-		return;
+	if (sem_post(lock) == 0) {
+		return 0;
 	}
 
-	return;
+	return 0;
 }
 
-void param_commands_lock_init(void) {
-	sem_init(&commands_lock, 0, 1);
+#define NUM_LOCKS 2
+
+static uint8_t lock_taken[NUM_LOCKS] = {0};
+static sem_t locks[NUM_LOCKS] = {0};
+
+void* si_lock_init() {
+
+	for (int i = 0; i < NUM_LOCKS; i++) {
+		if(lock_taken[i] == 0) {
+			lock_taken[i] = 1;
+			sem_init(&locks[i], 0, 1);
+			return &locks[i];
+		}
+	}
+
+	return NULL;
 }
 
 
