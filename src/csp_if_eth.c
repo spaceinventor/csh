@@ -300,9 +300,6 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
      * CSP INTERFACE
      */
 
-	/* MTU is datasize */
-	iface->mtu = 1500;
-
 	/* Regsiter interface */
 	iface->name = "ETH",
 	iface->nexthop = &csp_if_eth_tx,

@@ -10,6 +10,7 @@
 
 #include <csp/csp.h>
 #include <csp/csp_yaml.h>
+#include <csp/csp_hooks.h>
 
 #include <param/param.h>
 #include <param/param_list.h>
@@ -31,7 +32,7 @@
 extern const char *version_string;
 
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
-#define LINE_SIZE		    128
+#define LINE_SIZE		    512
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
@@ -73,7 +74,13 @@ int slash_prompt(struct slash * slash) {
 
 		char nodebuf[20];
 		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)) == 0) {
+			/* Failed to find hostname, only print node */
 			snprintf(nodebuf, 20, "%d", slash_dfl_node);
+		} else {
+			/* Found hostname, now append node */
+			char nodenumbuf[7];
+			snprintf(nodenumbuf, 7, "@%d", slash_dfl_node);
+			strncat(nodebuf, nodenumbuf, 20-strnlen(nodebuf, 20));
 		}
 		printf("%s", nodebuf);
 		len += strlen(nodebuf);
@@ -168,7 +175,9 @@ void * vmem_server_task(void * param) {
 
 void * onehz_task(void * param) {
 	while(1) {
-		param_schedule_server_update();
+		csp_timestamp_t scheduler_time = {};
+        csp_clock_get_time(&scheduler_time);
+        param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
 		sleep(1);
 	}
 	return NULL;
