@@ -17,8 +17,12 @@
 #include <param/param_server.h>
 #include <param/param_collector.h>
 #include <param/param_queue.h>
+#ifdef PARAM_HAVE_COMMANDS
 #include <param/param_commands.h>
+#endif
+#ifdef PARAM_HAVE_SCHEDULER
 #include <param/param_scheduler.h>
+#endif
 
 #include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
@@ -34,8 +38,12 @@ extern const char *version_string;
 #define HISTORY_SIZE		2048
 
 VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
+#ifdef PARAM_HAVE_COMMANDS
 VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
+#endif
+#ifdef PARAM_HAVE_SCHEDULER
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
+#endif
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
 #define PARAMID_TELEM1					 302
@@ -169,9 +177,11 @@ void * vmem_server_task(void * param) {
 
 void * onehz_task(void * param) {
 	while(1) {
+#ifdef PARAM_HAVE_SCHEDULER
 		csp_timestamp_t scheduler_time = {};
         csp_clock_get_time(&scheduler_time);
         param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
+#endif
 		sleep(1);
 	}
 	return NULL;
@@ -296,6 +306,14 @@ int main(int argc, char **argv) {
 		exit(EXIT_FAILURE);
 	}
 
+#ifdef PARAM_HAVE_COMMANDS
+	vmem_file_init(&vmem_commands);
+	param_command_server_init();
+#endif
+#ifdef PARAM_HAVE_SCHEDULER
+	param_schedule_server_init();
+#endif
+
 	vmem_file_init(&vmem_dummy);
 
 	static pthread_t router_handle;
@@ -321,10 +339,6 @@ int main(int argc, char **argv) {
     } else {
         snprintf(path, 100, "csh_hosts");
     }
-
-	vmem_file_init(&vmem_commands);
-	param_command_server_init();
-	param_schedule_server_init();
 
 	slash_run(slash, path, 0);
 
