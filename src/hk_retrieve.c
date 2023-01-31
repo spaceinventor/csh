@@ -22,6 +22,7 @@ static int hk_retrieve(struct slash *slash) {
     uint32_t step = 1;
     uint32_t num_timestamps = 1;
     char * prio = "123";
+    int rdp = 0;
 
     optparse_t * parser = optparse_new("hk retrieve", "timestamp");
     optparse_add_help(parser);
@@ -30,6 +31,7 @@ static int hk_retrieve(struct slash *slash) {
     optparse_add_unsigned(parser, 's', "step", "NUM", 0, &step, "Step between telemetry timestamps");
     optparse_add_unsigned(parser, 'N', "num", "NUM", 0, &num_timestamps, " Number of timestamps to download");
     optparse_add_string(parser, 'p', "prio", "STRING", &prio, "Log priorities (default 123)");
+    optparse_add_set(parser, 'r', "rdp", CSP_O_RDP, &rdp, "Use RDP protocol for downloads");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -37,7 +39,7 @@ static int hk_retrieve(struct slash *slash) {
 	    return SLASH_EINVAL;
     }
 
-    csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, 13, slash_dfl_timeout, CSP_O_CRC32);
+    csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, 13, slash_dfl_timeout, CSP_O_CRC32 | rdp );
     if (conn == NULL) {
         printf("Could not create connection");
         return SLASH_EIO;
