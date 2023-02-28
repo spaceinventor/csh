@@ -71,6 +71,9 @@ static void reset_to_flash(int node, int flash, int times, int type) {
 	}
 	printf("\n");
 
+	for (int i = 0; i < 4; i++)
+		param_list_destroy(boot_img[i]);
+
 	ping(node);
 }
 
