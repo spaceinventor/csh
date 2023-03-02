@@ -29,6 +29,7 @@
 
 #include "prometheus.h"
 #include "param_sniffer.h"
+#include "hk_param_sniffer.h"
 #include "known_hosts.h"
 
 extern const char *version_string;
@@ -194,19 +195,32 @@ int main(int argc, char **argv) {
 	int remain, index, i, c, p = 0;
 
 	int use_prometheus = 0;
+	unsigned int hk_node = 0;
 	int csp_version = 2;
 	char * rtable = NULL;
 	char * yamlname = "csh.yaml";
 	char * dirname = getenv("HOME");
 	unsigned int dfl_addr = 0;
 	
-	while ((c = getopt(argc, argv, "+hpn:v:r:f:")) != -1) {
+	while ((c = getopt(argc, argv, ":+hp:n:v:r:f:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
+		case ':':
+			switch (optopt) {
+			case 'p':
+				use_prometheus = 1;
+				break;
+			default:
+				printf("option -%c is missing a required argument\n", optopt);
+				return EXIT_FAILURE;
+			}
+			break;
 		case 'p':
 			use_prometheus = 1;
+			printf("HK node: %s\n", optarg);
+			hk_node = atoi(optarg);
 			break;
 		case 'r':
 			rtable = optarg;
@@ -222,6 +236,7 @@ int main(int argc, char **argv) {
 			yamlname = optarg;
 			break;
 		default:
+			printf("Argument -%c not recognized\n", c);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -327,7 +342,11 @@ int main(int argc, char **argv) {
 
 	if (use_prometheus) {
 		prometheus_init();
-		param_sniffer_init();
+		if(hk_node > 0) {
+			hk_param_sniffer_init(hk_node);
+		} else {
+			param_sniffer_init();
+		}
 	}
 
 	/** Persist hosts file */

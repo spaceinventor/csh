@@ -19,7 +19,7 @@
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
-static int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader) {
 
 	char tmp[1000] = {};
 
@@ -36,9 +36,12 @@ static int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, i
 
 	for (int i = offset; i < offset + count; i++) {
 
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		uint64_t time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
+		uint64_t time_ms = 1000 * (uint64_t)param->timestamp;
+		if (time_ms == 0) {
+			struct timeval tv;
+			gettimeofday(&tv, NULL);
+			time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
+		}
 
 		switch (param->type) {
 		case PARAM_TYPE_UINT8:

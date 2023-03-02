@@ -8,6 +8,7 @@
 #ifndef SRC_PARAM_SNIFFER_H_
 #define SRC_PARAM_SNIFFER_H_
 
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader);
 void param_sniffer_init(void);
 
 #endif /* SRC_PARAM_SNIFFER_H_ */

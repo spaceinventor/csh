@@ -20,7 +20,10 @@
 		"type_traits": "c",
 		"utility": "c",
 		"variant": "c",
-		"random": "c"
+		"random": "c",
+		"complex": "c",
+		"iomanip": "c",
+		"ctime": "c"
 	},
 	"files.exclude": {
 		"**/.gitignore": true,

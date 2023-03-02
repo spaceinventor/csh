@@ -45,6 +45,7 @@ csh_sources = [
 	'src/serial.c',
 	'src/known_hosts.c',
 	'src/hk_retrieve.c',
+	'src/hk_param_sniffer.c',
 	'src/lock.c',
 ]
 

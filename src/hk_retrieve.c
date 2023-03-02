@@ -1,5 +1,14 @@
+/*
+ * hk_retrieve.c
+ *
+ *  Created on: Mar 2, 2022
+ *      Author: Troels
+ */
+
 #include <stdio.h>
 #include <endian.h>
+#include <sys/time.h>
+#include <time.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
@@ -9,6 +18,8 @@
 
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
+
+#include "hk_param_sniffer.h"
 
 void param_deserialize_id(mpack_reader_t *reader, int *id, int *node, long unsigned int *timestamp, int *offset, param_queue_t * queue);
 void param_deserialize_from_mpack_to_param(void * context, void * queue, param_t * param, int offset, mpack_reader_t * reader);
@@ -23,6 +34,7 @@ static int hk_retrieve(struct slash *slash) {
     uint32_t num_timestamps = 1;
     char * prio = "123";
     int rdp = 0;
+    int use_offset = 0;
 
     optparse_t * parser = optparse_new("hk retrieve", "timestamp");
     optparse_add_help(parser);
@@ -30,12 +42,18 @@ static int hk_retrieve(struct slash *slash) {
     optparse_add_unsigned(parser, 't', "time", "NUM", 0, &timestamp, "Timestamp for newest telemetry to request");
     optparse_add_unsigned(parser, 's', "step", "NUM", 0, &step, "Step between telemetry timestamps");
     optparse_add_unsigned(parser, 'N', "num", "NUM", 0, &num_timestamps, " Number of timestamps to download");
+    optparse_add_set(parser, 'o', "offset", 1, &use_offset, "Calculate time offset from timestamp in reply");
     optparse_add_string(parser, 'p', "prio", "STRING", &prio, "Log priorities (default 123)");
     optparse_add_set(parser, 'r', "rdp", CSP_O_RDP, &rdp, "Use RDP protocol for downloads");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
         optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+    if (use_offset && timestamp != 0) {
+        printf("Options offset and timestamp cannot be used simultaneously\n");
 	    return SLASH_EINVAL;
     }
 
@@ -88,6 +106,13 @@ static int hk_retrieve(struct slash *slash) {
         if (last_timestamp != be32toh(packet->data32[0])) {
             last_timestamp = be32toh(packet->data32[0]);
             fprintf(file, "Timestamp %lu\n", last_timestamp);
+        }
+
+        if (use_offset) {
+			struct timeval tv;
+			gettimeofday(&tv, NULL);
+            hk_epoch(tv.tv_sec - last_timestamp);
+            use_offset = 0;
         }
 
         param_queue_t queue;
