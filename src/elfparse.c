@@ -210,12 +210,12 @@ void elfparse_native(Elf * elf, intptr_t start, intptr_t stop, int verbose) {
 
 }
 
-void elfparse_32arm(Elf * elf, intptr_t start, intptr_t stop, int verbose) {
+void elfparse_32arm(Elf * elf, intptr_t start, intptr_t stop, int verbose, int list_dynamic) {
 
-    typedef struct {
+	typedef struct {
         uint16_t id;
         uint16_t node;
-        uint32_t type;
+        uint8_t type;  // Type appears to be packed to 1 byte on 32-bit ARM
         uint32_t mask;
         uint32_t name;
         uint32_t unit;
@@ -223,10 +223,10 @@ void elfparse_32arm(Elf * elf, intptr_t start, intptr_t stop, int verbose) {
         uint32_t addr;
         uint32_t vmem;
         int32_t array_size;
-        uint32_t array_step;
+        int32_t array_step;
         uint32_t callback_ptr;
         uint32_t timestamp;
-		uint32_t next;
+		// uint32_t next;  /* Manually handle next pointer, based on arguments provided. */
     } param_format_1;
 
     /* Packing formats are different on different platforms */
@@ -340,7 +340,12 @@ void elfparse_32arm(Elf * elf, intptr_t start, intptr_t stop, int verbose) {
         param_type_str(param->type, typestr, 10);
         printf("%s\n", typestr);
 
-        param++;
+		if (!list_dynamic) {  /* assumes param_format_1 is without list_dynamic ie 'next' */
+        	param++;
+		} else {  /* Manually increment past the 'next' pointer */
+			/* 4 bytes is the size of the 'next' pointer */
+			param = (param_format_1*)((void*)param + 4 + sizeof(param_format_1));
+		}
     }
 
 }
@@ -395,7 +400,7 @@ static int elfparse(struct slash * slash) {
             elfparse_native(elf, start_param, stop_param, verbose);
         break;
         default:
-            elfparse_32arm(elf, start_param, stop_param, verbose);
+            elfparse_32arm(elf, start_param, stop_param, verbose, (param_parser == 2));
             break;
     }
 
