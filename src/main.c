@@ -28,8 +28,6 @@
 #include <vmem/vmem_file.h>
 
 #include "prometheus.h"
-#include "param_sniffer.h"
-#include "hk_param_sniffer.h"
 #include "known_hosts.h"
 
 extern const char *version_string;
@@ -46,14 +44,6 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
 VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
-
-#define PARAMID_TELEM1					 302
-#define PARAMID_TELEM2					 303
-
-uint16_t _telem1 = 0;
-uint16_t _telem2 = 0;
-PARAM_DEFINE_STATIC_RAM(PARAMID_TELEM1,      telem1,        PARAM_TYPE_UINT16, -1, 0, PM_TELEM, NULL, "", &_telem1, NULL);
-PARAM_DEFINE_STATIC_RAM(PARAMID_TELEM2,      telem2,        PARAM_TYPE_UINT16, -1, 0, PM_TELEM, NULL, "", &_telem2, NULL);
 
 int slash_prompt(struct slash * slash) {
 
@@ -138,42 +128,22 @@ int slash_prompt(struct slash * slash) {
 
 }
 
-
 uint64_t clock_get_nsec(void) {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_sec * 1E9 + ts.tv_nsec;
 }
 
-
 void usage(void) {
 	printf("usage: csh -f conf.yaml [command]\n");
 	printf("\n");
 	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
 	printf("\n");
-	printf("Options:\n");
-	printf(" -f\t\tPath to config file\n");
-	printf(" -n NODE\tUse NODE as own CSP address on the default interface\n");
-	printf(" -v VERSION\tUse VERSION as CSP version (1 or 2)\n");
-	printf(" -p\t\tSetup prometheus node\n");
-	printf(" -h\t\tPrint this help and exit\n");
 }
 
 void kiss_discard(char c, void * taskwoken) {
 	putchar(c);
 }
-
-void * router_task(void * param) {
-	while(1) {
-		csp_route_work();
-	}
-}
-
-void * vmem_server_task(void * param) {
-	vmem_server_loop(param);
-	return NULL;
-}
-
 
 void * onehz_task(void * param) {
 	while(1) {
@@ -191,50 +161,7 @@ void * onehz_task(void * param) {
 int main(int argc, char **argv) {
 
 	static struct slash *slash;
-	int remain, index, i, c, p = 0;
-
-	int use_prometheus = 0;
-	unsigned int hk_node = 0;
-	int csp_version = 2;
-	char * yamlname = "csh.yaml";
-	char * dirname = getenv("HOME");
-	unsigned int dfl_addr = 0;
-	
-	while ((c = getopt(argc, argv, ":+hp:n:v:r:f:")) != -1) {
-		switch (c) {
-		case 'h':
-			usage();
-			exit(EXIT_SUCCESS);
-		case ':':
-			switch (optopt) {
-			case 'p':
-				use_prometheus = 1;
-				break;
-			default:
-				printf("option -%c is missing a required argument\n", optopt);
-				return EXIT_FAILURE;
-			}
-			break;
-		case 'p':
-			use_prometheus = 1;
-			printf("HK node: %s\n", optarg);
-			hk_node = atoi(optarg);
-			break;
-		case 'v':
-			csp_version = atoi(optarg);
-			break;
-		case 'n':
-			dfl_addr = atoi(optarg);
-			break;
-		case 'f':
-			dirname = "";
-			yamlname = optarg;
-			break;
-		default:
-			printf("Argument -%c not recognized\n", c);
-			exit(EXIT_FAILURE);
-		}
-	}
+	int remain, index, i, p = 0;
 
 	remain = argc - optind;
 	index = optind;
@@ -262,46 +189,6 @@ int main(int argc, char **argv) {
 	void serial_init(void);
 	serial_init();
 
-	static char hostname[100];
-	gethostname(hostname, 100);
-
-	static char domainname[100];
-	int res = getdomainname(domainname, 100);
-	(void) res;
-
-	struct utsname info;
-	uname(&info);
-
-	csp_conf.hostname = info.nodename;
-	csp_conf.model = info.version;
-	csp_conf.revision = info.release;
-	csp_conf.version = csp_version;
-	csp_conf.dedup = CSP_DEDUP_OFF;
-	csp_init();
-
-	//csp_debug_set_level(4, 1);
-	//csp_debug_set_level(5, 1);
-
-	if (strlen(dirname)) {
-		char buildpath[100];
-		snprintf(buildpath, 100, "%s/%s", dirname, yamlname);
-		csp_yaml_init(buildpath, &dfl_addr);
-	} else {
-		csp_yaml_init(yamlname, &dfl_addr);
-
-	}
-
-	csp_iflist_check_dfl();
-
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
-	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
-	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
-	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
-
-	csp_bind_callback(csp_service_handler, CSP_ANY);
-	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
-
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
@@ -318,23 +205,8 @@ int main(int argc, char **argv) {
 
 	vmem_file_init(&vmem_dummy);
 
-	static pthread_t router_handle;
-	pthread_create(&router_handle, NULL, &router_task, NULL);
-
-	static pthread_t vmem_server_handle;
-	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
-
 	static pthread_t onehz_handle;
 	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
-
-	if (use_prometheus) {
-		prometheus_init();
-		if(hk_node > 0) {
-			hk_param_sniffer_init(hk_node);
-		} else {
-			param_sniffer_init();
-		}
-	}
 
 	/** Persist hosts file */
 	char * homedir = getenv("HOME");

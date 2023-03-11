@@ -157,14 +157,16 @@ static void * param_sniffer(void * param) {
 	return NULL;
 }
 
-void param_sniffer_init(void) {
+void param_sniffer_init(int add_logfile) {
 
-	logfile = fopen("param_sniffer.log", "a");
-	if (logfile) {
-		printf("Logging parameters to param_sniffer.log\n");
-	} else {
-		printf("Couldn't open param_sniffer.log for append\n");
-	}
+	if (add_logfile) {
+		logfile = fopen("param_sniffer.log", "a");
+		if (logfile) {
+			printf("Logging parameters to param_sniffer.log\n");
+		} else {
+			printf("Couldn't open param_sniffer.log for append\n");
+		}
+	}	
 
 	pthread_create(&param_sniffer_thread, NULL, &param_sniffer, NULL);
 }

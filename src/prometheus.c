@@ -12,7 +12,15 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include <slash/slash.h>
+#include <slash/optparse.h>
+
+#include <param/param.h>
+#include <param/param_queue.h>
+
 #include "prometheus.h"
+#include "param_sniffer.h"
+#include "hk_param_sniffer.h"
 
 static pthread_t prometheus_tread;
 
@@ -105,3 +113,30 @@ void prometheus_close(void) {
 }
 
 
+static int prometheus_start_cmd(struct slash *slash) {
+
+	int hk_node = 0;
+	int logfile = 0;
+
+    optparse_t * parser = optparse_new("prometheus start", "");
+    optparse_add_help(parser);
+    optparse_add_int(parser, 'h', "hk_node", "NUM", 0, &hk_node, "Housekeeping node");
+	optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+	prometheus_init();
+	if(hk_node > 0) {
+		hk_param_sniffer_init(hk_node);
+	} else {
+		param_sniffer_init(logfile);
+	}
+
+	return SLASH_SUCCESS;
+}
+
+slash_command_sub(prometheus, start, prometheus_start_cmd, NULL, "Start prometheus webserver");

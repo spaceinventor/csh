@@ -47,6 +47,7 @@ csh_sources = [
 	'src/hk_retrieve.c',
 	'src/hk_param_sniffer.c',
 	'src/lock.c',
+	'src/csp_init_cmd.c',
 ]
 
 if libelf_dep.found()
