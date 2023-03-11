@@ -60,7 +60,6 @@ int main(int argc, char **argv) {
     zmq_if->name = "ZMQ";
 
 #if (CSP_HAVE_STDIO)
-    csp_rtable_print();
     csp_iflist_print();
 #endif
 

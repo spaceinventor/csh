@@ -156,7 +156,6 @@ void usage(void) {
 	printf(" -n NODE\tUse NODE as own CSP address on the default interface\n");
 	printf(" -v VERSION\tUse VERSION as CSP version (1 or 2)\n");
 	printf(" -p\t\tSetup prometheus node\n");
-	printf(" -r RTABLE\tOverride rtable with this string\n");
 	printf(" -h\t\tPrint this help and exit\n");
 }
 
@@ -197,7 +196,6 @@ int main(int argc, char **argv) {
 	int use_prometheus = 0;
 	unsigned int hk_node = 0;
 	int csp_version = 2;
-	char * rtable = NULL;
 	char * yamlname = "csh.yaml";
 	char * dirname = getenv("HOME");
 	unsigned int dfl_addr = 0;
@@ -221,9 +219,6 @@ int main(int argc, char **argv) {
 			use_prometheus = 1;
 			printf("HK node: %s\n", optarg);
 			hk_node = atoi(optarg);
-			break;
-		case 'r':
-			rtable = optarg;
 			break;
 		case 'v':
 			csp_version = atoi(optarg);
@@ -296,21 +291,13 @@ int main(int argc, char **argv) {
 
 	}
 
+	csp_iflist_check_dfl();
+
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
 	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
 	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
 	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
-
-#if (CSP_HAVE_STDIO)
-	if (rtable && csp_rtable_check(rtable)) {
-		int error = csp_rtable_load(rtable);
-		if (error < 1) {
-			printf("csp_rtable_load(%s) failed, error: %d\n", rtable, error);
-		}
-	}
-#endif
-	(void) rtable;
 
 	csp_bind_callback(csp_service_handler, CSP_ANY);
 	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
