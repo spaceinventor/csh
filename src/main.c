@@ -129,7 +129,7 @@ uint64_t clock_get_nsec(void) {
 }
 
 void usage(void) {
-	printf("usage: csh -f conf.yaml [command]\n");
+	printf("usage: csh -i init.csh [command]\n");
 	printf("\n");
 	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
 	printf("\n");
@@ -151,7 +151,25 @@ void * onehz_task(void * param) {
 int main(int argc, char **argv) {
 
 	static struct slash *slash;
-	int remain, index, i, p = 0;
+	int remain, index, i, c, p = 0;
+
+	char * initfile = "init.csh";
+	char * dirname = getenv("HOME");
+
+	while ((c = getopt(argc, argv, ":+hi:")) != -1) {
+		switch (c) {
+		case 'h':
+			usage();
+			exit(EXIT_SUCCESS);
+		case 'i':
+			dirname = "";
+			initfile = optarg;
+			break;
+		default:
+			printf("Argument -%c not recognized\n", c);
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	remain = argc - optind;
 	index = optind;
@@ -209,6 +227,16 @@ int main(int argc, char **argv) {
     }
 
 	slash_run(slash, path, 0);
+
+	/* Init file */
+	char buildpath[100];
+	if (strlen(dirname)) {
+		snprintf(buildpath, 100, "%s/%s", dirname, initfile);
+	} else {
+		snprintf(buildpath, 100, "%s", initfile);
+	}
+	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
+	slash_run(slash, buildpath, 0);
 
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
