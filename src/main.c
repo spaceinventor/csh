@@ -13,10 +13,6 @@
 #include <csp/csp_hooks.h>
 
 #include <param/param.h>
-#include <param/param_list.h>
-#include <param/param_server.h>
-#include <param/param_collector.h>
-#include <param/param_queue.h>
 #ifdef PARAM_HAVE_COMMANDS
 #include <param/param_commands.h>
 #endif
@@ -24,10 +20,8 @@
 #include <param/param_scheduler.h>
 #endif
 
-#include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
 
-#include "prometheus.h"
 #include "known_hosts.h"
 
 extern const char *version_string;
@@ -139,10 +133,6 @@ void usage(void) {
 	printf("\n");
 	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
 	printf("\n");
-}
-
-void kiss_discard(char c, void * taskwoken) {
-	putchar(c);
 }
 
 void * onehz_task(void * param) {

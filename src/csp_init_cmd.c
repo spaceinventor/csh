@@ -10,6 +10,12 @@
 #include <slash/optparse.h>
 #include <sys/utsname.h>
 #include <csp/interfaces/csp_if_zmqhub.h>
+#include <csp/interfaces/csp_if_can.h>
+#include <csp/interfaces/csp_if_lo.h>
+#include <csp/interfaces/csp_if_tun.h>
+#include <csp/interfaces/csp_if_udp.h>
+#include <csp/drivers/can_socketcan.h>
+#include <csp/drivers/usart.h>
 
 void * router_task(void * param) {
 	while(1) {
@@ -94,10 +100,10 @@ slash_command_sub(csp, init, csp_init_cmd, NULL, "Initialize CSP");
 
 static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
-    static int zmqidx = 0;
+    static int ifidx = 0;
 
     char name[10];
-    sprintf(name, "ZMQ%u", zmqidx++);
+    sprintf(name, "ZMQ%u", ifidx++);
     
     int promisc = 0;
     int mask = 8;
@@ -140,3 +146,258 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 }
 
 slash_command_subsub(csp, add, zmq, csp_ifadd_zmq_cmd, NULL, "Add a new ZMQ interface");
+
+static int csp_ifadd_kiss_cmd(struct slash *slash) {
+
+    static int ifidx = 0;
+
+    char name[10];
+    sprintf(name, "KISS%u", ifidx++);
+    
+    int promisc = 0;
+    int mask = 8;
+    int dfl = 0;
+    int baud = 1000000;
+
+    optparse_t * parser = optparse_new("csp add kiss", "<addr> <device (ttyUSB0)>");
+    optparse_add_help(parser);
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
+    optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate");
+    optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * endptr;
+    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter device\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * device = slash->argv[argi];
+
+    csp_usart_conf_t conf = {
+        .device = device,
+        .baudrate = baud,
+        .databits = 8,
+        .stopbits = 1,
+        .paritysetting = 0,
+        .checkparity = 0
+    };
+
+    csp_iface_t * iface;
+    
+    int error = csp_usart_open_and_add_kiss_interface(&conf, name, &iface);
+    if (error != CSP_ERR_NONE) {
+        printf("Failed to add kiss interface\n");
+        return SLASH_EINVAL;
+    }
+
+    iface->is_default = dfl;
+    iface->addr = addr;
+	iface->netmask = mask;
+
+	return SLASH_SUCCESS;
+}
+
+slash_command_subsub(csp, add, kiss, csp_ifadd_kiss_cmd, NULL, "Add a new KISS/UART interface");
+
+#if (CSP_HAVE_LIBSOCKETCAN)
+
+static int csp_ifadd_can_cmd(struct slash *slash) {
+
+    static int ifidx = 0;
+
+    char name[10];
+    sprintf(name, "CAN%u", ifidx++);
+    
+    int promisc = 0;
+    int mask = 8;
+    int dfl = 0;
+    int baud = 1000000;
+
+    optparse_t * parser = optparse_new("csp add can", "<addr> <device (can0)>");
+    optparse_add_help(parser);
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
+    optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate");
+    optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * endptr;
+    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter device\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * device = slash->argv[argi];
+
+    csp_iface_t * iface;
+    
+    int error = csp_can_socketcan_open_and_add_interface(device, name, baud, true, &iface);
+    if (error != CSP_ERR_NONE) {
+        csp_print("failed to add CAN interface [%s], error: %d", device, error);
+        return SLASH_EINVAL;
+    }
+
+    iface->is_default = dfl;
+    iface->addr = addr;
+	iface->netmask = mask;
+
+	return SLASH_SUCCESS;
+}
+
+slash_command_subsub(csp, add, can, csp_ifadd_can_cmd, NULL, "Add a new CAN interface");
+
+#endif
+
+
+static int csp_ifadd_udp_cmd(struct slash *slash) {
+
+    static int ifidx = 0;
+
+    char name[10];
+    sprintf(name, "UDP%u", ifidx++);
+    
+    int promisc = 0;
+    int mask = 8;
+    int dfl = 0;
+    int listen_port = 9220;
+    int remote_port = 9220;
+
+    optparse_t * parser = optparse_new("csp add udp", "<addr> <server>");
+    optparse_add_help(parser);
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
+    optparse_add_int(parser, 'l', "listen-port", "NUM", 0, &listen_port, "Port to listen on");
+    optparse_add_int(parser, 'r', "remote-port", "NUM", 0, &remote_port, "Port to send to");
+    optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * endptr;
+    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter server\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * server = slash->argv[argi];
+
+    csp_iface_t * iface;
+    iface = malloc(sizeof(csp_iface_t));
+    memset(iface, 0, sizeof(csp_iface_t));
+    csp_if_udp_conf_t * udp_conf = malloc(sizeof(csp_if_udp_conf_t));
+    udp_conf->host = strdup(server);
+    udp_conf->lport = listen_port;
+    udp_conf->rport = remote_port;
+    csp_if_udp_init(iface, udp_conf);
+
+    iface->is_default = dfl;
+    iface->addr = addr;
+	iface->netmask = mask;
+
+	return SLASH_SUCCESS;
+}
+
+slash_command_subsub(csp, add, udp, csp_ifadd_udp_cmd, NULL, "Add a new UDP interface");
+
+
+static int csp_ifadd_tun_cmd(struct slash *slash) {
+
+    static int ifidx = 0;
+
+    char name[10];
+    sprintf(name, "TUN%u", ifidx++);
+    
+    int promisc = 0;
+    int mask = 8;
+    int dfl = 0;
+
+    optparse_t * parser = optparse_new("csp add udp", "<ifaddr> <tun src> <tun dst>");
+    optparse_add_help(parser);
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
+    optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * endptr;
+    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (++argi >= slash->argc) {
+		printf("missing parameter tun src\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    unsigned int tun_src = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (++argi >= slash->argc) {
+		printf("missing parameter tun dst\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    unsigned int tun_dst = strtoul(slash->argv[argi], &endptr, 10);
+
+    csp_iface_t * iface;
+    iface = malloc(sizeof(csp_iface_t));
+    csp_if_tun_conf_t * ifconf = malloc(sizeof(csp_if_tun_conf_t));
+    ifconf->tun_dst = tun_dst;
+    ifconf->tun_src = tun_src;
+
+    csp_if_tun_init(iface, ifconf);
+
+    iface->is_default = dfl;
+    iface->addr = addr;
+	iface->netmask = mask;
+
+	return SLASH_SUCCESS;
+}
+
+slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
+
+
+
+
