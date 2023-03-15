@@ -1,9 +1,0 @@
-
- - name: "UDP"
-   driver: "udp"
-   addr: 28
-   netmask: 1
-   server: "127.0.0.1"
-   listen_port: 52001
-   remote_port: 52002
-   default: true

@@ -158,12 +158,14 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int mask = 8;
     int dfl = 0;
     int baud = 1000000;
+    char * device = "ttyUSB0";
 
-    optparse_t * parser = optparse_new("csp add kiss", "<addr> <device (ttyUSB0)>");
+    optparse_t * parser = optparse_new("csp add kiss", "<addr>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate");
+    optparse_add_string(parser, 'u', "uart", "STR", &device, "UART device name (defaults to ttyUSB0)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -179,13 +181,6 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 	}
     char * endptr;
     unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
-
-	if (++argi >= slash->argc) {
-		printf("missing parameter device\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
-	}
-    char * device = slash->argv[argi];
 
     csp_usart_conf_t conf = {
         .device = device,
@@ -226,12 +221,14 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     int mask = 8;
     int dfl = 0;
     int baud = 1000000;
+    char * device = "can0";
 
-    optparse_t * parser = optparse_new("csp add can", "<addr> <device (can0)>");
+    optparse_t * parser = optparse_new("csp add can", "<addr>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate");
+    optparse_add_string(parser, 'c', "can", "STR", &device, "CAN device name (defaults to can0)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -247,13 +244,6 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
 	}
     char * endptr;
     unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
-
-	if (++argi >= slash->argc) {
-		printf("missing parameter device\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
-	}
-    char * device = slash->argv[argi];
 
     csp_iface_t * iface;
     
