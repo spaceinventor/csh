@@ -34,19 +34,28 @@ void hk_epoch(time_t epoch) {
 
 static int hk_timeoffset(struct slash *slash) {
 
-    optparse_t * parser = optparse_new("hk epoch", "Satellite epoch time relative to Jan 1th 1970");
+    optparse_t * parser = optparse_new("hk timeoffset", "Satellite epoch time in seconds relative to Jan 1th 1970");
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
 
 	/* Check if name is present */
-	if (++argi >= slash->argc) {
-		printf("missing offset value\n");
-		return SLASH_EINVAL;
+	int time_offset = 0;
+	if (++argi < slash->argc) {
+		time_offset = atoi(slash->argv[argi]);
 	}
 
-	hk_epoch(atoi(slash->argv[argi]));
+	
+	if (time_offset > 0) {
+		hk_epoch(time_offset);
+	} else {
+		printf("Current satellite EPOCH is %s", ctime(&local_epoch));
+	}
 
-	return 0;
+	return SLASH_SUCCESS;
 }
 
 slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL);
