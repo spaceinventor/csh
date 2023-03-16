@@ -16,6 +16,7 @@
 #include <csp/interfaces/csp_if_udp.h>
 #include <csp/drivers/can_socketcan.h>
 #include <csp/drivers/usart.h>
+#include <csp/csp_rtable.h>
 
 void * router_task(void * param) {
 	while(1) {
@@ -389,5 +390,44 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
 
 
+static int csp_routeadd_cmd(struct slash *slash) {
 
+    char route[50];
 
+    optparse_t * parser = optparse_new("csp add route", "<addr>/<mask> <ifname>");
+    optparse_add_help(parser);
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+    /* Build string from the two slash input arguments */
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr/mask\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    strcpy(route, slash->argv[argi]);
+    route[strlen(slash->argv[argi])] = ' ';
+    route[strlen(slash->argv[argi])+1] = '\0';
+
+    if (++argi >= slash->argc) {
+		printf("missing parameter ifname\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+    strcpy(&route[strlen(route)], slash->argv[argi]);
+
+    if (csp_rtable_load(route) == 1) { /* function returns number of routes added */
+        printf("Added route %s\n", route);
+    	return SLASH_SUCCESS;
+    } else {
+        printf("Error during route add\n");
+        return SLASH_EINVAL;
+    }
+}
+
+slash_command_subsub(csp, add, route, csp_routeadd_cmd, NULL, "Add a new route");
