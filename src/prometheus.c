@@ -120,7 +120,7 @@ static int prometheus_start_cmd(struct slash *slash) {
 
     optparse_t * parser = optparse_new("prometheus start", "");
     optparse_add_help(parser);
-    optparse_add_int(parser, 'h', "hk_node", "NUM", 0, &hk_node, "Housekeeping node");
+    optparse_add_int(parser, 'n', "hk_node", "NUM", 0, &hk_node, "Housekeeping node");
 	optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
