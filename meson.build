@@ -78,4 +78,4 @@ spacebridge = executable('spacebridge', spacebridge_sources,
 	install : true,
 )
 
-install_data('yaml/caninit', install_dir : get_option('bindir'))
+install_data('init/caninit', install_dir : get_option('bindir'))
