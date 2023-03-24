@@ -1,2 +1,2 @@
 csp init
-csp add can -d 1
+csp add can -d 15
