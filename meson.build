@@ -27,6 +27,7 @@ csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 libelf_dep = dependency('libelf', required: false)
+lua_dep = dependency('lua5.4', required: false)
 
 csh_sources = [
 	'src/main.c',
@@ -51,6 +52,10 @@ csh_sources = [
 	'src/csp_init_cmd.c',
 ]
 
+if lua_dep.found()
+	csh_sources += 'src/lua.c'
+endif
+
 if libelf_dep.found()
 	csh_sources += 'src/elfparse.c'
 endif
@@ -59,7 +64,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, lua_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )
