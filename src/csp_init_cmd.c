@@ -112,7 +112,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
     optparse_t * parser = optparse_new("csp add zmq", "<addr> <server>");
     optparse_add_help(parser);
-    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
 
@@ -163,7 +163,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
     optparse_t * parser = optparse_new("csp add kiss", "<addr>");
     optparse_add_help(parser);
-    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate");
     optparse_add_string(parser, 'u', "uart", "STR", &device, "UART device name (defaults to ttyUSB0)");
@@ -248,7 +248,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
 
     csp_iface_t * iface;
     
-    int error = csp_can_socketcan_open_and_add_interface(device, name, baud, true, &iface);
+    int error = csp_can_socketcan_open_and_add_interface(device, name, baud, promisc, &iface);
     if (error != CSP_ERR_NONE) {
         csp_print("failed to add CAN interface [%s], error: %d", device, error);
         return SLASH_EINVAL;
