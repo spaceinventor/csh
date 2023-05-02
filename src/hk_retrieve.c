@@ -96,7 +96,7 @@ static int hk_retrieve(struct slash *slash) {
 
     do {
         csp_buffer_free(packet);
-        packet = csp_read(conn, 1000);
+        packet = csp_read(conn, slash_dfl_timeout);
         if (packet == NULL) {
             printf("No response\n");
             csp_close(conn);
