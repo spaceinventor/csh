@@ -9,8 +9,9 @@
 #define SRC_HK_PARAM_SNIFFER_H_
 
 #include <time.h>
+#include <csp/csp.h>
 
 void hk_epoch(time_t epoch);
-void hk_param_sniffer_init(unsigned int node);
+void hk_param_sniffer(csp_packet_t * packet);
 
 #endif /* SRC_HK_PARAM_SNIFFER_H_ */

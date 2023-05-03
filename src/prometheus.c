@@ -97,7 +97,7 @@ void prometheus_add(char * str) {
 		strcpy(prometheus_buf + prometheus_buf_len, str);
 		prometheus_buf_len += strlen(str);
 	}
-	//printf("prometheus add %s, buflen %d\n", str, prometheus_buf_len);
+	//printf("prometheus add %s", str);
 }
 
 void prometheus_clear(void) {
@@ -130,11 +130,7 @@ static int prometheus_start_cmd(struct slash *slash) {
     }
 
 	prometheus_init();
-	if(hk_node > 0) {
-		hk_param_sniffer_init(hk_node);
-	} else {
-		param_sniffer_init(logfile);
-	}
+	param_sniffer_init(logfile, hk_node);
 
 	return SLASH_SUCCESS;
 }

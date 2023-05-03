@@ -14,10 +14,13 @@
 #include <csp/csp.h>
 #include <csp/csp_crc32.h>
 
+#include "hk_param_sniffer.h"
 #include "prometheus.h"
 
 pthread_t param_sniffer_thread;
 FILE *logfile;
+
+static unsigned int hk_node = 0;
 
 int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader) {
 
@@ -95,30 +98,41 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 	return 0;
 }
 
+int param_sniffer_crc(csp_packet_t * packet) {
+
+	/* CRC32 verified packet */
+	if (packet->id.flags & CSP_FCRC32) {
+		if (packet->length < 4) {
+			printf("Too short packet for CRC32, %u\n", packet->length);
+			return -1;
+		}
+		/* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
+		if (csp_crc32_verify(packet) != 0) {
+			/* Checksum failed */
+			printf("CRC32 verification error! Discarding packet\n");
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static void * param_sniffer(void * param) {
 	csp_promisc_enable(100);
 	while(1) {
 		csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
+
+		if (packet->id.src == hk_node) {
+			hk_param_sniffer(packet);
+		}
 
 		if (packet->id.sport != PARAM_PORT_SERVER) {
 			csp_buffer_free(packet);
 			continue;
 		}
 
-		/* CRC32 verified packet */
-		if (packet->id.flags & CSP_FCRC32) {
-			if (packet->length < 4) {
-				printf("Too short packet for CRC32, %u\n", packet->length);
-				csp_buffer_free(packet);
-				continue;
-			}
-			/* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
-			if (csp_crc32_verify(packet) != 0) {
-				/* Checksum failed */
-				printf("CRC32 verification error! Discarding packet\n");
-				csp_buffer_free(packet);
-				continue;
-			}
+		if (param_sniffer_crc(packet) < 0) {
+			csp_buffer_free(packet);
+			continue;
 		}
 
 		uint8_t type = packet->data[0];
@@ -150,6 +164,9 @@ static void * param_sniffer(void * param) {
 			param_t * param = param_list_find_id(node, id);
 			if (param) {	
 				param_sniffer_log(NULL, &queue, param, offset, &reader);
+			} else {
+				printf("Found unknown param node %d id %d\n", node, id);
+				break;
 			}
 		}
 		csp_buffer_free(packet);
@@ -157,7 +174,9 @@ static void * param_sniffer(void * param) {
 	return NULL;
 }
 
-void param_sniffer_init(int add_logfile) {
+void param_sniffer_init(int add_logfile, int node) {
+
+	hk_node = node;
 
 	if (add_logfile) {
 		logfile = fopen("param_sniffer.log", "a");
