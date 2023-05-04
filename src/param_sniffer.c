@@ -123,6 +123,8 @@ static void * param_sniffer(void * param) {
 
 		if (packet->id.src == hk_node) {
 			hk_param_sniffer(packet);
+			csp_buffer_free(packet);
+			continue;
 		}
 
 		if (packet->id.sport != PARAM_PORT_SERVER) {
