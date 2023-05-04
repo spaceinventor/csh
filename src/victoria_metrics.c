@@ -52,7 +52,7 @@ void * vm_push(void * arg) {
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
-        // continue if local_buffer_size = 0 TODO Bob Jensen
+        // continue if local_buffer_size = 0 TODO
 
         // Create a socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -147,6 +147,9 @@ static int vm_start_cmd(struct slash *slash) {
 	}
 	char * name = slash->argv[argi];
 
+    // string copy this TODO
+    // create global variable for wether we are running prometheus or victoria
+    // TODO mutate the str passed from param_sniffer to include label
     if (++argi >= slash->argc) {
         printf("No server using 127.0.0.1\n");
         server_ip = "127.0.0.1";
