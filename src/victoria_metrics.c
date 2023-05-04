@@ -28,17 +28,17 @@
 static pthread_t vm_push_thread;
 
 #define SERVER_PORT 8428
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE 10*1024*1024
 
-char *server_ip;
+char server_ip[64] = {0};
 char buffer[BUFFER_SIZE];
 size_t buffer_size = 0;
 pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+char request[BUFFER_SIZE + 1024];
 
 void * vm_push(void * arg) {
     int sockfd;
     struct sockaddr_in server_addr;
-    char request[BUFFER_SIZE * 2];
     char local_buffer[BUFFER_SIZE];
 
     while (1) {
@@ -52,7 +52,10 @@ void * vm_push(void * arg) {
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
-        // continue if local_buffer_size = 0 TODO
+        if(local_buffer_size == 0){
+            sleep(1);
+            continue;
+        }
 
         // Create a socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -75,7 +78,7 @@ void * vm_push(void * arg) {
         }
 
         // Prepare HTTP request
-        snprintf(request, BUFFER_SIZE * 2,
+        snprintf(request, BUFFER_SIZE + 1024,
                  "POST /api/v1/import/prometheus HTTP/1.1\r\n"
                  "Host: %s:%d\r\n"
                  "Content-Type: text/plain\r\n"
@@ -84,16 +87,22 @@ void * vm_push(void * arg) {
                  "%s",
                  server_ip, SERVER_PORT, local_buffer_size, local_buffer);
 
+
         // Send HTTP request
         if (send(sockfd, request, strlen(request), 0) < 0) {
             perror("send() error");
             close(sockfd);
             continue;
         }
-        // clear buffer and length TODO
 
         // Close the socket
         close(sockfd);
+
+        pthread_mutex_lock(&buffer_mutex);
+        // Copy buffer to local_buffer and get current buffer_size
+        buffer_size = 0;
+        // Unlock the buffer mutex
+        pthread_mutex_unlock(&buffer_mutex);
 
         // Sleep for 1 second
         sleep(1);
@@ -152,9 +161,9 @@ static int vm_start_cmd(struct slash *slash) {
     // TODO mutate the str passed from param_sniffer to include label
     if (++argi >= slash->argc) {
         printf("No server using 127.0.0.1\n");
-        server_ip = "127.0.0.1";
+        strncpy(server_ip, "127.0.0.1", 64);
     } else {
-        server_ip = slash->argv[argi];
+        strncpy(server_ip, slash->argv[argi], 64);
     }
 
     vm_init();
