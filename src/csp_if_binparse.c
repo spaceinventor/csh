@@ -14,10 +14,11 @@
 #include <csp/csp_id.h>
 #include <csp/csp_crc32.h>
 #include <csp/csp_cmp.h>
+#include <csp/csp_hooks.h>
 
 static csp_iface_t iface;
 
-extern uint64_t binparse_time;
+time_t binparse_time;
 
 static bool initialized = false;
 
@@ -44,6 +45,7 @@ static int csp_if_binparse(struct slash *slash) {
     optparse_t * parser = optparse_new("binparse", "filename");
     optparse_add_help(parser);
     optparse_add_set(parser, 's', "sim", 1, &sim, "Simulation Mode");
+
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -74,7 +76,7 @@ static int csp_if_binparse(struct slash *slash) {
     printf("Read %d bytes from %s\n", filesize, filename);
 
     int cnt = 0;
-    int lastseq = -1;
+    //int lastseq = -1;
 
     csp_packet_t * rx_packet = NULL;
 
@@ -93,7 +95,7 @@ static int csp_if_binparse(struct slash *slash) {
             binparse_time = be32toh(*(uint32_t*)&d[3*4])+1672527600 + 3600; // Cortex logs timestamp relative to Jan 1st 2023
 
             uint8_t idx = d[17*4];
-            uint8_t seq = d[17*4+1];
+            //uint8_t seq = d[17*4+1];
             uint16_t len = be16toh(*(uint16_t*)(&d[17*4+2]));
 
             if(len >= 10 && len <= MAX_LEN) {
@@ -145,8 +147,13 @@ static int csp_if_binparse(struct slash *slash) {
 
                 // printf("Found packet with length %d port %d from node %d\n", len, rx_packet->id.sport, rx_packet->id.src);
 
+                struct tm *tmp = gmtime(&binparse_time);
+                printf("%02d-%02d-%04d %02d:%02d:%02d\n", tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900, tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
+
                 /* Send back into CSP, notice calling from task so last argument must be NULL! */
                 if (sim) {
+                    printf("SIM: %lu\n", binparse_time);
+                    csp_input_hook(&iface, rx_packet);
                     csp_buffer_free(rx_packet);
                     rx_packet = NULL;
                 } else {
