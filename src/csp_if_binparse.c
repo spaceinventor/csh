@@ -82,6 +82,8 @@ void * binparse_task(void * param) {
     csp_iflist_add(&iface);
 
     csp_packet_t * rx_packet = NULL;
+    uint8_t last_idx = -1;
+    uint8_t last_seq = -1;
 
 	while(1) {
 
@@ -170,6 +172,29 @@ void * binparse_task(void * param) {
         if (_binparse_dbg & 0x2)
             printf("FRAME: idx %u, seq %u, len %u\n", idx, seq, len);
 
+        /* Multiple frames in a single CSP packet support */
+        static const int CCSDS_LEN = 219;
+        uint8_t numframes = len / CCSDS_LEN;
+        if (len * CCSDS_LEN < numframes) numframes++; // ceil(...)
+
+        /* Beginning of new CSP packet, reset check variables */
+        if (idx == 0) {
+            last_seq = seq;
+            last_idx = 0;
+        /* Check for CCSDS frame loss */
+        } else if (last_seq != seq || ++last_idx != idx) {
+            printf("Discarding packet due to %u != %u || ++%u != %u \n", last_seq, seq, last_idx, idx);
+            csp_buffer_free(rx_packet);
+            rx_packet = NULL;
+            goto skip;
+        }
+
+        if(numframes > idx + 1) {
+            if (_binparse_dbg & 0x10)
+                printf("Found frame %d of %d with len %d, waiting for next one\n", idx, numframes, len);
+            goto skip;
+        }
+
         /* For dry runs, we have done enough now */
         if (_binparse_fwd == 0)
             goto skip;
@@ -186,18 +211,8 @@ void * binparse_task(void * param) {
         }
 
         /* Move data to CSP buffer (with support for spanning multiple frames)*/
-        static const int CCSDS_LEN = 219;
         rx_packet->frame_length = len;
         memcpy(&rx_packet->frame_begin[idx * CCSDS_LEN], &hdr->data.csp_packet, min(len-idx*CCSDS_LEN,CCSDS_LEN));
-
-        /* Multiple frames in a since CSP packet support */
-        int numframes = len / CCSDS_LEN;
-        if(numframes > idx + 1) {
-            printf("Found frame %d of %d with len %d, looking for next one\n", idx, len, numframes);
-            goto skip;
-        }
-        if (idx > 0)
-            printf("Found all frames, proceeding\n");
 
         /* Parse CSP header */
         if (csp_id_strip(rx_packet) < 0) {
