@@ -63,13 +63,25 @@ int min(int a, int b) {
     else return b;
 }
 
-static uint8_t _binparse_dbg = 0;
+static uint8_t _binparse_dbg = 1;
 PARAM_DEFINE_STATIC_RAM(500, binparse_dbg, PARAM_TYPE_UINT8,  1, 0, PM_DEBUG, NULL, "", &_binparse_dbg, NULL);
 
 static uint8_t _binparse_fwd = 1;
 PARAM_DEFINE_STATIC_RAM(501, binparse_fwd, PARAM_TYPE_UINT8,  1, 0, PM_CONF, NULL, "", &_binparse_fwd, NULL);
 
+static uint8_t _binparse_en = 0;
+void binparse_en_cb(struct param_s * param, int offset) {
+	static pthread_t binparse_handle = 0;
+    if (binparse_handle == 0) {
+        void *binparse_task(void * param);
+	    pthread_create(&binparse_handle, NULL, &binparse_task, NULL);
+    }
+}
+PARAM_DEFINE_STATIC_RAM(502, binparse_en, PARAM_TYPE_UINT8,  1, 0, PM_CONF, binparse_en_cb, "", &_binparse_en, NULL);
+
 void * binparse_task(void * param) {
+
+    csp_iflist_add(&iface);
 
     csp_packet_t * rx_packet = NULL;
 
@@ -81,12 +93,12 @@ void * binparse_task(void * param) {
             fill_level += sizeof(ringbuf);
         }
 
-        if (_binparse_dbg & 0x3)
+        if (_binparse_dbg & 0x8)
             printf("Read %d, write %d, Fill level %d\n", ringbuf_read, ringbuf_write, fill_level);
 
         /* Wait for at least one frame */
         if (fill_level < sizeof(cortex_hdr_t)) {
-            sleep(1);
+            usleep(1000);
             continue;
         }
 
@@ -114,26 +126,33 @@ void * binparse_task(void * param) {
             rs_corrected = (ctx_rs_status && 0xFF00) >> 8;
         }
 
-        if (_binparse_dbg & 0x2)
+        if (_binparse_dbg & 0x4)
             printf("CORTEX seq: %d, len %d (payload %d), ok %d (rserr %d), lock %d, %02d-%02d-%04d %02d:%02d:%02d\n", ctx_seq, ctx_len, ctx_frame_len, ok, rs_corrected, ctx_lock, tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900, tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 
         /* Frame sanity checks */
-        if (be32toh(hdr->bit_slip_status) != 0)
-            printf("WARNING: BIT SLIP\n");
-        if (be32toh(hdr->tm_delay) != 0)
-            printf("WARNING: TM DELAY\n");
-        if (be32toh(hdr->frame_check_type) != 1)
-            printf("WARNING: Non RS frame\n");
-        if (be32toh(hdr->sync_word_len) != 32)
-            printf("WARNING: Non 32-bit sync word\n");
+        if (_binparse_dbg & 0x1) {
+            if (be32toh(hdr->bit_slip_status) != 0)
+                printf("WARNING: BIT SLIP\n");
+            if (be32toh(hdr->tm_delay) != 0)
+                printf("WARNING: TM DELAY\n");
+            if (be32toh(hdr->frame_check_type) != 1)
+                printf("WARNING: Non RS frame\n");
+            if (be32toh(hdr->sync_word_len) != 32)
+                printf("WARNING: Non 32-bit sync word\n");
+        }
+
+        iface.frame++;
 
         /* Skip frames with RS Check error */
-        if (!ok)
+        if (!ok) {
+            iface.rx_error++;
             goto skip;
+        }
 
         /* Expect CCSDS ASM */
         if (be32toh(hdr->data.ccsds_asm) != 0x1ACFFC1D) {
-            printf("WARNING: Non CCSDS frame\n");
+            if (_binparse_dbg & 0x1)
+                printf("WARNING: Non CCSDS frame\n");
             goto skip;
         }
 
@@ -145,7 +164,7 @@ void * binparse_task(void * param) {
         if ((len == 0) || (len > 2000))
             goto skip;
 
-        if (_binparse_dbg & 0x1)
+        if (_binparse_dbg & 0x2)
             printf("FRAME: idx %u, seq %u, len %u\n", idx, seq, len);
 
         /* For dry runs, we have done enough now */
@@ -154,6 +173,9 @@ void * binparse_task(void * param) {
 
         /* Allocate CSP packet buffer */
         if (rx_packet == NULL) {
+            if (csp_buffer_remaining() < 10) {
+                usleep(1);
+            }
             while((rx_packet = csp_buffer_get(0)) == NULL) {
                 usleep(1);
             }
@@ -190,15 +212,6 @@ skip:
 	return NULL;
 }
 
-static int binparse_start_cmd(struct slash *slash) {
-	static pthread_t binparse_handle = 0;
-    if (binparse_handle == 0) {
-	    pthread_create(&binparse_handle, NULL, &binparse_task, NULL);
-    }
-    return SLASH_SUCCESS;
-}
-
-slash_command_sub(binparse, start, binparse_start_cmd, NULL, NULL);
 
 static int binparse_file(struct slash *slash) {
 
