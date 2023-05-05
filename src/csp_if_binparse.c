@@ -80,6 +80,9 @@ static int csp_if_binparse(struct slash *slash) {
 
     csp_packet_t * rx_packet = NULL;
 
+    struct timespec ts_begin;
+    clock_gettime(CLOCK_MONOTONIC, &ts_begin);
+
     while(d-dd < filesize) {
 
         if (d[0] == 0x49 && d[1] == 0x96 && d[2] == 0x02 && d[3] == 0xD2
@@ -101,7 +104,9 @@ static int csp_if_binparse(struct slash *slash) {
             if(len >= 10 && len <= MAX_LEN) {
 
                 if (rx_packet == NULL) {
-                    rx_packet = csp_buffer_get(0);
+                    while((rx_packet = csp_buffer_get(0)) == NULL) {
+                        usleep(1);
+                    }
                     csp_id_setup_rx(rx_packet);
                 }
 
@@ -124,42 +129,17 @@ static int csp_if_binparse(struct slash *slash) {
                     continue;
                 }
 
-                /* CRC32 verified packet */
-                // if (rx_packet->id.flags & CSP_FCRC32) {
-                //     if (rx_packet->length < 4) {
-                //         printf("Too short packet for CRC32, %u\n", rx_packet->length);
-                //         csp_buffer_free(rx_packet);
-                //         continue;
-                //     }
-                //     // rx_packet->length += 4;
-                //     /* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
-                //     if (csp_crc32_verify(rx_packet) != 0) {
-                //         /* Checksum failed */
-                //         printf("CRC32 verification error! Discarding packet\n");
-                //         csp_buffer_free(rx_packet);
-                //         continue;
-                //     }
-                // }
-
-                // if (rx_packet->id.src == 331) {
-                //     printf("Found HK with length %u on port %u\n", len, rx_packet->id.sport);
-                // }
-
-                // printf("Found packet with length %d port %d from node %d\n", len, rx_packet->id.sport, rx_packet->id.src);
-
                 struct tm *tmp = gmtime(&binparse_time);
                 printf("%02d-%02d-%04d %02d:%02d:%02d\n", tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900, tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 
                 /* Send back into CSP, notice calling from task so last argument must be NULL! */
                 if (sim) {
-                    printf("SIM: %lu\n", binparse_time);
                     csp_input_hook(&iface, rx_packet);
                     csp_buffer_free(rx_packet);
                     rx_packet = NULL;
                 } else {
                     csp_qfifo_write(rx_packet, &iface, NULL);
                     rx_packet = NULL;
-                    usleep(10000);
                 }
 
                 cnt++;
@@ -170,6 +150,12 @@ static int csp_if_binparse(struct slash *slash) {
         }
     }
 
+    struct timespec ts_end;
+    clock_gettime(CLOCK_MONOTONIC, &ts_end);
+
+    float duration = (ts_end.tv_sec - ts_begin.tv_sec) + (ts_end.tv_nsec - ts_begin.tv_nsec) / 1e9;
+
+    printf("Processed %d bytes in %f seconds\n", filesize, duration);
     printf("Found %d packets\n", cnt);
 
     free(dd);
