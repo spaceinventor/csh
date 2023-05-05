@@ -3,12 +3,13 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
 #include <slash/optparse.h>
 
-#include <param/param_queue.h>
+#include <param/param.h>
 
 #include <csp/csp.h>
 #include <csp/csp_id.h>
@@ -45,71 +46,57 @@ typedef struct {
     frame_hdr_t data;           //! First data frame field
 } cortex_hdr_t;
 
+static const int CCSDS_LEN = 219;
+
 static csp_iface_t iface = {
     .name = "BINPARSE",
     .addr = 14000,
     .netmask = 8,
 };
 
+static uint8_t ringbuf[400000000];
+static int ringbuf_write = 0;
+static int ringbuf_read = 0;
+
 int min(int a, int b) {
     if (a < b) return a;
     else return b;
 }
 
-static int csp_if_binparse(struct slash *slash) {
+static uint8_t _binparse_dbg = 0;
+PARAM_DEFINE_STATIC_RAM(500, binparse_dbg, PARAM_TYPE_UINT8,  1, 0, PM_DEBUG, NULL, "", &_binparse_dbg, NULL);
 
-	char * filename = NULL;
-    int dry_run = 0;
-    int ctx_dbg = 0;
+static uint8_t _binparse_fwd = 1;
+PARAM_DEFINE_STATIC_RAM(501, binparse_fwd, PARAM_TYPE_UINT8,  1, 0, PM_CONF, NULL, "", &_binparse_fwd, NULL);
 
-    optparse_t * parser = optparse_new("binparse", "filename");
-    optparse_add_help(parser);
-    optparse_add_set(parser, 'n', "dry-run", 1, &dry_run, "Dry run mode");
-    optparse_add_set(parser, 'c', "cortex", 1, &ctx_dbg, "Print cortex debug information");
-
-    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
-    if (argi < 0) {
-        optparse_del(parser);
-	    return SLASH_EINVAL;
-    }
-
-	if (++argi >= slash->argc) {
-	    return SLASH_EINVAL;
-    }
-
-    filename = slash->argv[argi];
-    FILE * file = fopen(filename, "rb");
-
-    if (file == NULL) {
-        printf("File could not be opened\n");
-        return SLASH_EINVAL;
-    }
-
-    const int MAX_SIZE = 10*1024*1024;
-    const int CCSDS_LEN = 219;
-
-    uint8_t * d = malloc(MAX_SIZE);
-    uint8_t * dd = d;
-
-    int filesize = fread((void*)d, 1, MAX_SIZE, file);
-    printf("Read %d bytes from %s\n", filesize, filename);
-
-    int cnt = 0;
+void * binparse_task(void * param) {
 
     csp_packet_t * rx_packet = NULL;
 
-    struct timespec ts_begin;
-    clock_gettime(CLOCK_MONOTONIC, &ts_begin);
+	while(1) {
 
+        /* Calculate current fill level */
+        int fill_level = ringbuf_write - ringbuf_read;
+        if (fill_level < 0) {
+            fill_level += sizeof(ringbuf);
+        }
 
-    while(d-dd < filesize) {
+        if (_binparse_dbg & 0x3)
+            printf("Read %d, write %d, Fill level %d\n", ringbuf_read, ringbuf_write, fill_level);
 
-        cortex_hdr_t * hdr = (cortex_hdr_t *) d;
+        /* Wait for at least one frame */
+        if (fill_level < sizeof(cortex_hdr_t)) {
+            sleep(1);
+            continue;
+        }
+
+        cortex_hdr_t * hdr = (cortex_hdr_t *) &ringbuf[ringbuf_read];
 
         /* Note 4: Telemetry frames and blocks are 32-bit aligned 
          * (LSBs of the last word are zero-filled if the frame or block length, in bytes, is not a multiple of 4).*/
         if (hdr->start_of_message != htobe32(0x499602D2)) {
-            d += 4;
+            ringbuf_read = (ringbuf_read + 1) % sizeof(ringbuf);
+            printf("sidestep in ringbuf\n");
             continue;
         }
 
@@ -127,7 +114,7 @@ static int csp_if_binparse(struct slash *slash) {
             rs_corrected = (ctx_rs_status && 0xFF00) >> 8;
         }
 
-        if (ctx_dbg)
+        if (_binparse_dbg & 0x2)
             printf("CORTEX seq: %d, len %d (payload %d), ok %d (rserr %d), lock %d, %02d-%02d-%04d %02d:%02d:%02d\n", ctx_seq, ctx_len, ctx_frame_len, ok, rs_corrected, ctx_lock, tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900, tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 
         /* Frame sanity checks */
@@ -158,11 +145,11 @@ static int csp_if_binparse(struct slash *slash) {
         if ((len == 0) || (len > 2000))
             goto skip;
 
-        printf("FRAME: idx %u, seq %u, len %u\n", idx, seq, len);
-        cnt++;
+        if (_binparse_dbg & 0x1)
+            printf("FRAME: idx %u, seq %u, len %u\n", idx, seq, len);
 
         /* For dry runs, we have done enough now */
-        if (dry_run)
+        if (_binparse_fwd == 0)
             goto skip;
 
         /* Allocate CSP packet buffer */
@@ -198,21 +185,86 @@ static int csp_if_binparse(struct slash *slash) {
         rx_packet = NULL;
 
 skip:
-        d += ctx_len;
-
+        ringbuf_read = (ringbuf_read + ctx_len) % sizeof(ringbuf);
     }
+	return NULL;
+}
+
+static int binparse_start_cmd(struct slash *slash) {
+	static pthread_t binparse_handle = 0;
+    if (binparse_handle == 0) {
+	    pthread_create(&binparse_handle, NULL, &binparse_task, NULL);
+    }
+    return SLASH_SUCCESS;
+}
+
+slash_command_sub(binparse, start, binparse_start_cmd, NULL, NULL);
+
+static int binparse_file(struct slash *slash) {
+
+	char * filename = NULL;
+
+    optparse_t * parser = optparse_new("binparse file", "<filename>");
+    optparse_add_help(parser);
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	if (++argi >= slash->argc) {
+	    return SLASH_EINVAL;
+    }
+
+    filename = slash->argv[argi];
+    FILE * file = fopen(filename, "rb");
+
+    if (file == NULL) {
+        printf("File could not be opened\n");
+        return SLASH_EINVAL;
+    }
+
+    while(1) {
+
+        /* Calculate current fill level */
+        int fill_level = ringbuf_write - ringbuf_read;
+        if (fill_level < 0) {
+            fill_level += sizeof(ringbuf);
+        }
+        /* Remain is -1 because we dont want buffer to overwrite itself */
+        int remain = sizeof(ringbuf) - fill_level - 1;
+
+        printf("Remain %d\n", remain);
+        if (remain == 0) {
+            break;
+        }
+
+        int buf_end = sizeof(ringbuf) - ringbuf_write;
+
+        int filesize = fread(&ringbuf[ringbuf_write], 1, min(remain, buf_end), file);
+        if (filesize == 0) {
+            break;
+        }
+        ringbuf_write = (ringbuf_write + filesize) % sizeof(ringbuf);
+        printf("Read %d bytes from %s\n", filesize, filename);
+    }
+    
+    fclose(file);
+
+    #if 0
+    struct timespec ts_begin;
+    clock_gettime(CLOCK_MONOTONIC, &ts_begin);
 
     struct timespec ts_end;
     clock_gettime(CLOCK_MONOTONIC, &ts_end);
 
     float duration = (ts_end.tv_sec - ts_begin.tv_sec) + (ts_end.tv_nsec - ts_begin.tv_nsec) / 1e9;
-
     printf("Processed %d bytes in %f seconds\n", filesize, duration);
-    printf("Found %d packets\n", cnt);
+    #endif
 
-    free(dd);
 
     return SLASH_SUCCESS;
 }
 
-slash_command(binparse, csp_if_binparse, NULL, NULL);
+slash_command_sub(binparse, file, binparse_file, NULL, NULL);
