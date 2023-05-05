@@ -46,8 +46,6 @@ typedef struct {
     frame_hdr_t data;           //! First data frame field
 } cortex_hdr_t;
 
-static const int CCSDS_LEN = 219;
-
 static csp_iface_t iface = {
     .name = "BINPARSE",
     .addr = 14000,
@@ -86,6 +84,11 @@ void * binparse_task(void * param) {
     csp_packet_t * rx_packet = NULL;
 
 	while(1) {
+
+        if (_binparse_en == 0) {
+            sleep(1);
+            continue;
+        }
 
         /* Calculate current fill level */
         int fill_level = ringbuf_write - ringbuf_read;
@@ -183,6 +186,7 @@ void * binparse_task(void * param) {
         }
 
         /* Move data to CSP buffer (with support for spanning multiple frames)*/
+        static const int CCSDS_LEN = 219;
         rx_packet->frame_length = len;
         memcpy(&rx_packet->frame_begin[idx * CCSDS_LEN], &hdr->data.csp_packet, min(len-idx*CCSDS_LEN,CCSDS_LEN));
 
@@ -264,18 +268,6 @@ static int binparse_file(struct slash *slash) {
     }
     
     fclose(file);
-
-    #if 0
-    struct timespec ts_begin;
-    clock_gettime(CLOCK_MONOTONIC, &ts_begin);
-
-    struct timespec ts_end;
-    clock_gettime(CLOCK_MONOTONIC, &ts_end);
-
-    float duration = (ts_end.tv_sec - ts_begin.tv_sec) + (ts_end.tv_nsec - ts_begin.tv_nsec) / 1e9;
-    printf("Processed %d bytes in %f seconds\n", filesize, duration);
-    #endif
-
 
     return SLASH_SUCCESS;
 }
