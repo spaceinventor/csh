@@ -50,7 +50,7 @@ csh_sources = [
 	'src/hk_param_sniffer.c',
 	'src/lock.c',
 	'src/csp_init_cmd.c',
-	'src/csp_if_binparse.c',
+	'src/csp_if_cortex.c',
 ]
 
 if lua_dep.found()
