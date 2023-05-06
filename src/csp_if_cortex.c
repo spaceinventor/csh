@@ -290,6 +290,8 @@ void * csp_if_cortex_rx_task(void * param) {
 
     while (1) {
 
+        printf("RX task\n");
+
         /* Calculate current fill level */
         int fill_level = ringbuf_write - ringbuf_read;
         if (fill_level < 0) {
@@ -301,24 +303,33 @@ void * csp_if_cortex_rx_task(void * param) {
 
         printf("Remain %d\n", remain);
         if (remain == 0) {
-            break;
+            sleep(1);
+            continue;
         }
 
         int buf_end = sizeof(ringbuf) - ringbuf_write;
 
         ssize_t valread = read(ifconf->sockfd_rx, &ringbuf[ringbuf_write], min(remain, buf_end));
 
+        printf("a\n");
+
         /* Socket not currently connected, so let's do that */
         if (valread < 0) {
 
+            printf("a\n");
+
+            ifconf->cortex_ip.sin_port = ifconf->rx_port;
             if (connect(ifconf->sockfd_rx, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
                 sleep(1);
                 continue;
             }
 
+            printf("b\n");
+
             /* Send TLM request to open Cortex channel */
             write(ifconf->sockfd_rx, &tlm_req, sizeof(tlm_req));
 
+            printf("c\n");
             valread = read(ifconf->sockfd_rx, &ringbuf[ringbuf_write], min(remain, buf_end));
             if (valread < 0) {
                 sleep(1);
@@ -342,9 +353,6 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
 
 void csp_if_cortex_init(csp_iface_t * iface, csp_if_cortex_conf_t * ifconf) {
 
-    pthread_attr_t attributes;
-	int ret;
-
 	iface->driver_data = ifconf;
 
 	if (inet_aton(ifconf->host, &ifconf->cortex_ip.sin_addr) == 0) {
@@ -353,6 +361,8 @@ void csp_if_cortex_init(csp_iface_t * iface, csp_if_cortex_conf_t * ifconf) {
 
 	csp_print("  Cortex peer address: %s, rx-port: %d, tx-port %d\n", inet_ntoa(ifconf->cortex_ip.sin_addr), ifconf->rx_port, ifconf->tx_port);
 
+    pthread_attr_t attributes;
+	int ret;
 	/* Start server thread */
 	ret = pthread_attr_init(&attributes);
 	if (ret != 0) {
@@ -366,7 +376,6 @@ void csp_if_cortex_init(csp_iface_t * iface, csp_if_cortex_conf_t * ifconf) {
     ret = pthread_create(&ifconf->parser_task, &attributes, &cortex_parser_task, iface);
 
 	/* Regsiter interface */
-	iface->name = "UDP",
 	iface->nexthop = csp_if_cortex_tx,
 	csp_iflist_add(iface);
 

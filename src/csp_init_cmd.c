@@ -331,15 +331,9 @@ slash_command_subsub(csp, add, udp, csp_ifadd_udp_cmd, NULL, "Add a new UDP inte
 static int csp_ifadd_cortex_cmd(struct slash *slash) {
 
     static int ifidx = 0;
-
-    if (ifidx > 1) {
-        printf("Multiple Cortex interfaces are not supported in this version\n");
-        return SLASH_ENOMEM;
-    }
-
     char name[10];
-    sprintf(name, "Cortex%u", ifidx++);
-    
+    sprintf(name, "CORTEX%u", ifidx++);
+   
     int promisc = 0;
     int mask = 8;
     int dfl = 0;
@@ -382,8 +376,9 @@ static int csp_ifadd_cortex_cmd(struct slash *slash) {
     cortex_conf->host = strdup(server);
     cortex_conf->rx_port = rx_port;
     cortex_conf->tx_port = tx_port;
+    iface->name = strdup(name);
 
-    csp_if_cortex_init(&iface, &cortex_conf);
+    csp_if_cortex_init(iface, cortex_conf);
 
     iface->is_default = dfl;
     iface->addr = addr;
