@@ -11,13 +11,11 @@ typedef struct {
 	char * host;
 	int rx_port;
 	int tx_port;
-    struct sockaddr_in cortex_ip;
 
 	/* Internal parameters */
+    struct sockaddr_in cortex_ip;
 	pthread_t rx_task;
     pthread_t parser_task;
-	int sockfd_rx;
-    int sockfd_tx;
 
 } csp_if_cortex_conf_t;
 

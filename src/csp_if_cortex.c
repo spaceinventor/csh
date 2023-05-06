@@ -164,7 +164,7 @@ void * cortex_parser_task(void * param) {
          * (LSBs of the last word are zero-filled if the frame or block length, in bytes, is not a multiple of 4).*/
         if (hdr->start_of_message != htobe32(0x499602D2)) {
             ringbuf_read = (ringbuf_read + 1) % sizeof(ringbuf);
-            printf("sidestep in ringbuf\n");
+            printf("sidestep in ringbuf at %d\n", ringbuf_read);
             continue;
         }
 
@@ -344,61 +344,56 @@ void * csp_if_cortex_rx_task(void * param) {
 
     csp_iface_t * iface = param;
 	csp_if_cortex_conf_t * ifconf = iface->driver_data;
+    int fd;
 
-    ifconf->sockfd_rx = socket(AF_INET, SOCK_STREAM, 0);
+new_connection:
+    fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-    while (1) {
-
-        printf("RX task\n");
-
-        /* Calculate current fill level */
-        int fill_level = ringbuf_write - ringbuf_read;
-        if (fill_level < 0) {
-            fill_level += sizeof(ringbuf);
-        }
-
-        /* Remain is -1 because we dont want buffer to overwrite itself */
-        int remain = sizeof(ringbuf) - fill_level - 1;
-
-        printf("Remain %d\n", remain);
-        if (remain == 0) {
-            sleep(1);
-            continue;
-        }
-
-        int buf_end = sizeof(ringbuf) - ringbuf_write;
-
-        ssize_t valread = read(ifconf->sockfd_rx, &ringbuf[ringbuf_write], min(remain, buf_end));
-
-        printf("a\n");
-
-        /* Socket not currently connected, so let's do that */
-        if (valread < 0) {
-
-            printf("a\n");
-
-            ifconf->cortex_ip.sin_port = ifconf->rx_port;
-            if (connect(ifconf->sockfd_rx, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
-                sleep(1);
-                continue;
-            }
-
-            printf("b\n");
-
-            /* Send TLM request to open Cortex channel */
-            write(ifconf->sockfd_rx, &tlm_req, sizeof(tlm_req));
-
-            printf("c\n");
-            valread = read(ifconf->sockfd_rx, &ringbuf[ringbuf_write], min(remain, buf_end));
-            if (valread < 0) {
-                sleep(1);
-                continue;
-            }
-        }
-
-        ringbuf_write = (ringbuf_write + valread) % sizeof(ringbuf);
-        printf("Read %ld bytes from Cortex DL S-band\n", valread);
+connect:
+    ifconf->cortex_ip.sin_family = AF_INET;
+    ifconf->cortex_ip.sin_port = htons(ifconf->rx_port);
+    if (connect(fd, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
+        printf("connect %s\n", strerror(errno));
+        sleep(1);
+        goto connect;
     }
+
+    /* Send TLM request to open Cortex channel */
+    ssize_t valsend = send(fd, &tlm_req, sizeof(tlm_req), MSG_NOSIGNAL);
+    if (valsend <= 0) {
+        printf("Send error %s\n", strerror(errno));
+        close(fd);
+        goto new_connection;
+    }
+
+read:
+    /* Calculate current fill level */
+    int fill_level = ringbuf_write - ringbuf_read;
+    if (fill_level < 0) {
+        fill_level += sizeof(ringbuf);
+    }
+
+    /* Remain is -1 because we dont want buffer to overwrite itself */
+    int remain = sizeof(ringbuf) - fill_level - 1;
+    if (remain == 0) {
+        printf("cortex rx buffer full\n");
+        sleep(1);
+        goto read;
+    }
+
+    int buf_end = sizeof(ringbuf) - ringbuf_write;
+
+    /* Blocking read */
+    ssize_t valread = recv(fd, &ringbuf[ringbuf_write], min(remain, buf_end), MSG_NOSIGNAL);
+    if (valread <= 0) {
+        printf("Read error %s\n", strerror(errno));
+        close(fd);
+        goto new_connection;
+    }
+
+    ringbuf_write = (ringbuf_write + valread) % sizeof(ringbuf);
+    printf("Read %ld bytes from Cortex DL S-band\n", valread);
+    goto read;
 
     return NULL;
 }
