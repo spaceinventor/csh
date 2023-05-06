@@ -25,7 +25,10 @@
 #include <csp/csp_hooks.h>
 
 #include "param_config.h"
+#include "rs.h"
+#include "ccsds_randomize.h"
 
+static const int CCSDS_LEN = 219;
 typedef struct {
     uint32_t ccsds_asm;         //! CCSDS ASM is 0x1ACFFC1D
     uint8_t idx;                //! Space Inventor index
@@ -53,7 +56,44 @@ typedef struct {
     uint32_t unused1;           //! Reserved
     uint32_t unused2;           //! Reserved
     frame_hdr_t data;           //! First data frame field
-} cortex_hdr_t;
+} cortex_hdr_tm_t;
+
+typedef struct {
+    uint32_t ccsds_asm;         //! CCSDS ASM is 0x1ACFFC1D
+    uint8_t idx;                //! Space Inventor index
+    uint8_t sequence_number;    //! Space Inventor Radio Sequence number
+    uint16_t data_length;       //! Data length in RS frame in bytes
+    uint8_t csp_packet[RS_BLOCK_LENGTH-RS_CHECK_LENGTH];
+    uint8_t rs_checksum[RS_CHECK_LENGTH];
+} ccsds_frame_t;
+
+/** CRT TELECOMMAND DATA PACKET FORMAT: Table 6 */
+typedef struct {
+    uint32_t start_of_message;  //! Start of message is 0x499602D2
+    uint32_t length;            //! Size of message 4xN
+    uint32_t flowid;            //! Always 0
+    uint32_t opcode;            //! Always 1
+    uint32_t command_tag;       //! Tag for logging purposes
+    uint32_t frame_length;      //! Number of bits in transmission
+} cortex_hdr_tc_t;
+
+typedef struct {
+    uint32_t start_of_message;  //! Start of message is 0x499602D2
+    uint32_t length;            //! Size of message 4xN
+    uint32_t flowid;            //! Always 0
+    uint32_t opcode;            //! Always 1
+    uint32_t data;              //! Not specified
+    uint32_t time_seconds;      //! Time in seconds of the current year (weird format)
+    uint32_t time_subseconds;   //! Integer or double...
+    uint32_t status;            //! Cortex sequence number
+    uint32_t crc;               //! Frame check field
+    uint32_t end_of_message;    //! 0: No lock, 1: ON lock, 2, ON flywheel, 4: End of data (offline mode)
+} cortex_tc_ack_t;
+
+typedef struct {
+    uint32_t crc;
+    uint32_t end_of_message;
+} cortex_ftr_t;
 
 static csp_iface_t iface = {
     .name = "CORTEX",
@@ -65,9 +105,30 @@ static uint8_t ringbuf[400000000];
 static int ringbuf_write = 0;
 static int ringbuf_read = 0;
 
+int get_num_frames(int packet_len) {
+
+    uint8_t numframes = packet_len / CCSDS_LEN;
+    if (packet_len * CCSDS_LEN < numframes) numframes++; // ceil(...)
+    return numframes;
+}
+
 int min(int a, int b) {
     if (a < b) return a;
     else return b;
+}
+
+uint32_t cortex_checksum(uint8_t * data, size_t data_size)
+{
+	uint32_t sum = 0;
+	uint32_t tmp = 0; 
+	for (size_t i = 0; i < data_size/4; ++i) {
+		tmp = 0;
+		for (size_t j = 0; j < 4; ++j) {
+			tmp = tmp * 256 + *(data + 4 * i + j);
+		}
+		sum += tmp;
+	}
+	return -sum;
 }
 
 VMEM_DEFINE_FILE(cortex, "cortex", "cortex.vmem", 2048);
@@ -126,12 +187,12 @@ void * cortex_parser_task(void * param) {
             printf("Read %d, write %d, Fill level %d\n", ringbuf_read, ringbuf_write, fill_level);
 
         /* Wait for at least one frame */
-        if (fill_level < sizeof(cortex_hdr_t)) {
+        if (fill_level < sizeof(cortex_hdr_tm_t)) {
             usleep(1000);
             continue;
         }
 
-        cortex_hdr_t * hdr = (cortex_hdr_t *) &ringbuf[ringbuf_read];
+        cortex_hdr_tm_t * hdr = (cortex_hdr_tm_t *) &ringbuf[ringbuf_read];
 
         /* Note 4: Telemetry frames and blocks are 32-bit aligned 
          * (LSBs of the last word are zero-filled if the frame or block length, in bytes, is not a multiple of 4).*/
@@ -197,9 +258,7 @@ void * cortex_parser_task(void * param) {
             printf("FRAME: idx %u, seq %u, len %u\n", idx, seq, len);
 
         /* Multiple frames in a single CSP packet support */
-        static const int CCSDS_LEN = 219;
-        uint8_t numframes = len / CCSDS_LEN;
-        if (len * CCSDS_LEN < numframes) numframes++; // ceil(...)
+        uint8_t numframes = get_num_frames(len);
 
         /* Beginning of new CSP packet, reset check variables */
         if (idx == 0) {
@@ -387,8 +446,63 @@ void cortex_dl_s_init() {
 
 int cortex_ul_s(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
 
-    /* TX is not yet supported */    
-    return -1;
+    static int fd = -1;
+    static uint8_t seq_num = 0;
+
+    if (fd < 0) {
+        fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) {
+            printf("Creating socket for Cortex DL S-band failed with %d\n", errno);
+            exit(1);
+        }
+    }
+
+    uint8_t frame_buffer[3000]; // Holds a 2kb CSP packet with RS checksum and ASM, along with Cortex header
+    cortex_hdr_tc_t* cortex_frame = (cortex_hdr_tc_t*)&frame_buffer[0];
+    cortex_frame->start_of_message = htobe32(1234567890);
+    cortex_frame->length = sizeof(cortex_hdr_tc_t);
+    cortex_frame->flowid = 0;
+    cortex_frame->opcode = 1;
+    cortex_frame->command_tag = 2;
+    cortex_frame->frame_length = 0;
+
+    uint8_t numframes = get_num_frames(packet->frame_length);
+
+    for (int idx = 0; idx < numframes; idx++) {
+
+        ccsds_frame_t* ccsds_frame = (ccsds_frame_t*)&frame_buffer[sizeof(cortex_hdr_tc_t) + idx*sizeof(ccsds_frame_t)];
+        ccsds_frame->ccsds_asm = htobe32(0x1ACFFC1D);
+        ccsds_frame->data_length = packet->frame_length;
+        ccsds_frame->sequence_number = seq_num++;
+        ccsds_frame->idx = idx;
+
+        memcpy(ccsds_frame->csp_packet, &packet->frame_begin[idx*CCSDS_LEN], min(packet->frame_length-idx*CCSDS_LEN, CCSDS_LEN));
+        encode_rs_8(ccsds_frame->csp_packet, ccsds_frame->rs_checksum, 0);
+        ccsds_randomize(ccsds_frame->csp_packet);
+
+        cortex_frame->length += sizeof(ccsds_frame_t);
+        cortex_frame->frame_length = 8*sizeof(ccsds_frame_t);
+    }
+
+    /* Cortex require length of frame to be a multiplum of 4-byte words */
+	cortex_frame->length += (sizeof(ccsds_frame_t)*numframes % 4 ?  4 - (sizeof(ccsds_frame_t)*numframes % 4) : 0);
+
+    cortex_ftr_t* cortex_ftr = (cortex_ftr_t*)&frame_buffer[cortex_frame->length];
+    cortex_frame->length += sizeof(cortex_ftr_t);
+    cortex_ftr->crc = 0; // CRC field is part of checksum calculation, so set to 0 before calculation
+    cortex_ftr->end_of_message = htobe32(-1234567890);
+    cortex_ftr->crc = cortex_checksum((uint8_t*)cortex_frame, cortex_frame->length);
+
+    write(fd, frame_buffer, cortex_frame->length);
+
+    read(fd, frame_buffer, sizeof(frame_buffer));
+    cortex_tc_ack_t* cortex_ack = (cortex_tc_ack_t*)&frame_buffer[0];
+
+    if (cortex_ack->status == 0) {
+        return CSP_ERR_TX;
+    }
+
+    return CSP_ERR_NONE;
 }
 
 static int csp_ifadd_cortex_cmd(struct slash *slash) {

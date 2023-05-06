@@ -51,6 +51,8 @@ csh_sources = [
 	'src/lock.c',
 	'src/csp_init_cmd.c',
 	'src/csp_if_cortex.c',
+	'src/rs_encode.c',
+	'src/ccsds_randomize.c',
 ]
 
 if lua_dep.found()
