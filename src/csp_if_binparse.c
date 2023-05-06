@@ -47,7 +47,7 @@ typedef struct {
 } cortex_hdr_t;
 
 static csp_iface_t iface = {
-    .name = "BINPARSE",
+    .name = "CORTEX",
     .addr = 14000,
     .netmask = 8,
 };
@@ -61,23 +61,23 @@ int min(int a, int b) {
     else return b;
 }
 
-static uint8_t _binparse_dbg = 1;
-PARAM_DEFINE_STATIC_RAM(500, binparse_dbg, PARAM_TYPE_UINT8,  1, 0, PM_DEBUG, NULL, "", &_binparse_dbg, NULL);
+static uint8_t _cortex_dbg = 1;
+PARAM_DEFINE_STATIC_RAM(500, cortex_dbg, PARAM_TYPE_UINT8,  1, 0, PM_DEBUG, NULL, "", &_cortex_dbg, NULL);
 
-static uint8_t _binparse_fwd = 1;
-PARAM_DEFINE_STATIC_RAM(501, binparse_fwd, PARAM_TYPE_UINT8,  1, 0, PM_CONF, NULL, "", &_binparse_fwd, NULL);
+static uint8_t _cortex_fwd = 1;
+PARAM_DEFINE_STATIC_RAM(501, cortex_fwd, PARAM_TYPE_UINT8,  1, 0, PM_CONF, NULL, "", &_cortex_fwd, NULL);
 
-static uint8_t _binparse_en = 0;
-void binparse_en_cb(struct param_s * param, int offset) {
-	static pthread_t binparse_handle = 0;
-    if (binparse_handle == 0) {
-        void *binparse_task(void * param);
-	    pthread_create(&binparse_handle, NULL, &binparse_task, NULL);
+static uint8_t _cortex_en = 0;
+void cortex_en_cb(struct param_s * param, int offset) {
+	static pthread_t cortex_handle = 0;
+    if (cortex_handle == 0) {
+        void *cortex_task(void * param);
+	    pthread_create(&cortex_handle, NULL, &cortex_task, NULL);
     }
 }
-PARAM_DEFINE_STATIC_RAM(502, binparse_en, PARAM_TYPE_UINT8,  1, 0, PM_CONF, binparse_en_cb, "", &_binparse_en, NULL);
+PARAM_DEFINE_STATIC_RAM(502, cortex_en, PARAM_TYPE_UINT8,  1, 0, PM_CONF, cortex_en_cb, "", &_cortex_en, NULL);
 
-void * binparse_task(void * param) {
+void * cortex_task(void * param) {
 
     csp_iflist_add(&iface);
 
@@ -87,7 +87,7 @@ void * binparse_task(void * param) {
 
 	while(1) {
 
-        if (_binparse_en == 0) {
+        if (_cortex_en == 0) {
             sleep(1);
             continue;
         }
@@ -98,7 +98,7 @@ void * binparse_task(void * param) {
             fill_level += sizeof(ringbuf);
         }
 
-        if (_binparse_dbg & 0x8)
+        if (_cortex_dbg & 0x8)
             printf("Read %d, write %d, Fill level %d\n", ringbuf_read, ringbuf_write, fill_level);
 
         /* Wait for at least one frame */
@@ -131,11 +131,11 @@ void * binparse_task(void * param) {
             rs_corrected = (ctx_rs_status && 0xFF00) >> 8;
         }
 
-        if (_binparse_dbg & 0x4)
+        if (_cortex_dbg & 0x4)
             printf("CORTEX seq: %d, len %d (payload %d), ok %d (rserr %d), lock %d, %02d-%02d-%04d %02d:%02d:%02d\n", ctx_seq, ctx_len, ctx_frame_len, ok, rs_corrected, ctx_lock, tmp->tm_mday, tmp->tm_mon + 1, tmp->tm_year + 1900, tmp->tm_hour, tmp->tm_min, tmp->tm_sec);
 
         /* Frame sanity checks */
-        if (_binparse_dbg & 0x1) {
+        if (_cortex_dbg & 0x1) {
             if (be32toh(hdr->bit_slip_status) != 0)
                 printf("WARNING: BIT SLIP\n");
             if (be32toh(hdr->tm_delay) != 0)
@@ -156,7 +156,7 @@ void * binparse_task(void * param) {
 
         /* Expect CCSDS ASM */
         if (be32toh(hdr->data.ccsds_asm) != 0x1ACFFC1D) {
-            if (_binparse_dbg & 0x1)
+            if (_cortex_dbg & 0x1)
                 printf("WARNING: Non CCSDS frame\n");
             goto skip;
         }
@@ -169,7 +169,7 @@ void * binparse_task(void * param) {
         if ((len == 0) || (len > 2000))
             goto skip;
 
-        if (_binparse_dbg & 0x2)
+        if (_cortex_dbg & 0x2)
             printf("FRAME: idx %u, seq %u, len %u\n", idx, seq, len);
 
         /* Multiple frames in a single CSP packet support */
@@ -190,13 +190,13 @@ void * binparse_task(void * param) {
         }
 
         if(numframes > idx + 1) {
-            if (_binparse_dbg & 0x10)
+            if (_cortex_dbg & 0x10)
                 printf("Found frame %d of %d with len %d, waiting for next one\n", idx, numframes, len);
             goto skip;
         }
 
         /* For dry runs, we have done enough now */
-        if (_binparse_fwd == 0)
+        if (_cortex_fwd == 0)
             goto skip;
 
         /* Allocate CSP packet buffer */
@@ -232,11 +232,11 @@ skip:
 }
 
 
-static int binparse_file(struct slash *slash) {
+static int cortex_file(struct slash *slash) {
 
 	char * filename = NULL;
 
-    optparse_t * parser = optparse_new("binparse file", "<filename>");
+    optparse_t * parser = optparse_new("cortex file", "<filename>");
     optparse_add_help(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -287,4 +287,4 @@ static int binparse_file(struct slash *slash) {
     return SLASH_SUCCESS;
 }
 
-slash_command_sub(binparse, file, binparse_file, NULL, NULL);
+slash_command_sub(cortex, file, cortex_file, NULL, NULL);
