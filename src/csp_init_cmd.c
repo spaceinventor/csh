@@ -14,6 +14,7 @@
 #include <csp/interfaces/csp_if_lo.h>
 #include <csp/interfaces/csp_if_tun.h>
 #include <csp/interfaces/csp_if_udp.h>
+#include "csp_if_cortex.h"
 #include <csp/drivers/can_socketcan.h>
 #include <csp/drivers/usart.h>
 #include <csp/csp_rtable.h>
@@ -325,6 +326,73 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 }
 
 slash_command_subsub(csp, add, udp, csp_ifadd_udp_cmd, NULL, "Add a new UDP interface");
+
+
+static int csp_ifadd_cortex_cmd(struct slash *slash) {
+
+    static int ifidx = 0;
+
+    if (ifidx > 1) {
+        printf("Multiple Cortex interfaces are not supported in this version\n");
+        return SLASH_ENOMEM;
+    }
+
+    char name[10];
+    sprintf(name, "Cortex%u", ifidx++);
+    
+    int promisc = 0;
+    int mask = 8;
+    int dfl = 0;
+    int rx_port = 9220;
+    int tx_port = 9220;
+
+    optparse_t * parser = optparse_new("csp add cortex", "<addr> <server>");
+    optparse_add_help(parser);
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
+    optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
+    optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
+    optparse_add_int(parser, 'r', "rx-port", "NUM", 0, &rx_port, "Port to receive data on");
+    optparse_add_int(parser, 't', "tx-port", "NUM", 0, &tx_port, "Port to send data to");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+	    return SLASH_EINVAL;
+    }
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * endptr;
+    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+	if (++argi >= slash->argc) {
+		printf("missing parameter server\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * server = slash->argv[argi];
+
+    csp_iface_t * iface;
+    iface = malloc(sizeof(csp_iface_t));
+    memset(iface, 0, sizeof(csp_iface_t));
+    csp_if_cortex_conf_t * cortex_conf = malloc(sizeof(csp_if_cortex_conf_t));
+    cortex_conf->host = strdup(server);
+    cortex_conf->rx_port = rx_port;
+    cortex_conf->tx_port = tx_port;
+
+    csp_if_cortex_init(&iface, &cortex_conf);
+
+    iface->is_default = dfl;
+    iface->addr = addr;
+	iface->netmask = mask;
+
+    return SLASH_SUCCESS;
+}
+
+slash_command_subsub(csp, add, cortex, csp_ifadd_cortex_cmd, NULL, "Add a new Cortex socket interface");
 
 
 static int csp_ifadd_tun_cmd(struct slash *slash) {

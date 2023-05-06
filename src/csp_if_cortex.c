@@ -1,3 +1,5 @@
+#include "csp_if_cortex.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <endian.h>
@@ -55,12 +57,6 @@ typedef struct {
     frame_hdr_t data;           //! First data frame field
 } cortex_hdr_t;
 
-static csp_iface_t iface = {
-    .name = "CORTEX",
-    .addr = 14000,
-    .netmask = 8,
-};
-
 static uint8_t ringbuf[400000000];
 static int ringbuf_write = 0;
 static int ringbuf_read = 0;
@@ -70,51 +66,21 @@ int min(int a, int b) {
     else return b;
 }
 
-VMEM_DEFINE_FILE(cortex, "cortex", "cortex.vmem", 2048);
-
 static uint8_t _cortex_dbg = 1;
 PARAM_DEFINE_STATIC_RAM(PARAMID_CORTEX_DEBUG, cortex_dbg, PARAM_TYPE_UINT8,  1, 0, PM_DEBUG, NULL, "", &_cortex_dbg, NULL);
 
 static uint8_t _cortex_fwd = 1;
 PARAM_DEFINE_STATIC_RAM(PARAMID_CORTEX_FWD, cortex_fwd, PARAM_TYPE_UINT8,  1, 0, PM_CONF, NULL, "", &_cortex_fwd, NULL);
 
-static uint8_t _cortex_parser_en = 0;
-void cortex_parser_en_cb(struct param_s * param, int offset) {
-    vmem_file_init(&vmem_cortex);
-	static pthread_t cortex_handle = 0;
-    if (cortex_handle == 0) {
-        void *cortex_parser_task(void * param);
-	    pthread_create(&cortex_handle, NULL, &cortex_parser_task, NULL);
-    }
-}
-PARAM_DEFINE_STATIC_RAM(PARAMID_CORTEX_PARSER_EN, cortex_parser_en, PARAM_TYPE_UINT8,  1, 0, PM_CONF, cortex_parser_en_cb, "", &_cortex_parser_en, NULL);
-
-PARAM_DEFINE_STATIC_VMEM(PARAMID_CORTEX_IP_UL_S, cortex_ip_ul_s, PARAM_TYPE_STRING, 16, 0, PM_CONF, NULL, "", cortex, 0, NULL);
-PARAM_DEFINE_STATIC_VMEM(PARAMID_CORTEX_IP_DL_S, cortex_ip_dl_s, PARAM_TYPE_STRING, 16, 0, PM_CONF, NULL, "", cortex, 1, NULL);
-PARAM_DEFINE_STATIC_VMEM(PARAMID_CORTEX_IP_DL_X, cortex_ip_dl_x, PARAM_TYPE_STRING, 16, 0, PM_CONF, NULL, "", cortex, 2, NULL);
-PARAM_DEFINE_STATIC_VMEM(PARAMID_CORTEX_PORT_UL_S, cortex_port_ul_s, PARAM_TYPE_UINT16, sizeof(uint16_t), 0, PM_CONF, NULL, "", cortex, 3, NULL);
-PARAM_DEFINE_STATIC_VMEM(PARAMID_CORTEX_PORT_DL_S, cortex_port_dl_s, PARAM_TYPE_UINT16, sizeof(uint16_t), 0, PM_CONF, NULL, "", cortex, 4, NULL);
-PARAM_DEFINE_STATIC_VMEM(PARAMID_CORTEX_PORT_DL_X, cortex_port_dl_x, PARAM_TYPE_UINT16, sizeof(uint16_t), 0, PM_CONF, NULL, "", cortex, 5, NULL);
-
-void csp_if_cortex_init(csp_iface_t* iface) {
-
-    csp_iflist_add(iface);
-}
-
 void * cortex_parser_task(void * param) {
 
-    csp_if_cortex_init(&iface);
+    csp_iface_t * iface = param;
     
     csp_packet_t * rx_packet = NULL;
     uint8_t last_idx = -1;
     uint8_t last_seq = -1;
 
 	while(1) {
-
-        if (_cortex_parser_en == 0) {
-            sleep(1);
-            continue;
-        }
 
         /* Calculate current fill level */
         int fill_level = ringbuf_write - ringbuf_read;
@@ -170,11 +136,11 @@ void * cortex_parser_task(void * param) {
                 printf("WARNING: Non 32-bit sync word\n");
         }
 
-        iface.frame++;
+        iface->frame++;
 
         /* Skip frames with RS Check error */
         if (!ok) {
-            iface.rx_error++;
+            iface->rx_error++;
             goto skip;
         }
 
@@ -246,7 +212,7 @@ void * cortex_parser_task(void * param) {
         }
 
         /* Send back into CSP, notice calling from task so last argument must be NULL! */
-        csp_qfifo_write(rx_packet, &iface, NULL);
+        csp_qfifo_write(rx_packet, iface, NULL);
         rx_packet = NULL;
 
 skip:
@@ -254,7 +220,6 @@ skip:
     }
 	return NULL;
 }
-
 
 static int cortex_file(struct slash *slash) {
 
@@ -316,12 +281,12 @@ slash_command_sub(cortex, file, cortex_file, NULL, NULL);
 /* CRT TLM request header, configured for telemetry channel B with permanent flow */
 static uint8_t tlm_req[] = {0x49, 0x96, 0x02, 0xd2, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xb6, 0x69, 0xfd, 0x2e};
 
-void * cortex_dl_s_task(void * param) {
+void * csp_if_cortex_rx_task(void * param) {
 
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd == -1) {
-        printf("Creating socket for Cortex DL S-band failed with %d\n", errno);
-    }
+    csp_iface_t * iface = param;
+	csp_if_cortex_conf_t * ifconf = iface->driver_data;
+
+    ifconf->sockfd_rx = socket(AF_INET, SOCK_STREAM, 0);
 
     while (1) {
 
@@ -330,6 +295,7 @@ void * cortex_dl_s_task(void * param) {
         if (fill_level < 0) {
             fill_level += sizeof(ringbuf);
         }
+
         /* Remain is -1 because we dont want buffer to overwrite itself */
         int remain = sizeof(ringbuf) - fill_level - 1;
 
@@ -340,30 +306,20 @@ void * cortex_dl_s_task(void * param) {
 
         int buf_end = sizeof(ringbuf) - ringbuf_write;
 
-        ssize_t valread = read(fd, &ringbuf[ringbuf_write], min(remain, buf_end));
+        ssize_t valread = read(ifconf->sockfd_rx, &ringbuf[ringbuf_write], min(remain, buf_end));
 
         /* Socket not currently connected, so let's do that */
         if (valread < 0) {
 
-            struct sockaddr_in addr;
-            addr.sin_family = AF_INET;
-            addr.sin_port = htons(param_get_uint16(&cortex_port_dl_s));
-        
-            char ip[16];
-            param_get_string(&cortex_ip_dl_s, ip, sizeof(ip));
-            if (inet_pton(AF_INET, ip, &addr.sin_addr) <= 0) {
-                printf("Invalid address or address not supported \n");
-            }
-
-            if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            if (connect(ifconf->sockfd_rx, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
                 sleep(1);
                 continue;
             }
 
             /* Send TLM request to open Cortex channel */
-            write(fd, &tlm_req, sizeof(tlm_req));
+            write(ifconf->sockfd_rx, &tlm_req, sizeof(tlm_req));
 
-            valread = read(fd, &ringbuf[ringbuf_write], min(remain, buf_end));
+            valread = read(ifconf->sockfd_rx, &ringbuf[ringbuf_write], min(remain, buf_end));
             if (valread < 0) {
                 sleep(1);
                 continue;
@@ -377,76 +333,42 @@ void * cortex_dl_s_task(void * param) {
     return NULL;
 }
 
-void cortex_dl_s_init() {
-
-	static pthread_t cortex_handle = 0;
-    if (cortex_handle == 0) {
-	    pthread_create(&cortex_handle, NULL, &cortex_dl_s_task, NULL);
-    }
-}
-
-int cortex_ul_s(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
 
     /* TX is not yet supported */    
     return -1;
+
 }
 
-static int csp_ifadd_cortex_cmd(struct slash *slash) {
+void csp_if_cortex_init(csp_iface_t * iface, csp_if_cortex_conf_t * ifconf) {
 
-    static int ifidx = 0;
+    pthread_attr_t attributes;
+	int ret;
 
-    if (ifidx > 1) {
-        printf("Multiple Cortex interfaces are not supported in this version\n");
-        return SLASH_ENOMEM;
-    }
+	iface->driver_data = ifconf;
 
-    char name[10];
-    sprintf(name, "Cortex%u", ifidx++);
-    
-    int promisc = 0;
-    int mask = 8;
-    int dfl = 0;
-
-    optparse_t * parser = optparse_new("csp add cortex", "<addr>");
-    optparse_add_help(parser);
-    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
-    optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
-    optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
-
-    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
-
-    if (argi < 0) {
-	    return SLASH_EINVAL;
-    }
-
-	if (++argi >= slash->argc) {
-		printf("missing parameter addr\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
+	if (inet_aton(ifconf->host, &ifconf->cortex_ip.sin_addr) == 0) {
+		csp_print("  Unknown peer address %s\n", ifconf->host);
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
 
-    csp_if_cortex_init(&iface);
+	csp_print("  Cortex peer address: %s, rx-port: %d, tx-port %d\n", inet_ntoa(ifconf->cortex_ip.sin_addr), ifconf->rx_port, ifconf->tx_port);
 
-    if (param_get_uint16(&cortex_port_ul_s) != 0) {
-        printf("UL is not yet supported\n");
-    }
+	/* Start server thread */
+	ret = pthread_attr_init(&attributes);
+	if (ret != 0) {
+		csp_print("csp_if_udp_init: pthread_attr_init failed: %s: %d\n", strerror(ret), ret);
+	}
+	ret = pthread_attr_setdetachstate(&attributes, PTHREAD_CREATE_DETACHED);
+	if (ret != 0) {
+		csp_print("csp_if_udp_init: pthread_attr_setdetachstate failed: %s: %d\n", strerror(ret), ret);
+	}
+	ret = pthread_create(&ifconf->rx_task, &attributes, &csp_if_cortex_rx_task, iface);
+    ret = pthread_create(&ifconf->parser_task, &attributes, &cortex_parser_task, iface);
 
-    if (param_get_uint16(&cortex_port_dl_s) != 0) {
-        cortex_dl_s_init();
-    }
+	/* Regsiter interface */
+	iface->name = "UDP",
+	iface->nexthop = csp_if_cortex_tx,
+	csp_iflist_add(iface);
 
-    if (param_get_uint16(&cortex_port_dl_x) != 0) {
-        printf("DL on X-band is not yet supported\n");
-    }
-
-    iface.is_default = dfl;
-    iface.addr = addr;
-	iface.netmask = mask;
-    iface.nexthop = cortex_ul_s;
-
-    return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, cortex, csp_ifadd_cortex_cmd, NULL, "Add a new Cortex socket interface");
