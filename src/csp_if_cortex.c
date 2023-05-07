@@ -271,6 +271,7 @@ void * cortex_parser_task(void * param) {
         }
 
         /* Send back into CSP, notice calling from task so last argument must be NULL! */
+        rx_packet->timestamp_rx = ctx_time;
         csp_qfifo_write(rx_packet, iface, NULL);
         rx_packet = NULL;
 

@@ -94,7 +94,7 @@ void hk_param_sniffer(csp_packet_t * packet) {
 				if (param->timestamp != 0) {
 					param->timestamp += local_epoch;
 				}
-				param_sniffer_log(NULL, &queue, param, offset, &reader);
+				param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
 			}
 		}
 	}

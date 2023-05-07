@@ -22,7 +22,7 @@ FILE *logfile;
 
 static unsigned int hk_node = 0;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp) {
 
 	char tmp[1000] = {};
 
@@ -39,8 +39,10 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 
 	for (int i = offset; i < offset + count; i++) {
 
-		uint64_t time_ms = 1000 * (uint64_t)param->timestamp;
-		if (time_ms == 0) {
+		uint64_t time_ms;
+		if (timestamp > 0) {
+			time_ms = timestamp * 1000;
+		} else {
 			struct timeval tv;
 			gettimeofday(&tv, NULL);
 			time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
@@ -163,9 +165,13 @@ static void * param_sniffer(void * param) {
 			if (node == 0) {
 				node = packet->id.src;
 			}
+			/* If parameter timestamp is not inside the header, and the lower layer found a timestamp*/
+			if ((timestamp == 0) && (packet->timestamp_rx != 0)) {
+				timestamp = packet->timestamp_rx;
+			}
 			param_t * param = param_list_find_id(node, id);
 			if (param) {	
-				param_sniffer_log(NULL, &queue, param, offset, &reader);
+				param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
 			} else {
 				printf("Found unknown param node %d id %d\n", node, id);
 				break;

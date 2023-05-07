@@ -97,7 +97,7 @@ void prometheus_add(char * str) {
 		strcpy(prometheus_buf + prometheus_buf_len, str);
 		prometheus_buf_len += strlen(str);
 	}
-	//printf("prometheus add %s", str);
+	printf("prometheus add %s", str);
 }
 
 void prometheus_clear(void) {
