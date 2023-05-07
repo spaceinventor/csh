@@ -345,6 +345,8 @@ void * csp_if_cortex_rx_task(void * param) {
     csp_iface_t * iface = param;
 	csp_if_cortex_conf_t * ifconf = iface->driver_data;
     int fd;
+    int fill_level, remain, buf_end;
+    ssize_t valread;
 
 new_connection:
     fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -359,8 +361,7 @@ connect:
     }
 
     /* Send TLM request to open Cortex channel */
-    ssize_t valsend = send(fd, &tlm_req, sizeof(tlm_req), MSG_NOSIGNAL);
-    if (valsend <= 0) {
+    if (send(fd, &tlm_req, sizeof(tlm_req), MSG_NOSIGNAL) <= 0) {
         printf("Send error %s\n", strerror(errno));
         close(fd);
         goto new_connection;
@@ -368,23 +369,23 @@ connect:
 
 read:
     /* Calculate current fill level */
-    int fill_level = ringbuf_write - ringbuf_read;
+    fill_level = ringbuf_write - ringbuf_read;
     if (fill_level < 0) {
         fill_level += sizeof(ringbuf);
     }
 
     /* Remain is -1 because we dont want buffer to overwrite itself */
-    int remain = sizeof(ringbuf) - fill_level - 1;
+    remain = sizeof(ringbuf) - fill_level - 1;
     if (remain == 0) {
         printf("cortex rx buffer full\n");
         sleep(1);
         goto read;
     }
 
-    int buf_end = sizeof(ringbuf) - ringbuf_write;
+    buf_end = sizeof(ringbuf) - ringbuf_write;
 
     /* Blocking read */
-    ssize_t valread = recv(fd, &ringbuf[ringbuf_write], min(remain, buf_end), MSG_NOSIGNAL);
+    valread = recv(fd, &ringbuf[ringbuf_write], min(remain, buf_end), MSG_NOSIGNAL);
     if (valread <= 0) {
         printf("Read error %s\n", strerror(errno));
         close(fd);
