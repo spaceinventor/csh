@@ -428,8 +428,8 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
         ccsds_frame->idx = idx;
 
         memcpy(ccsds_frame->csp_packet, &packet->frame_begin[idx*CCSDS_LEN], min(packet->frame_length-idx*CCSDS_LEN, CCSDS_LEN));
-        encode_rs_8(&ccsds_frame->ccsds_header, ccsds_frame->rs_checksum, 0);
-        ccsds_randomize(&ccsds_frame->ccsds_header);
+        encode_rs_8((uint8_t*)&ccsds_frame->ccsds_header, ccsds_frame->rs_checksum, 0);
+        ccsds_randomize((uint8_t*)&ccsds_frame->ccsds_header);
 
         len_total += sizeof(ccsds_frame_t);
         len_payload += sizeof(ccsds_frame_t);
