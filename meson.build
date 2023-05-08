@@ -53,6 +53,8 @@ csh_sources = [
 	'src/csp_if_cortex.c',
 	'src/rs_encode.c',
 	'src/ccsds_randomize.c',
+	'src/victoria_metrics.c',
+	'src/base64.c',
 ]
 
 if lua_dep.found()
