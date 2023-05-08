@@ -436,7 +436,10 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
     }
 
     /* Cortex require length of frame to be a multiplum of 4-byte words */
-	len_total += (sizeof(ccsds_frame_t)*numframes % 4 ?  4 - (sizeof(ccsds_frame_t)*numframes % 4) : 0);
+    while (len_total % 4 != 0) {
+        frame_buffer[len_total] = 0;
+        len_total++;
+    }
 
     cortex_ftr_t* cortex_ftr = (cortex_ftr_t*)&frame_buffer[len_total];
     len_total += sizeof(cortex_ftr_t);
