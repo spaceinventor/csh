@@ -23,7 +23,8 @@
 		"random": "c",
 		"complex": "c",
 		"iomanip": "c",
-		"ctime": "c"
+		"ctime": "c",
+		"string_view": "c"
 	},
 	"files.exclude": {
 		"**/.gitignore": true,

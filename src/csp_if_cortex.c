@@ -31,6 +31,7 @@
 #include "ccsds_randomize.h"
 
 static const int CCSDS_LEN = 219;
+
 typedef struct {
     uint32_t ccsds_asm;         //! CCSDS ASM is 0x1ACFFC1D
     uint8_t idx;                //! Space Inventor index
@@ -101,15 +102,13 @@ static uint8_t ringbuf[400000000];
 static int ringbuf_write = 0;
 static int ringbuf_read = 0;
 
-int get_num_frames(int packet_len) {
-    uint8_t numframes = packet_len / CCSDS_LEN;
-    if (packet_len * CCSDS_LEN < numframes) numframes++; // ceil(...)
-    return numframes;
-}
-
-int min(int a, int b) {
+static int min(int a, int b) {
     if (a < b) return a;
     else return b;
+}
+
+static int get_num_frames(int packet_len) {
+    return (packet_len / CCSDS_LEN) + 1;
 }
 
 static uint32_t cortex_checksum(uint32_t * data, size_t data_size) {
@@ -349,14 +348,14 @@ connect:
     ifconf->cortex_ip.sin_family = AF_INET;
     ifconf->cortex_ip.sin_port = htons(ifconf->rx_port);
     if (connect(fd, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
-        //printf("connect %s\n", strerror(errno));
+        printf("TM connection error: %s\n", strerror(errno));
         sleep(1);
         goto connect;
     }
 
     /* Send TLM request to open Cortex channel */
     if (send(fd, &tlm_req, sizeof(tlm_req), MSG_NOSIGNAL) <= 0) {
-        printf("Send error %s\n", strerror(errno));
+        printf("TM send error: %s\n", strerror(errno));
         close(fd);
         goto new_connection;
     }
@@ -371,7 +370,7 @@ read:
     /* Remain is -1 because we dont want buffer to overwrite itself */
     remain = sizeof(ringbuf) - fill_level - 1;
     if (remain == 0) {
-        printf("cortex rx buffer full\n");
+        printf("TM buffer full\n");
         sleep(1);
         goto read;
     }
@@ -381,13 +380,13 @@ read:
     /* Blocking read */
     valread = recv(fd, &ringbuf[ringbuf_write], min(remain, buf_end), MSG_NOSIGNAL);
     if (valread <= 0) {
-        printf("Read error %s\n", strerror(errno));
+        printf("TM read error: %s\n", strerror(errno));
         close(fd);
         goto new_connection;
     }
 
     ringbuf_write = (ringbuf_write + valread) % sizeof(ringbuf);
-    //printf("Read %ld bytes from Cortex DL S-band\n", valread);
+    printf("TM received %ld bytes\n", valread);
     goto read;
 
     return NULL;
@@ -399,38 +398,21 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
     static uint8_t seq_num = 0;
     csp_if_cortex_conf_t * ifconf = iface->driver_data;
     
-    if (fd < 0) {
-        fd = socket(AF_INET, SOCK_STREAM, 0);
-        ifconf->cortex_ip.sin_family = AF_INET;
-        ifconf->cortex_ip.sin_port = htons(ifconf->tx_port);
-        if (connect(fd, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
-            //printf("connect %s\n", strerror(errno));
-            //close(fd);
-            //fd = -1;
-            //csp_buffer_free(packet);
-            //return CSP_ERR_TX;
-        }
-        printf("Connected to TC\n");
-    }
+    csp_id_prepend(packet);
+    printf("TC packet len %d, frame len %d\n", packet->length, packet->frame_length);
+    csp_hex_dump("frame", packet->frame_begin, packet->frame_length);
 
     uint8_t frame_buffer[3000]; // Holds a 2kb CSP packet with RS checksum and ASM, along with Cortex header
     cortex_hdr_tc_t* cortex_frame = (cortex_hdr_tc_t*)&frame_buffer[0];
     cortex_frame->start_of_message = htobe32(1234567890);
-    cortex_frame->length = sizeof(cortex_hdr_tc_t);
     cortex_frame->flowid = 0;
     cortex_frame->opcode = htobe32(1);
-    cortex_frame->command_tag = 1;
-    cortex_frame->frame_length = 0;
+    cortex_frame->command_tag = 0;
 
-    csp_id_prepend(packet);
-
-    printf("packet len %d, frame len %d\n", packet->length, packet->frame_length);
-    csp_hex_dump("frame", packet->frame_begin, packet->frame_length);
+    int len_total = sizeof(cortex_hdr_tc_t);
+    int len_payload = 0;
 
     uint8_t numframes = get_num_frames(packet->frame_length);
-    numframes = 1;
-
-    printf("Numframes %d\n", numframes);
 
     for (int idx = 0; idx < numframes; idx++) {
 
@@ -444,49 +426,47 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
         encode_rs_8(ccsds_frame->csp_packet, ccsds_frame->rs_checksum, 0);
         ccsds_randomize(ccsds_frame->csp_packet);
 
-        cortex_frame->length += sizeof(ccsds_frame_t);
-        cortex_frame->frame_length = 8 * sizeof(ccsds_frame_t);
+        len_total += sizeof(ccsds_frame_t);
+        len_payload += sizeof(ccsds_frame_t);
     }
 
-    printf("len %d\n", cortex_frame->length);
-
     /* Cortex require length of frame to be a multiplum of 4-byte words */
-	cortex_frame->length += (sizeof(ccsds_frame_t)*numframes % 4 ?  4 - (sizeof(ccsds_frame_t)*numframes % 4) : 0);
+	len_total += (sizeof(ccsds_frame_t)*numframes % 4 ?  4 - (sizeof(ccsds_frame_t)*numframes % 4) : 0);
 
-    printf("len %d\n", cortex_frame->length);
-
-    cortex_ftr_t* cortex_ftr = (cortex_ftr_t*)&frame_buffer[cortex_frame->length];
-    cortex_frame->length += sizeof(cortex_ftr_t);
-
-    printf("len %d\n", cortex_frame->length);
-
-    int leh = cortex_frame->length;
+    cortex_ftr_t* cortex_ftr = (cortex_ftr_t*)&frame_buffer[len_total];
+    len_total += sizeof(cortex_ftr_t);
 
     cortex_ftr->crc = 0; // CRC field is part of checksum calculation, so set to 0 before calculation
     cortex_ftr->end_of_message = htobe32(-1234567890);
-    cortex_frame->frame_length = htobe32(cortex_frame->frame_length);
-    cortex_frame->length = htobe32(cortex_frame->length);
-    uint32_t checksum = cortex_checksum((uint32_t *) cortex_frame, leh);
-    cortex_ftr->crc = htobe32((-checksum) & 0xffffffff);
-    //cortex_ftr->crc = 0xFFFFFFFF;
+    cortex_frame->frame_length = htobe32(8 * len_payload);
+    cortex_frame->length = htobe32(len_total);
+    uint32_t checksum = cortex_checksum((uint32_t *) cortex_frame, len_total);
+    cortex_ftr->crc = htobe32(-checksum);
 
-    /* Autogenerated from GS_1CMD.txt */
-    unsigned char bin2c_GS_1CMD_txt[292] = {'I',0226,02,0322,0,0,01,'$',0,0,0,0,0,0,0,01,0,0,0,0,0,0,010,030,032,0317,0374,035,0377,'I',014,0303,0236,010,'v',0273,0206,'%',0231,0246,0253,0272,'H',0301,'J',0206,'o',0337,'&',0267,0251,')',022,011,0353,0223,0210,0320,0364,0256,0336,0261,'?',0242,020,'?',0307,'^','4','p',015,'p','c','C',0243,0263,0205,037,0311,0253,'Q','p','H','K',',',030,0331,'*',025,0246,0353,0134,0275,'u','n','W','=','`',0227,0247,'m',0347,033,0343,0313,0210,'N','l','?',010,0242,'e',0237,0337,0251,0255,'}',026,0223,'w',06,'b',0377,0222,0232,025,'#','Q',0205,'>',0320,0261,'$','1',0310,'8','h',0357,'c',047,0201,0356,0273,'4',0300,'@',0254,0245,05,0322,0331,021,0363,':',0,0332,'t',0325,0271,0134,0365,0202,'^',0235,0267,0234,'o',0217,'.','!','9',0260,0374,'"',0211,0226,0177,'~',0246,0265,0364,'Z','M',0334,031,0213,0376,'J','I','T',0215,'F',024,0373,'B',0304,0220,0307,' ',0341,0243,0275,0214,0236,07,0272,0354,0323,01,02,0262,0224,027,'K','d','G',0314,0350,03,'j',022,0302,'r',0345,'G',0231,0351,0344,'C',0355,'!',0242,'!',034,'}','Y','u',016,0241,0337,'|','z',031,'U',0134,0345,0270,0376,0357,0247,'r',0255,'X',0330,'"','K','K','o','F',0204,'H',0212,'R',0207,'}',026,0377,0337,0312,0360,0243,'j','u',0245,015,023,0353,010,'(',033,'N',' ',0236,0,0262,022,0205,0222,0266,'i',0375,'.',};
-    checksum = cortex_checksum(bin2c_GS_1CMD_txt, 292);
-    printf("Good cortex checksum %x\n", checksum);
-    //memcpy(frame_buffer, bin2c_GS_1CMD_txt, 292);
-    leh = 292;
-    csp_hex_dump("pregen", bin2c_GS_1CMD_txt, leh);
-    csp_hex_dump("frame", frame_buffer, leh);
+    csp_hex_dump("frame", frame_buffer, len_total);
 
-    checksum = cortex_checksum((uint32_t *) frame_buffer, leh);
+    checksum = cortex_checksum((uint32_t *) frame_buffer, len_total);
     printf("Own cortex checksum %x\n", checksum);
 
-    printf("Trying to send %d bytes\n", leh);
-    int sentbytes = send(fd, frame_buffer, leh, MSG_NOSIGNAL);
+    if (fd < 0) {
+        fd = socket(AF_INET, SOCK_STREAM, 0);
+        ifconf->cortex_ip.sin_family = AF_INET;
+        ifconf->cortex_ip.sin_port = htons(ifconf->tx_port);
+        if (connect(fd, (struct sockaddr *) &ifconf->cortex_ip, sizeof(ifconf->cortex_ip)) < 0) {
+            printf("TC connect error: %s\n", strerror(errno));
+            close(fd);
+            fd = -1;
+            csp_buffer_free(packet);
+            return CSP_ERR_TX;
+        }
+        printf("TC connection open\n");
+    }
+
+    printf("TC sending %d bytes\n", len_total);
+    int sentbytes = send(fd, frame_buffer, len_total, MSG_NOSIGNAL);
 
     if (sentbytes <= 0) {
-        printf("send %s\n", strerror(errno));
+        printf("TC send error: %s\n", strerror(errno));
         close(fd);
         fd = -1;
         csp_buffer_free(packet);
@@ -494,23 +474,23 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
     }
 
     /* Get ack */
-    int recvbytes = recv(fd, frame_buffer, sizeof(frame_buffer), MSG_NOSIGNAL);
+    int recvbytes = recv(fd, frame_buffer, sizeof(frame_buffer), MSG_NOSIGNAL | MSG_PEEK | MSG_DONTWAIT);
     if (recvbytes < 0) {
-        printf("ack %s\n", strerror(errno));
-        close(fd);
-        fd = -1;
-        csp_buffer_free(packet);
-        return CSP_ERR_TX;
+        printf("TC receive error: %s\n", strerror(errno));
+        goto out;
     }
 
-    csp_hex_dump("ack", frame_buffer, recvbytes);
+    csp_hex_dump("TC response: ", frame_buffer, recvbytes);
 
+#if 0
     cortex_tc_ack_t* cortex_ack = (cortex_tc_ack_t*)&frame_buffer[0];
     if (cortex_ack->status == 0) {
         csp_buffer_free(packet);
         return CSP_ERR_TX;
     }
+#endif
 
+out:
     csp_buffer_free(packet);
     return CSP_ERR_NONE;
 
