@@ -24,8 +24,8 @@ void encode_rs_8(data_t *data, data_t *parity,int pad) {
  * data_t parity[] - an array of NROOTS and type data_t to be written with parity symbols
  * NROOTS - the number of roots in the RS code generator polynomial,
  *          which is the same as the number of parity symbols in a block.
-            Integer variable or literal.
-	    *
+ *          Integer variable or literal.
+
  * NN - the total number of symbols in a RS block. Integer variable or literal.
  * PAD - the number of pad symbols in a block. Integer variable or literal.
  * ALPHA_TO - The address of an array of NN elements to convert Galois field
@@ -49,7 +49,7 @@ void encode_rs_8(data_t *data, data_t *parity,int pad) {
   memset(parity,0,NROOTS*sizeof(data_t));
 
   for(i=0;i<NN-NROOTS-PAD;i++){
-    feedback = INDEX_OF[data[i] ^ parity[0]];
+    feedback = INDEX_OF[TalToConventional[data[i]] ^ parity[0]];
     if(feedback != A0){      /* feedback term is non-zero */
 #ifdef UNNORMALIZED
       /* This line is unnecessary when GENPOLY[NROOTS] is unity, as it must
@@ -58,7 +58,7 @@ void encode_rs_8(data_t *data, data_t *parity,int pad) {
       feedback = MODNN(NN - GENPOLY[NROOTS] + feedback);
 #endif
       for(j=1;j<NROOTS;j++)
-	parity[j] ^= ALPHA_TO[MODNN(feedback + GENPOLY[NROOTS-j])];
+        parity[j] ^= ALPHA_TO[MODNN(feedback + GENPOLY[NROOTS-j])];
     }
     /* Shift */
     memmove(&parity[0],&parity[1],sizeof(data_t)*(NROOTS-1));
@@ -68,4 +68,6 @@ void encode_rs_8(data_t *data, data_t *parity,int pad) {
       parity[NROOTS-1] = 0;
   }
 
+  for(j=0;j<NROOTS;j++)
+    parity[j] = TalToDualBasis[parity[j]];
 }

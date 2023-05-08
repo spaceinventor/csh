@@ -63,9 +63,14 @@ typedef struct {
 
 typedef struct __attribute__((packed)) {
     uint32_t ccsds_asm;         //! CCSDS ASM is 0x1ACFFC1D
-    uint8_t idx;                //! Space Inventor index
-    uint8_t sequence_number;    //! Space Inventor Radio Sequence number
-    uint16_t data_length;       //! Data length in RS frame in bytes
+    union {
+        struct {
+            uint8_t idx;                //! Space Inventor index
+            uint8_t sequence_number;    //! Space Inventor Radio Sequence number
+            uint16_t data_length;       //! Data length in RS frame in bytes
+        };
+        uint32_t ccsds_header;
+    };
     uint8_t csp_packet[RS_BLOCK_LENGTH-4-RS_CHECK_LENGTH];
     uint8_t rs_checksum[RS_CHECK_LENGTH];
 } ccsds_frame_t ;
@@ -423,8 +428,8 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
         ccsds_frame->idx = idx;
 
         memcpy(ccsds_frame->csp_packet, &packet->frame_begin[idx*CCSDS_LEN], min(packet->frame_length-idx*CCSDS_LEN, CCSDS_LEN));
-        encode_rs_8(ccsds_frame->csp_packet, ccsds_frame->rs_checksum, 0);
-        ccsds_randomize(ccsds_frame->csp_packet);
+        encode_rs_8(&ccsds_frame->ccsds_header, ccsds_frame->rs_checksum, 0);
+        ccsds_randomize(&ccsds_frame->ccsds_header);
 
         len_total += sizeof(ccsds_frame_t);
         len_payload += sizeof(ccsds_frame_t);
