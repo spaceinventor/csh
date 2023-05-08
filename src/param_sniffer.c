@@ -16,6 +16,10 @@
 
 #include "hk_param_sniffer.h"
 #include "prometheus.h"
+#include "victoria_metrics.h"
+
+extern int prometheus_started;
+extern int vm_started;
 
 pthread_t param_sniffer_thread;
 FILE *logfile;
@@ -87,7 +91,14 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 			break;
 		}
 
-		prometheus_add(tmp);
+
+        if(vm_started){
+            vm_add(tmp);
+        }
+
+        if(prometheus_started){
+		    prometheus_add(tmp);
+        }
 
 		if (logfile) {
 			fprintf(logfile, "%s", tmp);
