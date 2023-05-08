@@ -40,8 +40,8 @@ char *server_ip = NULL;
 char buffer[BUFFER_SIZE];
 size_t buffer_size = 0;
 pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
-char request[BUFFER_SIZE + 1024];
-char local_buffer[BUFFER_SIZE];
+char request[BUFFER_SIZE + 1024 + 20];
+char header[1024];
 char *username = NULL;
 char *password = NULL;
 int server_port = 0;
@@ -70,22 +70,33 @@ void * vm_push(void * arg) {
     printf("Started pushing to %s:%d\n",server_ip, server_port);
 
     encode_basic_auth(username, password, encoded_auth);
+    const csp_conf_t *conf = csp_get_conf();
+
+    // Prepare header without Content-Length
+    snprintf(header, 1024,
+             "POST /api/v1/import/prometheus?extra_label=hostname=%s HTTP/1.1\r\n"
+             "Host: %s:%d\r\n"
+             "Authorization: Basic %s\r\n"
+             "Content-Type: text/plain\r\n"
+             "Content-Length: ",
+             conf->hostname, server_ip, server_port, encoded_auth);
 
     while (1) {
         // Lock the buffer mutex
         pthread_mutex_lock(&buffer_mutex);
 
-        // Copy buffer to local_buffer and get current buffer_size
-        strncpy(local_buffer, buffer, BUFFER_SIZE);
         size_t local_buffer_size = buffer_size;
+        if(local_buffer_size == 0){
+            pthread_mutex_unlock(&buffer_mutex);
+            sleep(1);
+            continue;
+        }
+        // Build request buffer
+        snprintf(request, BUFFER_SIZE + 1024 + 20, "%s%zu\r\n\r\n%s", header, local_buffer_size, buffer);
 
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
-        if(local_buffer_size == 0){
-            sleep(1);
-            continue;
-        }
 
         // Create a socket
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -107,20 +118,7 @@ void * vm_push(void * arg) {
             continue;
         }
 
-        const csp_conf_t *conf = csp_get_conf();
-
-        // Prepare HTTP request
-        snprintf(request, BUFFER_SIZE + 1024,
-                 "POST /api/v1/import/prometheus?extra_label=hostname=%s HTTP/1.1\r\n"
-                 "Host: %s:%d\r\n"
-                 "Authorization: Basic %s\r\n"
-                 "Content-Type: text/plain\r\n"
-                 "Content-Length: %zu\r\n"
-                 "\r\n"
-                 "%s",
-                 conf->hostname, server_ip, server_port, encoded_auth, local_buffer_size, local_buffer);
-
-        printf("Request:\n%s\n", request);
+        // printf("Request:\n%s\n", request);
 
         // Send HTTP request
         if (send(sockfd, request, strlen(request), 0) < 0) {
@@ -129,15 +127,15 @@ void * vm_push(void * arg) {
             continue;
         }
 
-        char buf[1024];
-        int res_len = recv(sockfd, buf, 1023, 0);
-        if(res_len < 0){
-            perror("recv");
-            close(sockfd);
-            continue;
-        }
-        buf[res_len] = '\0';
-        printf("Response:\n%s\n", buf);
+        // char buf[1024];
+        // int res_len = recv(sockfd, buf, 1023, 0);
+        // if(res_len < 0){
+        //     perror("recv");
+        //     close(sockfd);
+        //     continue;
+        // }
+        // buf[res_len] = '\0';
+        // printf("Response:\n%s\n", buf);
 
         // Close the socket
         close(sockfd);
@@ -181,7 +179,7 @@ static int vm_start_cmd(struct slash *slash) {
     optparse_add_help(parser);
     optparse_add_int(parser, 'n', "hk_node", "NUM", 0, &hk_node, "Housekeeping node");
     optparse_add_int(parser, 'p', "server port", "NUM", 0, &server_port, "Overwrite dfl port");
-	optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
+    optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
     optparse_add_string(parser, 'u', "user", "STRING", &username, "Username for vmauth");
     optparse_add_string(parser, 's', "server", "STRING", &server_ip, "Server for victoria metrics");
 
@@ -195,9 +193,9 @@ static int vm_start_cmd(struct slash *slash) {
     if (username) {
         password = getpass("Enter vmauth password: ");
         if (server_port == 0) {
-        server_port = SERVER_PORT_AUTH;
+            server_port = SERVER_PORT_AUTH;
         }
-    } else {
+    } else if (server_port == 0) {
         server_port = SERVER_PORT;
     }
 
