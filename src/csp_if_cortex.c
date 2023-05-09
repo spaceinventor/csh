@@ -235,12 +235,6 @@ void * cortex_parser_task(void * param) {
             goto skip;
         }
 
-        if(numframes > idx + 1) {
-            if (_cortex_dbg & 0x10)
-                printf("Found frame %d of %d with len %d, waiting for next one\n", idx, numframes, len);
-            goto skip;
-        }
-
         /* For dry runs, we have done enough now */
         if (_cortex_fwd == 0)
             goto skip;
@@ -259,6 +253,13 @@ void * cortex_parser_task(void * param) {
         /* Move data to CSP buffer (with support for spanning multiple frames)*/
         rx_packet->frame_length = len;
         memcpy(&rx_packet->frame_begin[idx * CCSDS_LEN], &hdr->data.csp_packet, min(len-idx*CCSDS_LEN,CCSDS_LEN));
+
+        /* Skip if we expect more data */
+        if(numframes > idx + 1) {
+            if (_cortex_dbg & 0x10)
+                printf("Found frame %d of %d with len %d, waiting for next one\n", idx, numframes, len);
+            goto skip;
+        }
 
         /* Parse CSP header */
         if (csp_id_strip(rx_packet) < 0) {
@@ -423,8 +424,8 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
 
         ccsds_frame_t* ccsds_frame = (ccsds_frame_t*)&frame_buffer[sizeof(cortex_hdr_tc_t) + idx*sizeof(ccsds_frame_t)];
         ccsds_frame->ccsds_asm = htobe32(0x1ACFFC1D);
-        ccsds_frame->data_length = packet->frame_length;
-        ccsds_frame->sequence_number = seq_num++;
+        ccsds_frame->data_length = htobe16(packet->frame_length);
+        ccsds_frame->sequence_number = seq_num;
         ccsds_frame->idx = idx;
 
         memcpy(ccsds_frame->csp_packet, &packet->frame_begin[idx*CCSDS_LEN], min(packet->frame_length-idx*CCSDS_LEN, CCSDS_LEN));
@@ -434,6 +435,8 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
         len_total += sizeof(ccsds_frame_t);
         len_payload += sizeof(ccsds_frame_t);
     }
+
+    seq_num++;
 
     /* Cortex require length of frame to be a multiplum of 4-byte words */
     while (len_total % 4 != 0) {
@@ -482,7 +485,7 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
     }
 
     /* Get ack */
-    int recvbytes = recv(fd, frame_buffer, sizeof(frame_buffer), MSG_NOSIGNAL | MSG_PEEK | MSG_DONTWAIT);
+    int recvbytes = recv(fd, frame_buffer, sizeof(frame_buffer), MSG_NOSIGNAL | MSG_DONTWAIT);
     if (recvbytes < 0) {
         printf("TC receive error: %s\n", strerror(errno));
         goto out;
