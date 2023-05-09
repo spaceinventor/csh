@@ -24,7 +24,6 @@
 
 static pthread_t prometheus_tread;
 int prometheus_started = 0;
-extern int vm_started;
 
 static char prometheus_buf[10*1024*1024] = {0};
 static int prometheus_buf_len = 0;
@@ -135,9 +134,7 @@ static int prometheus_start_cmd(struct slash *slash) {
     }
 
     prometheus_init();
-    if(!vm_started){
-        param_sniffer_init(logfile, hk_node);
-    }
+    param_sniffer_init(logfile, hk_node);
     prometheus_started = 1;
     optparse_del(parser);
 	return SLASH_SUCCESS;
