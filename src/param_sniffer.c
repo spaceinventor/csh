@@ -19,8 +19,9 @@
 #include "victoria_metrics.h"
 
 extern int prometheus_started;
-extern int vm_started;
+extern int vm_running;
 
+int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
@@ -92,7 +93,7 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 		}
 
 
-        if(vm_started){
+        if(vm_running){
             vm_add(tmp);
         }
 
@@ -195,6 +196,10 @@ static void * param_sniffer(void * param) {
 
 void param_sniffer_init(int add_logfile, int node) {
 
+    if(sniffer_running){
+        return;
+    }
+
 	hk_node = node;
 
 	if (add_logfile) {
@@ -206,5 +211,6 @@ void param_sniffer_init(int add_logfile, int node) {
 		}
 	}	
 
+    sniffer_running = 1;
 	pthread_create(&param_sniffer_thread, NULL, &param_sniffer, NULL);
 }
