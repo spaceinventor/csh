@@ -108,7 +108,7 @@ static int resbuf_dump_slash(struct slash *slash) {
 
 	char data[vmem.size];
 
-	vmem_download(node, 1000, vmem.vaddr, vmem.size, data, 2);
+	vmem_download(node, 1000, vmem.vaddr, vmem.size, data, 2, 1);
 
 	//csp_hex_dump("data", data, 200);
 

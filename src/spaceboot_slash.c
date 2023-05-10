@@ -300,7 +300,7 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 	vmem_upload(node, timeout, address, data, len, 1);
 
 	char * datain = malloc(len);
-	vmem_download(node, timeout, address, len, datain, 1);
+	vmem_download(node, timeout, address, len, datain, 1, 1);
 
 	for (int i = 0; i < len; i++) {
 		if (datain[i] == data[i])
