@@ -113,7 +113,13 @@ static int min(int a, int b) {
 }
 
 static int get_num_frames(int packet_len) {
-    return (packet_len / CCSDS_LEN) + 1;
+    int whole_frames = (packet_len / CCSDS_LEN);
+    int remainder = (packet_len % CCSDS_LEN);
+    if (remainder) {
+        return whole_frames + 1;
+    } else {
+        return whole_frames;
+    }
 }
 
 static uint32_t cortex_checksum(uint32_t * data, size_t data_size) {
@@ -403,10 +409,16 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
     static int fd = -1;
     static uint8_t seq_num = 0;
     csp_if_cortex_conf_t * ifconf = iface->driver_data;
+
+    if (ifconf->tx_port == 0) {
+        printf("TC Disabled\n");
+        csp_buffer_free(packet);
+        return CSP_ERR_NONE;
+    }
     
     csp_id_prepend(packet);
-    printf("TC packet len %d, frame len %d\n", packet->length, packet->frame_length);
-    csp_hex_dump("frame", packet->frame_begin, packet->frame_length);
+    //printf("TC packet len %d, frame len %d\n", packet->length, packet->frame_length);
+    //csp_hex_dump("frame", packet->frame_begin, packet->frame_length);
 
     uint8_t frame_buffer[3000]; // Holds a 2kb CSP packet with RS checksum and ASM, along with Cortex header
     cortex_hdr_tc_t* cortex_frame = (cortex_hdr_tc_t*)&frame_buffer[0];
@@ -454,10 +466,10 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
     uint32_t checksum = cortex_checksum((uint32_t *) cortex_frame, len_total);
     cortex_ftr->crc = htobe32(-checksum);
 
-    csp_hex_dump("frame", frame_buffer, len_total);
+    //csp_hex_dump("frame", frame_buffer, len_total);
 
     checksum = cortex_checksum((uint32_t *) frame_buffer, len_total);
-    printf("Own cortex checksum %x\n", checksum);
+    //printf("Own cortex checksum %x\n", checksum);
 
     if (fd < 0) {
         fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -491,7 +503,7 @@ static int csp_if_cortex_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * pa
         goto out;
     }
 
-    csp_hex_dump("TC response: ", frame_buffer, recvbytes);
+    //csp_hex_dump("TC response: ", frame_buffer, recvbytes);
 
 #if 0
     cortex_tc_ack_t* cortex_ack = (cortex_tc_ack_t*)&frame_buffer[0];
