@@ -23,6 +23,11 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 
 add_global_arguments('-I../include', language: 'c')
 
+curl_dep = dependency('libcurl', required: false)
+if curl_dep.found()
+    add_global_arguments('-DHAVE_LIBCURL', language: 'c')
+endif
+
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
@@ -53,8 +58,6 @@ csh_sources = [
 	'src/csp_if_cortex.c',
 	'src/rs_encode.c',
 	'src/ccsds_randomize.c',
-	'src/victoria_metrics.c',
-	'src/base64.c',
 ]
 
 if lua_dep.found()
@@ -65,11 +68,17 @@ if libelf_dep.found()
 	csh_sources += 'src/elfparse.c'
 endif
 
+if curl_dep.found()
+    csh_sources += files([
+      'src/victoria_metrics.c', 
+      ])
+endif
+
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, lua_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, lua_dep, curl_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm'],
 	install : true,
 )
