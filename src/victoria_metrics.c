@@ -92,13 +92,13 @@ void * vm_push(void * arg) {
         }
         long response_code;
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-        if (response_code != 200) {
+        if (response_code != 200 && res == CURLE_OK) {
             printf("Failed test with response code: %ld\n", response_code);
             vm_running = 0;
         }
 
         // Resume building of header for push
-        snprintf(url, sizeof(url), "%s://%s:%d/api/v1/import/prometheus?extra_label=hostname=%s", protocol, args->server_ip, args->port, hostname);
+        snprintf(url, sizeof(url), "%s://%s:%d/api/v1/import/prometheus?extra_label=instance=%s", protocol, args->server_ip, args->port, hostname);
         curl_easy_setopt(curl, CURLOPT_URL, url);
         headers = curl_slist_append(headers, "Content-Type: text/plain");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
