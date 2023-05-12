@@ -249,7 +249,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
 
     csp_iface_t * iface;
     
-    int error = csp_can_socketcan_open_and_add_interface(device, name, baud, promisc, &iface);
+    int error = csp_can_socketcan_open_and_add_interface(device, name, addr, baud, promisc, &iface);
     if (error != CSP_ERR_NONE) {
         csp_print("failed to add CAN interface [%s], error: %d", device, error);
         return SLASH_EINVAL;
