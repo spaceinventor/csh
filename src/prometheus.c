@@ -64,7 +64,7 @@ retry_bind:
 		int conn_fd = accept(listen_fd, (struct sockaddr*)&client_addr, &client_addr_len);
 
 		char in[1024];
-		int bread = read(conn_fd, in, 1024);
+		int bread = recv(conn_fd, in, 1024, MSG_NOSIGNAL);
 		if (bread == 0) {
 			close(conn_fd);
 			continue;
@@ -75,10 +75,10 @@ retry_bind:
 			continue;
 		}
 
-		int written = write(conn_fd, header, strlen(header));
+		int written = send(conn_fd, header, strlen(header), MSG_NOSIGNAL);
 
 		/* Dump queued data */
-		written += write(conn_fd, prometheus_buf, prometheus_buf_len);
+		written += send(conn_fd, prometheus_buf, prometheus_buf_len, MSG_NOSIGNAL);
 		//printf("Prometheus sent %d bytes\n", written);
 
 		prometheus_clear();
