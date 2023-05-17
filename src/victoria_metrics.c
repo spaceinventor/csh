@@ -125,18 +125,15 @@ void * vm_push(void * arg) {
             continue;
         }
 
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, buffer_size);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
             printf("Failed push: %s", curl_easy_strerror(res));
         }
 
-        // Unlock the buffer mutex
-        pthread_mutex_unlock(&buffer_mutex);
-
-        pthread_mutex_lock(&buffer_mutex);
         buffer_size = 0;
+        // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
         sleep(1);
