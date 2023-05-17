@@ -153,8 +153,10 @@ int main(int argc, char ** argv) {
     assert(zmq_bind(backend, pub_str) == 0);
     printf("Publisher task listening on %s\n", pub_str);
 
-    pthread_t capworker;
-    pthread_create(&capworker, NULL, task_capture, ctx);
+    if(debug){
+        pthread_t capworker;
+        pthread_create(&capworker, NULL, task_capture, ctx);
+    }
 
     zmq_proxy(frontend, backend, NULL);
 
