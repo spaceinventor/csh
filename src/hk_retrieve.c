@@ -130,7 +130,7 @@ static int hk_retrieve(struct slash *slash) {
                 break;
             }
             param_t param_log = *param;
-            param_log.timestamp = timestamp_param;
+            *param_log.timestamp = timestamp_param;
 
 			param_deserialize_from_mpack_to_param(NULL, &queue, &param_log, offset, &reader);
 
