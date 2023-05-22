@@ -173,7 +173,7 @@ void vm_add(char * metric_line) {
     size_t line_len = strlen(metric_line);
     if (buffer_size + line_len < BUFFER_SIZE) {
         // Add the new metric line to the buffer
-        strncpy(buffer + buffer_size, metric_line, BUFFER_SIZE - buffer_size);
+        strcpy(buffer + buffer_size, metric_line);
         buffer_size += line_len;
     }
 
