@@ -16,24 +16,102 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define ETH_TYPE_CSP 0x6666
 #define BUF_SIZ	2048
 
-static int sockfd;
+// Global variables assumes a SINGLE ethernet device
+static int sockfd = -1;
+
 static struct ifreq if_idx;
 static struct ifreq if_mac;
 
+static uint16_t tx_mtu = 0;
 
-#if 0
-	/** INIT FROM MAIN */
+//PHM TEMP - Remove
+void print_data(uint8_t * data, size_t size)
+{
+    printf("[%u] ", (unsigned)size);
+    if (size && data) {
+        for (size_t i = 0; i < size; ++i) {
+            printf("0x%02x ", *(data + i));
+        }
+    }
+    printf("\n");
+}
 
-	if (eth_ifname) {
-		static csp_iface_t csp_iface_eth;
-		csp_if_eth_init(&csp_iface_eth, eth_ifname);
-		default_iface = &csp_iface_eth;
-	}
+void print_csp_packet(csp_packet_t * packet, const char * desc)
+{
+    printf("%s P{", desc);
+    if (packet) {
+        printf("ID{pri:%u,fl:%02x,S:%u,D:%u,Sp:%u,Dp:%u}",
+               (unsigned)(packet->id.pri), (unsigned)(packet->id.flags), 
+               (unsigned)(packet->id.src), (unsigned)(packet->id.dst), 
+               (unsigned)(packet->id.sport), (unsigned)(packet->id.dport));
+        printf(",len:%u", (unsigned)packet->length);
+    } else {
+        printf("0");
+    }
+    printf("}\n");
+    print_data((uint8_t*)packet->frame_begin, packet->frame_length);
+}
 
+#define DEB printf("%s:%d\n", __FILE__, __LINE__);
 
-#endif
+typedef struct arp_list_entry_s {
+    uint16_t csp_addr;
+    uint8_t mac_addr[ETH_ALEN];
+    struct arp_list_entry_s * next;
+} arp_list_entry_t;
+
+static arp_list_entry_t * arp_list = 0; 
+
+void arp_print()
+{
+    printf("ARP  CSP  MAC\n");
+    for (arp_list_entry_t * arp = arp_list; arp; arp = arp->next) {
+        printf("     %3u  ", (unsigned)(arp->csp_addr));
+        for (int i = 0; i < ETH_ALEN; ++i) {
+            printf("%02x ", arp->mac_addr[i]);
+        }
+    }
+    printf("\n");
+}
+
+void arp_set_addr(uint16_t csp_addr, uint8_t * mac_addr) 
+{
+    arp_list_entry_t * last_arp = 0;
+    for (arp_list_entry_t * arp = arp_list; arp; arp = arp->next) {
+        last_arp = arp;
+        if (arp->csp_addr == csp_addr) {
+            // Already set
+            return;
+        }
+    }
+
+    // Create and add a new ARP entry
+    arp_list_entry_t * new_arp = malloc(sizeof(arp_list_entry_t));
+    new_arp->csp_addr = csp_addr;
+	memcpy(new_arp->mac_addr, mac_addr, ETH_ALEN);
+    new_arp->next = 0;
+
+    if (last_arp) {
+        last_arp->next = new_arp;
+    } else {
+        arp_list = new_arp;
+    }
+}
+
+void arp_get_addr(uint16_t csp_addr, uint8_t * mac_addr) 
+{
+    for (arp_list_entry_t * arp = arp_list; arp ; arp = arp->next) {
+        if (arp->csp_addr == csp_addr) {
+            memcpy(mac_addr, arp->mac_addr, ETH_ALEN);
+            return;
+        }
+    }
+    // Defaults to returning the broadcast address
+	memset(mac_addr, 0xff, ETH_ALEN);
+}
 
 
 /**
@@ -81,92 +159,53 @@ uint16_t lwip_standard_chksum(const void *dataptr, int len) {
     return htons((uint16_t)acc);
 }
 
+
 static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+	/* Loopback */
+	if (packet->id.dst == iface->addr) {
+		csp_qfifo_write(packet, iface, NULL);
+		return CSP_ERR_NONE;
+	}
 
 	csp_id_prepend(packet);
 
+    if (packet->frame_length > tx_mtu) {
+        iface->rx_error++;
+        csp_buffer_free(packet);
+		return CSP_ERR_DRIVER;
+    }
+
 	/* Construct the Ethernet header */
-	char sendbuf[BUF_SIZ];
+	uint8_t sendbuf[BUF_SIZ];
     memset(sendbuf, 0, BUF_SIZ);
 
 	/* Ethernet header */
     struct ether_header *eh = (struct ether_header *) sendbuf;
-	int tx_len = sizeof(struct ether_header);
+	uint16_t head_size = sizeof(struct ether_header);
 
-	eh->ether_shost[0] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[0];
-	eh->ether_shost[1] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[1];
-	eh->ether_shost[2] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[2];
-	eh->ether_shost[3] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[3];
-	eh->ether_shost[4] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4];
-	eh->ether_shost[5] = ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5];
+    memcpy(eh->ether_shost, if_mac.ifr_hwaddr.sa_data, ETH_ALEN);
+ 
+    arp_get_addr(packet->id.dst, (uint8_t*)(eh->ether_dhost)); 
 
-	/* We just broadcast on ethernet! */
-	/* TODO: Broadcast traffic is throttled on some networks,
-	 * this should not be an issue with a point to point ethernet link
-	 * but in largere corporate networks, we might want to add an ARP */
-	eh->ether_dhost[0] = 0xff;
-	eh->ether_dhost[1] = 0xff;
-	eh->ether_dhost[2] = 0xff;
-	eh->ether_dhost[3] = 0xff;
-	eh->ether_dhost[4] = 0xff;
-	eh->ether_dhost[5] = 0xff;
-	
-#if 1
-	eh->ether_type = htons(0x6666);
+	eh->ether_type = htons(ETH_TYPE_CSP);
 
-#else
-	eh->ether_type = htons(0x0800);
-    
-	/* IP header */
-	struct iphdr *iph = (struct iphdr *) (sendbuf + tx_len);
-	tx_len += sizeof(struct iphdr);
-
-	iph->version = 4;
-	iph->ihl = 5;
-	iph->tos = 0;
-	iph->id = 0;
-	iph->frag_off = 0;
-	iph->tot_len = htons(sizeof(struct iphdr) + sizeof(struct udphdr) + packet->frame_length);
-	iph->ttl = 10;
-	iph->protocol = 17; // UDP
-	iph->saddr = htonl(0x0A000000 | packet->id.src);
-	iph->daddr = htonl(0x0A000000 | packet->id.dst);
-	iph->check = 0;
-	iph->check = ~lwip_standard_chksum(iph, sizeof(struct iphdr));
-
-	/* UDP header */
-	struct udphdr *udp = (struct udphdr *) (sendbuf + tx_len);
-	tx_len += sizeof(struct udphdr);
-
-	udp->source = htons(9000);
-	udp->dest = htons(9000);
-	udp->len = htons(sizeof(struct udphdr) + packet->frame_length);
-	udp->check = 0; // TODO;
-#endif
-
-    /* Copy data to outgoing */
-    memcpy(&sendbuf[tx_len], packet->frame_begin, packet->frame_length);
-    tx_len += packet->frame_length;
-
-	/* Socket address */
+	/* Destination socket address */
 	struct sockaddr_ll socket_address = {};
 	socket_address.sll_ifindex = if_idx.ifr_ifindex;
 	socket_address.sll_halen = ETH_ALEN;
-	socket_address.sll_addr[0] = eh->ether_dhost[0];
-	socket_address.sll_addr[1] = eh->ether_dhost[1];
-	socket_address.sll_addr[2] = eh->ether_dhost[2];
-	socket_address.sll_addr[3] = eh->ether_dhost[3];
-	socket_address.sll_addr[4] = eh->ether_dhost[4];
-	socket_address.sll_addr[5] = eh->ether_dhost[5];
+    memcpy(socket_address.sll_addr, eh->ether_dhost, ETH_ALEN);
 
-	/* Send packet */
-	if (sendto(sockfd, sendbuf, tx_len, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0)
-	    printf("Send failed\n");
+    sendbuf[head_size] = packet->frame_length / 256;
+    sendbuf[head_size + 1] = packet->frame_length % 256;
+
+    memcpy(&sendbuf[head_size + 2], packet->frame_begin, packet->frame_length);
+    if (sendto(sockfd, sendbuf, head_size + 2 + packet->frame_length, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
+        csp_buffer_free(packet);
+		return CSP_ERR_DRIVER;
+    }
 
     csp_buffer_free(packet);
-
     return CSP_ERR_NONE;
-
 }
 
 
@@ -183,27 +222,41 @@ void csp_if_eth_rx_loop(void * param) {
             continue;
         }
 
-        /* Setup RX frame to point to ID */
-        //int csp_header_size = csp_id_setup_rx(packet);
-        uint8_t * eth_frame_begin = packet->frame_begin - 14;
-		printf("Recv ready\n");
-        int received_len = recvfrom(sockfd, eth_frame_begin, 21, 0, NULL, NULL);
-        packet->frame_length = received_len - 14;
-		printf("Recv %d\n", received_len);
+		csp_id_setup_rx(packet);
 
-        /* Filter */
-        if (received_len < 14) {
+        /* Data buffer */
+        uint8_t recvbuf[BUF_SIZ];
+
+        /* Ethernet header */
+        struct ether_header * eh = (struct ether_header *)recvbuf;
+    	uint16_t head_size = sizeof(struct ether_header);
+
+        // Receive 
+        int received_len = recvfrom(sockfd, recvbuf, BUF_SIZ, 0, NULL, NULL);
+
+        /* Filter : ether head (14) + packet length + CSP head */
+        if (received_len < head_size + 2 + 6) {
             iface->rx_error++;
             csp_buffer_free(packet);
             continue;
         }
 
-        /* Filter */
-        if ((eth_frame_begin[12] != 0x66) || (eth_frame_begin[13] != 0x66)) {
+        /* Filter on CSP protocol id */
+        if ((ntohs(eh->ether_type) != ETH_TYPE_CSP)) {
             iface->rx_error++;
             csp_buffer_free(packet);
             continue;
         }
+
+        packet->frame_length = (uint16_t)(recvbuf[head_size]) * 256 + recvbuf[head_size + 1];
+
+        if (packet->frame_length > received_len - head_size) {
+            iface->rx_error++;
+            csp_buffer_free(packet);
+            continue;
+        }
+
+        memcpy(packet->frame_begin, &recvbuf[head_size + 2], packet->frame_length);
 
         /* Parse the frame and strip the ID field */
         if (csp_id_strip(packet) != 0) {
@@ -212,13 +265,16 @@ void csp_if_eth_rx_loop(void * param) {
             continue;
         }
 
+        // Record (CSP,MAC) addresses of source
+        arp_set_addr(packet->id.src, eh->ether_shost);
+
         csp_qfifo_write(packet, iface, NULL);
 	    
     }
 
 }
 
-void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
+void csp_if_eth_init(csp_iface_t * iface, char * ifname, int mtu) {
 
     /**
      * TX SOCKET
@@ -282,11 +338,13 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
 	/* fill sockaddr_ll struct to prepare binding */
 	struct sockaddr_ll my_addr;
 	my_addr.sll_family = AF_PACKET;
-	my_addr.sll_protocol = htons(0x6666);
+	my_addr.sll_protocol = htons(ETH_TYPE_CSP);
 	my_addr.sll_ifindex = if_idx.ifr_ifindex;
 
 	/* bind socket  */
 	bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr_ll));
+
+    tx_mtu = mtu;
 
 	/* Start server thread */
 	void * csp_if_eth_rx_task(void * param) {
@@ -294,7 +352,8 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
 		return NULL;
 	}
     static pthread_t server_handle;
-	pthread_create(&server_handle, NULL, &csp_if_eth_rx_task, NULL);
+	pthread_create(&server_handle, NULL, &csp_if_eth_rx_task, iface);
+usleep(1);
 
     /**
      * CSP INTERFACE
@@ -304,6 +363,6 @@ void csp_if_eth_init(csp_iface_t * iface, char * ifname) {
 	iface->name = "ETH",
 	iface->nexthop = &csp_if_eth_tx,
 	csp_iflist_add(iface);
-
+DEB
 }
 
