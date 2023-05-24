@@ -17,6 +17,7 @@
 #include "hk_param_sniffer.h"
 #include "prometheus.h"
 #include "victoria_metrics.h"
+#include "vts.h"
 
 extern int prometheus_started;
 
@@ -45,6 +46,10 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 		count = mpack_expect_array(reader);
 	}
 
+    double vts_arr[4];
+    int vts_count = 0;
+    int vts = check_vts(param->node, param->id);
+
 	for (int i = offset; i < offset + count; i++) {
 
 		uint64_t time_ms;
@@ -56,40 +61,46 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 			time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
 		}
 
-		switch (param->type) {
-		case PARAM_TYPE_UINT8:
-		case PARAM_TYPE_XINT8:
-		case PARAM_TYPE_UINT16:
-		case PARAM_TYPE_XINT16:
-		case PARAM_TYPE_UINT32:
-		case PARAM_TYPE_XINT32:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, param->node, i, mpack_expect_uint(reader), time_ms);
-			break;
-		case PARAM_TYPE_UINT64:
-		case PARAM_TYPE_XINT64:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_u64(reader), time_ms);
-			break;
-		case PARAM_TYPE_INT8:
-		case PARAM_TYPE_INT16:
-		case PARAM_TYPE_INT32:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, param->node, i, mpack_expect_int(reader), time_ms);
-			break;
-		case PARAM_TYPE_INT64:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_i64(reader), time_ms);
-			break;
-		case PARAM_TYPE_FLOAT:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, mpack_expect_float(reader), time_ms);
-			break;
-		case PARAM_TYPE_DOUBLE:
-			sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, mpack_expect_double(reader), time_ms);
-			break;
 
-		case PARAM_TYPE_STRING:
-		case PARAM_TYPE_DATA:
-		default:
-			mpack_discard(reader);
-			break;
-		}
+        switch (param->type) {
+            case PARAM_TYPE_UINT8:
+            case PARAM_TYPE_XINT8:
+            case PARAM_TYPE_UINT16:
+            case PARAM_TYPE_XINT16:
+            case PARAM_TYPE_UINT32:
+            case PARAM_TYPE_XINT32:
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, param->node, i, mpack_expect_uint(reader), time_ms);
+                break;
+            case PARAM_TYPE_UINT64:
+            case PARAM_TYPE_XINT64:
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_u64(reader), time_ms);
+                break;
+            case PARAM_TYPE_INT8:
+            case PARAM_TYPE_INT16:
+            case PARAM_TYPE_INT32:
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, param->node, i, mpack_expect_int(reader), time_ms);
+                break;
+            case PARAM_TYPE_INT64:
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_i64(reader), time_ms);
+                break;
+            case PARAM_TYPE_FLOAT:
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, mpack_expect_float(reader), time_ms);
+                break;
+            case PARAM_TYPE_DOUBLE:
+                double tmp_dbl = mpack_expect_double(reader);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
+                if(vts){
+                    vts_arr[i] = tmp_dbl;
+                    vts_count++;
+                }
+                break;
+
+            case PARAM_TYPE_STRING:
+            case PARAM_TYPE_DATA:
+            default:
+                mpack_discard(reader);
+                break;
+        }
 
 		if (mpack_reader_error(reader) != mpack_ok) {
 			break;
@@ -106,12 +117,17 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 		    prometheus_add(tmp);
         }
 
+
 		if (logfile) {
 			fprintf(logfile, "%s", tmp);
 			fflush(logfile);
 		}
 
-	}
+	} // end of for loop
+    
+    if(vts){
+        vts_add(vts_arr, param->id, vts_count);
+    } 
 
 
 	return 0;
