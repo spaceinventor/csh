@@ -33,34 +33,32 @@ static unsigned int hk_node = 0;
 
 int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp) {
 
-	char tmp[1000] = {};
+    char tmp[1000] = {};
 
-	if (offset < 0)
-		offset = 0;
+    if (offset < 0)
+        offset = 0;
 
-	int count = 1;
+    int count = 1;
 
-	/* Inspect for array */
-	mpack_tag_t tag = mpack_peek_tag(reader);
-	if (tag.type == mpack_type_array) {
-		count = mpack_expect_array(reader);
-	}
+    /* Inspect for array */
+    mpack_tag_t tag = mpack_peek_tag(reader);
+    if (tag.type == mpack_type_array) {
+        count = mpack_expect_array(reader);
+    }
 
     double vts_arr[4];
-    int vts_count = 0;
     int vts = check_vts(param->node, param->id);
 
-	for (int i = offset; i < offset + count; i++) {
+    uint64_t time_ms;
+    if (timestamp > 0) {
+        time_ms = timestamp * 1000;
+    } else {
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
+    }
 
-		uint64_t time_ms;
-		if (timestamp > 0) {
-			time_ms = timestamp * 1000;
-		} else {
-			struct timeval tv;
-			gettimeofday(&tv, NULL);
-			time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
-		}
-
+    for (int i = offset; i < offset + count; i++) {
 
         switch (param->type) {
             case PARAM_TYPE_UINT8:
@@ -91,7 +89,6 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
                 sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
                 if(vts){
                     vts_arr[i] = tmp_dbl;
-                    vts_count++;
                 }
                 break;
 
@@ -102,10 +99,9 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
                 break;
         }
 
-		if (mpack_reader_error(reader) != mpack_ok) {
-			break;
-		}
-
+        if (mpack_reader_error(reader) != mpack_ok) {
+            break;
+        }
 
 #ifdef HAVE_LIBCURL
         if(vm_running){
@@ -114,105 +110,102 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
 #endif /* HAVE_LIBCURL */
 
         if(prometheus_started){
-		    prometheus_add(tmp);
+            prometheus_add(tmp);
         }
 
+        if (logfile) {
+            fprintf(logfile, "%s", tmp);
+            fflush(logfile);
+        }
+    }
 
-		if (logfile) {
-			fprintf(logfile, "%s", tmp);
-			fflush(logfile);
-		}
-
-	} // end of for loop
-    
     if(vts){
-        vts_add(vts_arr, param->id, vts_count);
+        vts_add(vts_arr, param->id, count, time_ms);
     } 
 
-
-	return 0;
+    return 0;
 }
 
 int param_sniffer_crc(csp_packet_t * packet) {
 
-	/* CRC32 verified packet */
-	if (packet->id.flags & CSP_FCRC32) {
-		if (packet->length < 4) {
-			printf("Too short packet for CRC32, %u\n", packet->length);
-			return -1;
-		}
-		/* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
-		if (csp_crc32_verify(packet) != 0) {
-			/* Checksum failed */
-			printf("CRC32 verification error! Discarding packet\n");
-			return -1;
-		}
-	}
-	return 0;
+    /* CRC32 verified packet */
+    if (packet->id.flags & CSP_FCRC32) {
+        if (packet->length < 4) {
+            printf("Too short packet for CRC32, %u\n", packet->length);
+            return -1;
+        }
+        /* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
+        if (csp_crc32_verify(packet) != 0) {
+            /* Checksum failed */
+            printf("CRC32 verification error! Discarding packet\n");
+            return -1;
+        }
+    }
+    return 0;
 }
 
 static void * param_sniffer(void * param) {
-	csp_promisc_enable(100);
-	while(1) {
-		csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
+    csp_promisc_enable(100);
+    while(1) {
+        csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
 
-		if (packet->id.src == hk_node) {
-			hk_param_sniffer(packet);
-			csp_buffer_free(packet);
-			continue;
-		}
+        if (packet->id.src == hk_node) {
+            hk_param_sniffer(packet);
+            csp_buffer_free(packet);
+            continue;
+        }
 
-		if (packet->id.sport != PARAM_PORT_SERVER) {
-			csp_buffer_free(packet);
-			continue;
-		}
+        if (packet->id.sport != PARAM_PORT_SERVER) {
+            csp_buffer_free(packet);
+            continue;
+        }
 
-		if (param_sniffer_crc(packet) < 0) {
-			csp_buffer_free(packet);
-			continue;
-		}
+        if (param_sniffer_crc(packet) < 0) {
+            csp_buffer_free(packet);
+            continue;
+        }
 
-		uint8_t type = packet->data[0];
-		if ((type != PARAM_PULL_RESPONSE) && (type != PARAM_PULL_RESPONSE_V2)) {
-			csp_buffer_free(packet);
-			continue;
-		}
+        uint8_t type = packet->data[0];
+        if ((type != PARAM_PULL_RESPONSE) && (type != PARAM_PULL_RESPONSE_V2)) {
+            csp_buffer_free(packet);
+            continue;
+        }
 
-		int queue_version;
-		if (type == PARAM_PULL_RESPONSE) {
-		    queue_version = 1;
-		} else {
-		    queue_version = 2;
-		}
+        int queue_version;
+        if (type == PARAM_PULL_RESPONSE) {
+            queue_version = 1;
+        } else {
+            queue_version = 2;
+        }
 
-		param_queue_t queue;
-		param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
-		queue.last_node = packet->id.src;
+        param_queue_t queue;
+        param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
+        queue.last_node = packet->id.src;
 
-		mpack_reader_t reader;
-		mpack_reader_init_data(&reader, queue.buffer, queue.used);
-		while(reader.data < reader.end) {
-			int id, node, offset = -1;
-			long unsigned int timestamp = 0;
-			param_deserialize_id(&reader, &id, &node, &timestamp, &offset, &queue);
-			if (node == 0) {
-				node = packet->id.src;
-			}
-			/* If parameter timestamp is not inside the header, and the lower layer found a timestamp*/
-			if ((timestamp == 0) && (packet->timestamp_rx != 0)) {
-				timestamp = packet->timestamp_rx;
-			}
-			param_t * param = param_list_find_id(node, id);
-			if (param) {	
-				param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
-			} else {
-				printf("Found unknown param node %d id %d\n", node, id);
-				break;
-			}
-		}
-		csp_buffer_free(packet);
-	}
-	return NULL;
+        mpack_reader_t reader;
+        mpack_reader_init_data(&reader, queue.buffer, queue.used);
+        while(reader.data < reader.end) {
+            int id, node, offset = -1;
+            long unsigned int timestamp = 0;
+            param_deserialize_id(&reader, &id, &node, &timestamp, &offset, &queue);
+            if (node == 0) {
+                node = packet->id.src;
+            }
+            /* If parameter timestamp is not inside the header, and the lower layer found a timestamp*/
+            if ((timestamp == 0) && (packet->timestamp_rx != 0)) {
+                timestamp = packet->timestamp_rx;
+            }
+            param_t * param = param_list_find_id(node, id);
+            if (param) {	
+                param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
+            } else {
+                printf("Found unknown param node %d id %d\n", node, id);
+                break;
+            }
+        }
+        csp_buffer_free(packet);
+    }
+    return NULL;
 }
 
 void param_sniffer_init(int add_logfile, int node) {
@@ -221,17 +214,17 @@ void param_sniffer_init(int add_logfile, int node) {
         return;
     }
 
-	hk_node = node;
+    hk_node = node;
 
-	if (add_logfile) {
-		logfile = fopen("param_sniffer.log", "a");
-		if (logfile) {
-			printf("Logging parameters to param_sniffer.log\n");
-		} else {
-			printf("Couldn't open param_sniffer.log for append\n");
-		}
-	}	
+    if (add_logfile) {
+        logfile = fopen("param_sniffer.log", "a");
+        if (logfile) {
+            printf("Logging parameters to param_sniffer.log\n");
+        } else {
+            printf("Couldn't open param_sniffer.log for append\n");
+        }
+    }	
 
     sniffer_running = 1;
-	pthread_create(&param_sniffer_thread, NULL, &param_sniffer, NULL);
+    pthread_create(&param_sniffer_thread, NULL, &param_sniffer, NULL);
 }
