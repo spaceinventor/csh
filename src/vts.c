@@ -1,10 +1,6 @@
-#include <csp/csp.h>
-#include <csp/csp_cmp.h>
-
 #include <param/param.h>
 #include <param/param_client.h>
 
-#include <pthread.h>
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -41,9 +37,9 @@ int check_vts(uint16_t node, uint16_t id){
     return 0;
 }
 
-void vts_add(double arr[4], uint16_t id, int count){
+void vts_add(double arr[4], uint16_t id, int count, uint64_t time_ms){
     char buf[1000];
-    uint64_t timestamp = time(NULL);
+    uint64_t timestamp = time_ms / 1000;
     double jd_cnes = to_jd(timestamp) - 2433282.5;
     sprintf(buf, "TIME %f 1\n", jd_cnes);
     //printf("%s", buf);
