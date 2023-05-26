@@ -1,3 +1,4 @@
+#include "csp_if_eth.h"
 #include <csp/csp.h>
 #include <csp/csp_interface.h>
 #include <csp/csp_id.h>
@@ -16,7 +17,26 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define ETH_TYPE_CSP 0x6666
+bool eth_debug = false;
+
+void eth_print(const char * title, uint8_t * data, size_t size)
+{
+    if (eth_debug) {
+        printf("%s [%lu]\n", title, (unsigned long)size);
+        for (size_t i = 0; i < size; ++i) {
+            printf(" %02x", data[i]);
+            if (i % 32 == 31) {
+                printf("\n");
+            }
+        }
+        if (size % 32 != 0) {
+            printf("\n");
+        }
+        printf("\n");
+    }
+}
+
+
 #define BUF_SIZ	2048
 
 // Global variables assumes a SINGLE ethernet device
@@ -199,6 +219,7 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
     sendbuf[head_size + 1] = packet->frame_length % 256;
 
     memcpy(&sendbuf[head_size + 2], packet->frame_begin, packet->frame_length);
+    eth_print("tx", sendbuf, head_size + 2 + packet->frame_length);
     if (sendto(sockfd, sendbuf, head_size + 2 + packet->frame_length, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
         csp_buffer_free(packet);
 		return CSP_ERR_DRIVER;
@@ -230,9 +251,11 @@ void csp_if_eth_rx_loop(void * param) {
         /* Ethernet header */
         struct ether_header * eh = (struct ether_header *)recvbuf;
     	uint16_t head_size = sizeof(struct ether_header);
+        eh->ether_type = ntohs(eh->ether_type);
 
         // Receive 
         int received_len = recvfrom(sockfd, recvbuf, BUF_SIZ, 0, NULL, NULL);
+        eth_print("rx", recvbuf, received_len);
 
         /* Filter : ether head (14) + packet length + CSP head */
         if (received_len < head_size + 2 + 6) {
@@ -242,7 +265,7 @@ void csp_if_eth_rx_loop(void * param) {
         }
 
         /* Filter on CSP protocol id */
-        if ((ntohs(eh->ether_type) != ETH_TYPE_CSP)) {
+        if (eh->ether_type != ETH_TYPE_CSP) {
             iface->rx_error++;
             csp_buffer_free(packet);
             continue;
@@ -274,7 +297,7 @@ void csp_if_eth_rx_loop(void * param) {
 
 }
 
-void csp_if_eth_init(csp_iface_t * iface, char * ifname, int mtu) {
+void csp_if_eth_init(csp_iface_t * iface, const char * device, const char * ifname, int mtu) {
 
     /**
      * TX SOCKET
@@ -360,7 +383,7 @@ usleep(1);
      */
 
 	/* Regsiter interface */
-	iface->name = "ETH",
+	iface->name = ifname,
 	iface->nexthop = &csp_if_eth_tx,
 	csp_iflist_add(iface);
 DEB

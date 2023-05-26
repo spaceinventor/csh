@@ -21,6 +21,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include "csp_if_eth.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -42,58 +43,15 @@
 
 slash_command_group(eth, "Ethernet");
 
-static int eth(struct slash *slash)
+extern bool eth_debug;
+
+static int eth_debug_toggle(struct slash *slash)
 {
-    uid_t ruid, euid;
-    gid_t rgid, egid;
- 
-    ruid = getuid();
-    euid = geteuid(); 
-    rgid = getgid();
-    egid = getegid(); 
-    printf("uid r:%lu e:%lu\n", (unsigned long)ruid, (unsigned long)euid);
-    printf("gid r:%lu e:%lu\n", (unsigned long)rgid, (unsigned long)egid);
- 
-    /* elevate privileges */
-
-    if (seteuid((uid_t)0) == -1) {
-        fprintf(stderr, "Insufficient user privileges.\n");
-	    return SLASH_EINVAL;
-    }
- 
-    if (setegid((uid_t)0) == -1) {
-        fprintf(stderr, "Insufficient user privileges.\n");
-	    return SLASH_EINVAL;
-    }
- 
-    /* privileged command */
-    /* ... */
- 
-    ruid = getuid();
-    euid = geteuid(); 
-    rgid = getgid();
-    egid = getegid(); 
-    printf("uid r:%lu e:%lu\n", (unsigned long)ruid, (unsigned long)euid);
-    printf("gid r:%lu e:%lu\n", (unsigned long)rgid, (unsigned long)egid);
- 
-    /* drop privileges */
-
-    setgid(rgid);
-    setegid(egid); 
-    setuid(ruid);
-    seteuid(euid); 
-
-    ruid = getuid();
-    euid = geteuid(); 
-    rgid = getgid();
-    egid = getegid(); 
-    printf("uid r:%lu e:%lu\n", (unsigned long)ruid, (unsigned long)euid);
-    printf("gid r:%lu e:%lu\n", (unsigned long)rgid, (unsigned long)egid);
-
- 
-	return SLASH_SUCCESS;
+    eth_debug = !eth_debug;
+    printf("Ethernet debugginbg %s\n", eth_debug ? "ON" : "OFF");
+    return SLASH_SUCCESS;
 }
-slash_command(eth, eth, "[OPTIONS...] [name wildcard=*]", "List parameters");
+slash_command_sub(eth, debug, eth_debug_toggle, "", "Toggle ethernet debugging");
 
 
 int eth_init_check(char * device) {
@@ -154,13 +112,13 @@ int eth_init_check(char * device) {
 	/* fill sockaddr_ll struct to prepare binding */
 	struct sockaddr_ll my_addr;
 	my_addr.sll_family = AF_PACKET;
-	my_addr.sll_protocol = htons(0x6666);
+	my_addr.sll_protocol = htons(ETH_TYPE_CSP);
 	my_addr.sll_ifindex = if_idx.ifr_ifindex;
 
 	/* bind socket  */
 	bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr_ll));
 
-    printf("sll fam:%u prot:%u idx:%d hatyp:%u pktyp:%u halen:%u addr:",
+    printf("sll fam:0x%x prot:0x%x idx:%d hatyp:0x%x pktyp:0x%x halen:%u addr:",
             my_addr.sll_family,
             my_addr.sll_protocol,
             my_addr.sll_ifindex,
@@ -199,9 +157,9 @@ static void eth_list_interfaces()
         int family = address->ifa_addr->sa_family;
 
         printf("%d %p", i, address);
-        printf("  Name: %-12s", address->ifa_name);
-        printf("  Flags: %04x", address->ifa_flags);
-        printf("  Family: %s", (family == AF_INET ? "IPv4" : "IPv6"));
+        printf(" Name: %s", address->ifa_name);
+        printf(" Flags: 0x%x", address->ifa_flags);
+        printf(" Family: 0x%x", family);
 
         size_t sockaddr_size = (family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
 
@@ -209,13 +167,13 @@ static void eth_list_interfaces()
         getnameinfo(address->ifa_addr, sockaddr_size, 
                     ap, sizeof(ap), 0, 0,
                     NI_DGRAM | NI_NUMERICHOST);
-        printf("  Addr: %-16s", ap);
+        printf(" Addr: %s", ap);
 
         ap[0] = 0;
         getnameinfo(address->ifa_netmask, sockaddr_size, 
                     ap, sizeof(ap), 0, 0,
                     NI_DGRAM | NI_NUMERICHOST);
-        printf("  Netmask: %s", ap);
+        printf(" Netmask: %s", ap);
 
         ap[0] = 0;
         getnameinfo(address->ifa_dstaddr, sockaddr_size, 
