@@ -17,25 +17,9 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#define DEB printf("%d\n", __LINE__);
+
 bool eth_debug = false;
-
-void eth_print(const char * title, uint8_t * data, size_t size)
-{
-    if (eth_debug) {
-        printf("%s [%lu]\n", title, (unsigned long)size);
-        for (size_t i = 0; i < size; ++i) {
-            printf(" %02x", data[i]);
-            if (i % 32 == 31) {
-                printf("\n");
-            }
-        }
-        if (size % 32 != 0) {
-            printf("\n");
-        }
-        printf("\n");
-    }
-}
-
 
 #define BUF_SIZ	2048
 
@@ -74,8 +58,6 @@ void print_csp_packet(csp_packet_t * packet, const char * desc)
     printf("}\n");
     print_data((uint8_t*)packet->frame_begin, packet->frame_length);
 }
-
-#define DEB printf("%s:%d\n", __FILE__, __LINE__);
 
 typedef struct arp_list_entry_s {
     uint16_t csp_addr;
@@ -181,24 +163,30 @@ uint16_t lwip_standard_chksum(const void *dataptr, int len) {
 
 
 static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packet, int from_me) {
+
+DEB
 	/* Loopback */
 	if (packet->id.dst == iface->addr) {
 		csp_qfifo_write(packet, iface, NULL);
 		return CSP_ERR_NONE;
 	}
 
+DEB
 	csp_id_prepend(packet);
 
+/*
     if (packet->frame_length > tx_mtu) {
         iface->rx_error++;
         csp_buffer_free(packet);
 		return CSP_ERR_DRIVER;
     }
+*/
 
 	/* Construct the Ethernet header */
 	uint8_t sendbuf[BUF_SIZ];
     memset(sendbuf, 0, BUF_SIZ);
 
+DEB
 	/* Ethernet header */
     struct ether_header *eh = (struct ether_header *) sendbuf;
 	uint16_t head_size = sizeof(struct ether_header);
@@ -208,6 +196,8 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
     arp_get_addr(packet->id.dst, (uint8_t*)(eh->ether_dhost)); 
 
 	eh->ether_type = htons(ETH_TYPE_CSP);
+
+    printf("%s:%d TX ETH TYPE %02x %02x  %04x\n", __FILE__, __LINE__, (unsigned)sendbuf[12], (unsigned)sendbuf[13], (unsigned)eh->ether_type);
 
 	/* Destination socket address */
 	struct sockaddr_ll socket_address = {};
@@ -219,7 +209,7 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
     sendbuf[head_size + 1] = packet->frame_length % 256;
 
     memcpy(&sendbuf[head_size + 2], packet->frame_begin, packet->frame_length);
-    eth_print("tx", sendbuf, head_size + 2 + packet->frame_length);
+    csp_hex_dump("tx", sendbuf, head_size + 2 + packet->frame_length);
     if (sendto(sockfd, sendbuf, head_size + 2 + packet->frame_length, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
         csp_buffer_free(packet);
 		return CSP_ERR_DRIVER;
@@ -230,7 +220,7 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
 }
 
 
-void csp_if_eth_rx_loop(void * param) {
+void * csp_if_eth_rx_loop(void * param) {
 
     static csp_iface_t * iface;
     iface = param;
@@ -251,11 +241,11 @@ void csp_if_eth_rx_loop(void * param) {
         /* Ethernet header */
         struct ether_header * eh = (struct ether_header *)recvbuf;
     	uint16_t head_size = sizeof(struct ether_header);
-        eh->ether_type = ntohs(eh->ether_type);
 
         // Receive 
+DEB
         int received_len = recvfrom(sockfd, recvbuf, BUF_SIZ, 0, NULL, NULL);
-        eth_print("rx", recvbuf, received_len);
+        csp_hex_dump("rx", recvbuf, received_len);
 
         /* Filter : ether head (14) + packet length + CSP head */
         if (received_len < head_size + 2 + 6) {
@@ -265,7 +255,7 @@ void csp_if_eth_rx_loop(void * param) {
         }
 
         /* Filter on CSP protocol id */
-        if (eh->ether_type != ETH_TYPE_CSP) {
+        if ((ntohs(eh->ether_type) != ETH_TYPE_CSP)) {
             iface->rx_error++;
             csp_buffer_free(packet);
             continue;
@@ -295,23 +285,25 @@ void csp_if_eth_rx_loop(void * param) {
 	    
     }
 
+    return NULL;
 }
 
-void csp_if_eth_init(csp_iface_t * iface, const char * device, const char * ifname, int mtu) {
+void csp_if_eth_init(csp_iface_t * iface, const char * device, const char * ifname, int mtu, bool promisc) {
 
     /**
      * TX SOCKET
      */
 
     /* Open RAW socket to send on */
-	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(0x6666))) == -1) {
+    uint16_t protocol = promisc ? ETH_P_ALL : ETH_TYPE_CSP;
+	if ((sockfd = socket(AF_PACKET, SOCK_RAW, htons(protocol))) == -1) {
 	    perror("socket");
         return;
 	}
 
 	/* Get the index of the interface to send on */
 	memset(&if_idx, 0, sizeof(struct ifreq));
-	strncpy(if_idx.ifr_name, ifname, IFNAMSIZ-1);
+	strncpy(if_idx.ifr_name, device, IFNAMSIZ-1);
 	if (ioctl(sockfd, SIOCGIFINDEX, &if_idx) < 0) {
 	    perror("SIOCGIFINDEX");
         return;
@@ -319,29 +311,20 @@ void csp_if_eth_init(csp_iface_t * iface, const char * device, const char * ifna
 
 	/* Get the MAC address of the interface to send on */
 	memset(&if_mac, 0, sizeof(struct ifreq));
-	strncpy(if_mac.ifr_name, ifname, IFNAMSIZ-1);
+	strncpy(if_mac.ifr_name, device, IFNAMSIZ-1);
 	if (ioctl(sockfd, SIOCGIFHWADDR, &if_mac) < 0) {
 	    perror("SIOCGIFHWADDR");
         return;
     }
 
-	printf("ETH %s idx %d mac %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", ifname, if_idx.ifr_ifindex, 
+	printf("%s %s idx %d mac %02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx Promisc:%u\n", ifname, device, if_idx.ifr_ifindex, 
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[0],
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[1],
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[2],
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[3],
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[4],
-        ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5]);
-
-#if 0
-	/* Set interface to promiscuous mode - do we need to do this every time? */
-	/* Answer: no this is not needed */
-    struct ifreq ifopts = {};	/* set promiscuous mode */
-	strncpy(ifopts.ifr_name, ifname, IFNAMSIZ-1);
-	ioctl(sockfd, SIOCGIFFLAGS, &ifopts);
-	ifopts.ifr_flags |= IFF_PROMISC;
-	ioctl(sockfd, SIOCSIFFLAGS, &ifopts);
-#endif
+        ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5],
+        (unsigned)promisc);
 
     /* Allow the socket to be reused - incase connection is closed prematurely */
     int sockopt;
@@ -352,7 +335,7 @@ void csp_if_eth_init(csp_iface_t * iface, const char * device, const char * ifna
 	}
 
 	/* Bind to device */
-	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, ifname, IFNAMSIZ-1) == -1)	{
+	if (setsockopt(sockfd, SOL_SOCKET, SO_BINDTODEVICE, device, IFNAMSIZ-1) == -1)	{
 		perror("SO_BINDTODEVICE");
 		close(sockfd);
 		return;
@@ -367,25 +350,20 @@ void csp_if_eth_init(csp_iface_t * iface, const char * device, const char * ifna
 	/* bind socket  */
 	bind(sockfd, (struct sockaddr *)&my_addr, sizeof(struct sockaddr_ll));
 
-    tx_mtu = mtu;
+    tx_mtu = 10000; //mtu;
 
 	/* Start server thread */
-	void * csp_if_eth_rx_task(void * param) {
-		csp_if_eth_rx_loop(param);
-		return NULL;
-	}
     static pthread_t server_handle;
-	pthread_create(&server_handle, NULL, &csp_if_eth_rx_task, iface);
-usleep(1);
+	pthread_create(&server_handle, NULL, &csp_if_eth_rx_loop, iface);
 
     /**
      * CSP INTERFACE
      */
 
 	/* Regsiter interface */
-	iface->name = ifname,
+	iface->name = strdup(ifname),
 	iface->nexthop = &csp_if_eth_tx,
 	csp_iflist_add(iface);
-DEB
+
 }
 

@@ -30,6 +30,7 @@
 #include <sys/ioctl.h>
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
+#include <csp/csp_debug.h>
 #include <csp_autoconfig.h>
 #include <csp/csp_hooks.h>
 #include <sys/types.h>
@@ -49,6 +50,11 @@ static int eth_debug_toggle(struct slash *slash)
 {
     eth_debug = !eth_debug;
     printf("Ethernet debugginbg %s\n", eth_debug ? "ON" : "OFF");
+    if (eth_debug) {
+        csp_dbg_packet_print = 2;
+    } else {
+        csp_dbg_packet_print = 0;
+    }
     return SLASH_SUCCESS;
 }
 slash_command_sub(eth, debug, eth_debug_toggle, "", "Toggle ethernet debugging");
