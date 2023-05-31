@@ -160,7 +160,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int mask = 8;
     int dfl = 0;
     int baud = 1000000;
-    char * device = "ttyUSB0";
+    char * device = "/dev/ttyUSB0";
 
     optparse_t * parser = optparse_new("csp add kiss", "<addr>");
     optparse_add_help(parser);
