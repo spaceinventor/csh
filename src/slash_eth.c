@@ -42,6 +42,8 @@
 #include "base16.h"
 #include "known_hosts.h"
 
+#define DEB printf("%s:%d\n", __FILE__, __LINE__);
+
 slash_command_group(eth, "Ethernet");
 
 extern bool eth_debug;
@@ -158,43 +160,46 @@ static void eth_list_interfaces()
     struct ifaddrs *address = addresses;
     for( ; address; address = address->ifa_next)
     {
-        i++;
+        if (address->ifa_addr) {
 
-        int family = address->ifa_addr->sa_family;
+            i++;
 
-        printf("%d %p", i, address);
-        printf(" Name: %s", address->ifa_name);
-        printf(" Flags: 0x%x", address->ifa_flags);
-        printf(" Family: 0x%x", family);
+            int family = address->ifa_addr->sa_family;
 
-        size_t sockaddr_size = (family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
+            printf("%d %p", i, address);
+            printf(" Name: %s", address->ifa_name);
+            printf(" Flags: 0x%x", address->ifa_flags);
+            printf(" Family: 0x%x", family);
 
-        ap[0] = 0;
-        getnameinfo(address->ifa_addr, sockaddr_size, 
-                    ap, sizeof(ap), 0, 0,
-                    NI_DGRAM | NI_NUMERICHOST);
-        printf(" Addr: %s", ap);
+            size_t sockaddr_size = (family == AF_INET ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6));
 
-        ap[0] = 0;
-        getnameinfo(address->ifa_netmask, sockaddr_size, 
-                    ap, sizeof(ap), 0, 0,
-                    NI_DGRAM | NI_NUMERICHOST);
-        printf(" Netmask: %s", ap);
+            ap[0] = 0;
+            getnameinfo(address->ifa_addr, sockaddr_size, 
+                        ap, sizeof(ap), 0, 0,
+                        NI_DGRAM | NI_NUMERICHOST);
+            printf(" Addr: %s", ap);
 
-        ap[0] = 0;
-        getnameinfo(address->ifa_dstaddr, sockaddr_size, 
-                    ap, sizeof(ap), 0, 0,
-                    NI_DGRAM | NI_NUMERICHOST);
-        printf(" \n");
+            ap[0] = 0;
+            getnameinfo(address->ifa_netmask, sockaddr_size, 
+                        ap, sizeof(ap), 0, 0,
+                        NI_DGRAM | NI_NUMERICHOST);
+            printf(" Netmask: %s", ap);
+
+            ap[0] = 0;
+            getnameinfo(address->ifa_dstaddr, sockaddr_size, 
+                        ap, sizeof(ap), 0, 0,
+                        NI_DGRAM | NI_NUMERICHOST);
+            printf(" \n");
 
 
-        int ret = eth_init_check(address->ifa_name);
-        if (ret < 0) {
-            printf("ERROR %d\n", ret);
+            int ret = eth_init_check(address->ifa_name);
+            if (ret < 0) {
+                printf("ERROR %d\n", ret);
+            }
+            printf("----------------------------\n");
         }
-        printf("----------------------------\n");
     }
- 
+
     freeifaddrs(addresses);
 }
 
@@ -220,10 +225,12 @@ static const char * eth_select_interface(const char * device)
         bool found = false;
         struct ifaddrs *address = addresses;
         for( ; address && !found; address = address->ifa_next) {
-            printf("cmp:%d '%s' '%s'\n", strncmp(device, address->ifa_name, strlen(device)), device, address->ifa_name);
-            if (strncmp(device, address->ifa_name, strlen(device)) == 0) {
-                strncpy(selected_device, address->ifa_name, sizeof(selected_device));
-                found = true;
+            if (address->ifa_addr) {
+                printf("cmp:%d '%s' '%s'\n", strncmp(device, address->ifa_name, strlen(device)), device, address->ifa_name);
+                if (strncmp(device, address->ifa_name, strlen(device)) == 0) {
+                    strncpy(selected_device, address->ifa_name, sizeof(selected_device));
+                    found = true;
+                }
             }
         }
         freeifaddrs(addresses);

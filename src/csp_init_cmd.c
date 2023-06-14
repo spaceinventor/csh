@@ -287,7 +287,7 @@ static void eth_select_interface(const char ** device)
         struct ifaddrs * address = addresses;
 
         for( ; address && (selected[0] == 0); address = address->ifa_next) {
-            if (strcmp("lo", address->ifa_name) != 0) {
+            if (address->ifa_addr && strcmp("lo", address->ifa_name) != 0) {
                 if (strncmp(*device, address->ifa_name, strlen(*device)) == 0) {
                     strncpy(selected, address->ifa_name, sizeof(selected));
                     if (strlen(*device) != strlen(address->ifa_name)) {
@@ -316,7 +316,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     int promisc = 0;
     int mask = 8;
     int dfl = 0;
-    int mtu = 0;
+    int mtu = 1200;
 
     optparse_t * parser = optparse_new("csp add eth", "<addr>");
     optparse_add_help(parser);
