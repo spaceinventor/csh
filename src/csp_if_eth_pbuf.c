@@ -101,7 +101,7 @@ csp_packet_t * csp_if_eth_pbuf_get(csp_packet_t ** plist, uint32_t pbuf_id, bool
     }
 
     while (!packet) {
-        packet = isr ? csp_buffer_het_isr(0) : csp_buffer_get(0);
+        packet = isr ? csp_buffer_get_isr(0) : csp_buffer_get(0);
         if (!packet) {
             /* No free packet */
             usleep(10000);
@@ -141,7 +141,7 @@ void csp_if_eth_pbuf_remove(csp_packet_t ** plist, csp_packet_t * packet) {
 
 }
 
-void csp_if_eth_pbuf_list_cleanup(csp_packet_t ** plist, bool is_isr) {
+void csp_if_eth_pbuf_list_cleanup(csp_packet_t ** plist) {
 
     /* Free stalled packets, like for which a segment has been lost */
     uint32_t now = csp_get_ms();

@@ -43,15 +43,15 @@ uint32_t csp_if_eth_pbuf_id_as_int32(uint8_t * buf);
 
 /** Packet list operations */
 
-csp_packet_t * csp_if_eth_pbuf_find(csp_packet_t ** plist, uint32_t pbuf_id, int * task_woken);
+csp_packet_t * csp_if_eth_pbuf_find(csp_packet_t ** plist, uint32_t pbuf_id);
 
-void csp_if_eth_pbuf_insert(csp_packet_t ** plist, csp_packet_t * packet, int * task_woken);
+void csp_if_eth_pbuf_insert(csp_packet_t ** plist, csp_packet_t * packet);
 
-csp_packet_t * csp_if_eth_pbuf_get(csp_packet_t ** plist, uint32_t pbuf_id, int * task_woken);
+csp_packet_t * csp_if_eth_pbuf_get(csp_packet_t ** plist, uint32_t pbuf_id);
 
-void csp_if_eth_pbuf_remove(csp_packet_t ** plist, csp_packet_t * packet, int * task_woken);
+void csp_if_eth_pbuf_remove(csp_packet_t ** plist, csp_packet_t * packet);
 
-void csp_if_eth_pbuf_list_cleanup(csp_packet_t ** plist), int * task_woken;
+void csp_if_eth_pbuf_list_cleanup(csp_packet_t ** plist);
 
 void csp_if_eth_pbuf_print(const char * descr, csp_packet_t * packet);
 

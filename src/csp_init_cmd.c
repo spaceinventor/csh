@@ -272,6 +272,8 @@ slash_command_subsub(csp, add, can, csp_ifadd_can_cmd, NULL, "Add a new CAN inte
 #endif
 
 
+#if 0
+
 static void eth_select_interface(const char ** device)
 {
     printf("eth_select_interface('%s')\n", *device);
@@ -361,6 +363,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
 }
 
 slash_command_subsub(csp, add, eth, csp_ifadd_eth_cmd, NULL, "Add a new Ethernet interface");
+#endif
 
 
 static int csp_ifadd_udp_cmd(struct slash *slash) {
