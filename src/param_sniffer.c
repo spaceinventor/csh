@@ -84,13 +84,15 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
             case PARAM_TYPE_FLOAT:
                 sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, mpack_expect_float(reader), time_ms);
                 break;
-            case PARAM_TYPE_DOUBLE:
+            case PARAM_TYPE_DOUBLE: {
                 double tmp_dbl = mpack_expect_double(reader);
                 sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
                 if(vts){
                     vts_arr[i] = tmp_dbl;
                 }
                 break;
+            }
+                
 
             case PARAM_TYPE_STRING:
             case PARAM_TYPE_DATA:
