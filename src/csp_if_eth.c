@@ -1,4 +1,5 @@
 #include "csp_if_eth.h"
+#include "csp_if_eth_pbuf.h"
 #include <csp/csp.h>
 #include <csp/csp_interface.h>
 #include <csp/csp_id.h>
@@ -20,11 +21,7 @@
 
 bool eth_debug = false;
 
-#define RX_PACKET_TIMEOUT_MS 1000
-#define BUF_SIZ	2048
-
-/* packet_id(1), seg_size(2), packet_length(2) */
-#define SEG_HEAD_SIZE 5
+#define BUF_SIZE    3000
 
 // Global variables assumes a SINGLE ethernet device
 static int sockfd = -1;
@@ -174,7 +171,7 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
 	}
 
     static uint8_t packet_id = 0;
-	static uint8_t sendbuf[BUF_SIZ];
+	static uint8_t sendbuf[BUF_SIZE];
 
 	/* Construct the Ethernet header */
     struct ether_header *eh = (struct ether_header *) sendbuf;
@@ -199,26 +196,28 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
     packet_id++;
 
     uint16_t offset = 0;
+    uint16_t seg_offset = 0;
+    uint16_t seg_size_max = tx_mtu - (head_size + CSP_IF_ETH_PBUF_HEAD_SIZE);
     uint16_t seg_size = 0;
+
     while (offset < packet->frame_length) {
-        
+
         seg_size = packet->frame_length - offset;
-        if (head_size + SEG_HEAD_SIZE + seg_size > tx_mtu) {
-            seg_size = tx_mtu - (head_size + SEG_HEAD_SIZE);
+        if (seg_size > seg_size_max) {
+            seg_size = seg_size_max;
         }
+        
+        /* The ethernet header is the same */
+        seg_offset = head_size; 
 
-        // Set segment header
-        sendbuf[head_size] = packet_id;
-        sendbuf[head_size + 1] = seg_size / 256;
-        sendbuf[head_size + 2] = seg_size % 256;
-        sendbuf[head_size + 3] = packet->frame_length / 256;
-        sendbuf[head_size + 4] = packet->frame_length % 256;
+        seg_offset += csp_if_eth_pbuf_pack_head(&sendbuf[seg_offset], packet_id, packet->id.src, seg_size, packet->frame_length);
 
-        memcpy(&sendbuf[head_size + SEG_HEAD_SIZE], packet->frame_begin + offset, seg_size);
+        memcpy(&sendbuf[seg_offset], packet->frame_begin + offset, seg_size);
+        seg_offset += seg_size;
 
-        if (eth_debug) csp_hex_dump("tx", sendbuf, head_size + SEG_HEAD_SIZE + seg_size);
+        if (eth_debug) csp_hex_dump("tx", sendbuf, seg_offset);
 
-        if (sendto(sockfd, sendbuf, head_size + SEG_HEAD_SIZE + seg_size, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
+        if (sendto(sockfd, sendbuf, seg_offset, 0, (struct sockaddr*)&socket_address, sizeof(struct sockaddr_ll)) < 0) {
             csp_buffer_free(packet);
             return CSP_ERR_DRIVER;
         }
@@ -230,123 +229,14 @@ static int csp_if_eth_tx(csp_iface_t * iface, uint16_t via, csp_packet_t * packe
     return CSP_ERR_NONE;
 }
 
-static csp_packet_t * rx_packet_list = 0;
-
-csp_packet_t * rx_packet_find(uint8_t packet_id) {
-
-    csp_packet_t * packet = rx_packet_list;
-    while(packet) {
-        if (packet->cfpid == packet_id) {
-            return packet;
-        }
-        packet = packet->next;
-    }    
-    return packet;
-
-}
-
-void rx_packet_insert(csp_packet_t * packet) {
-
-    if (rx_packet_list) {
-        packet->next = rx_packet_list;
-    }
-    rx_packet_list = packet;
-
-}
-
-csp_packet_t * rx_packet_get(uint8_t packet_id) {
-
-    csp_packet_t * packet = rx_packet_find(packet_id);
-
-    if (packet) {
-    	packet->last_used = csp_get_ms();
-        return packet;
-    }
-
-    while (!packet) {
-        packet = csp_buffer_get(0);
-        if (!packet) {
-            /* No free packet */
-            usleep(10000);
-        }
-    }
-
-	csp_id_setup_rx(packet);
-
-    /* Existing cfpid and rx_count fields are used */ 
-    packet->cfpid = packet_id;
-    packet->rx_count = 0;
-	packet->last_used = csp_get_ms();
-
-    packet->next = 0;
-    rx_packet_insert(packet);
-
-    return packet;
-
-}
-
-void rx_packet_remove(csp_packet_t * packet) {
-
-    csp_packet_t * prev = 0;
-    csp_packet_t * p = rx_packet_list;
-    while(p && (p != packet)) {
-        prev = p;
-        p = p->next;
-    }   
-
-    if (p) {
-        if (prev) {
-            prev->next = p->next;
-        } else {
-            rx_packet_list = p->next;
-        }
-    }
-
-}
-
-void rx_packet_print(const char * descr, csp_packet_t * packet) {
-
-    if (packet) {
-        printf("%s %p id:%u Age:%lu,%lu,%lu rx:%u  flen:%u\n",
-            descr, packet, (unsigned)packet->cfpid, (unsigned long)csp_get_ms(), (unsigned long)packet->last_used, (unsigned long)(csp_get_ms() - packet->last_used), (unsigned)packet->rx_count, (unsigned)packet->frame_length);
-    } else {
-        printf("Packet is null\n");
-    }
-
-}
-
-void rx_packet_list_print() {
-
-    csp_packet_t * packet = rx_packet_list;
-    while(packet) {
-        rx_packet_print("list ", packet);
-        packet = packet->next;
-    }
-
-}
-
-void rx_packet_list_cleanup() {
-
-    /* Free stalled packets, like for which a segment has been lost */
-    uint32_t now = csp_get_ms();
-    csp_packet_t * packet = rx_packet_list;
-    while(packet) {
-		if (now > packet->last_used + RX_PACKET_TIMEOUT_MS) {
-            rx_packet_print("timeout ", packet);
-            rx_packet_remove(packet);
-            csp_buffer_free(packet);
-        }
-        packet = packet->next;
-    }
-
-}
-
 void * csp_if_eth_rx_loop(void * param) {
 
     static csp_iface_t * iface;
     iface = param;
 
-    static uint8_t recvbuf[BUF_SIZ];
+    csp_packet_t * pbuf_list = 0;
+
+    static uint8_t recvbuf[BUF_SIZE];
 
     /* Ethernet header */
     struct ether_header * eh = (struct ether_header *)recvbuf;
@@ -356,12 +246,12 @@ void * csp_if_eth_rx_loop(void * param) {
 
         /* Receive packet segment */ 
 
-        int received_len = recvfrom(sockfd, recvbuf, BUF_SIZ, 0, NULL, NULL);
+        int received_len = recvfrom(sockfd, recvbuf, BUF_SIZE, 0, NULL, NULL);
 
         if (eth_debug) csp_hex_dump("rx", recvbuf, received_len);
 
         /* Filter : ether head (14) + packet length + CSP head */
-        if (received_len < head_size + SEG_HEAD_SIZE + 6) {
+        if (received_len < head_size + CSP_IF_ETH_PBUF_HEAD_SIZE + 6) {
             continue;
         }
 
@@ -369,11 +259,14 @@ void * csp_if_eth_rx_loop(void * param) {
         if ((ntohs(eh->ether_type) != ETH_TYPE_CSP)) {
             continue;
         }
+        
+        uint16_t seg_offset = head_size;
 
-        // Get segment header
-        uint8_t packet_id = recvbuf[head_size];
-        uint16_t seg_size = (uint16_t)(recvbuf[head_size + 1]) * 256 + recvbuf[head_size + 2];
-        uint16_t frame_length = (uint16_t)(recvbuf[head_size + 3]) * 256 + recvbuf[head_size + 4];
+        uint16_t packet_id = 0;
+        uint16_t src_addr = 0;
+        uint16_t seg_size = 0;
+        uint16_t frame_length = 0;
+        seg_offset += csp_if_eth_pbuf_unpack_head(&recvbuf[seg_offset], &packet_id, &src_addr, &seg_size, &frame_length);
 
         if (seg_size == 0) {
             printf("eth rx seg_size is zero\n");
@@ -385,7 +278,7 @@ void * csp_if_eth_rx_loop(void * param) {
             continue;
         }
 
-        if (head_size + SEG_HEAD_SIZE + seg_size > received_len) {
+        if (seg_offset + seg_size > received_len) {
             printf("eth rx seg_size too high\n");
             continue;
         }
@@ -397,7 +290,7 @@ void * csp_if_eth_rx_loop(void * param) {
 
         /* Add packet segment */
 
-        csp_packet_t * packet = rx_packet_get(packet_id);
+        csp_packet_t * packet = csp_if_eth_pbuf_get(&pbuf_list, csp_if_eth_pbuf_id_as_int32(&recvbuf[head_size]));
 
         if (packet->frame_length == 0) {
             /* First segment */
@@ -415,14 +308,15 @@ void * csp_if_eth_rx_loop(void * param) {
             continue;
         }
 
-        memcpy(packet->frame_begin + packet->rx_count, &recvbuf[head_size + SEG_HEAD_SIZE], seg_size);
+        memcpy(packet->frame_begin + packet->rx_count, &recvbuf[seg_offset], seg_size);
         packet->rx_count += seg_size;
+        seg_offset += seg_size;
 
         /* Send packet when fully received */
 
         if (packet->rx_count == packet->frame_length) {
 
-            rx_packet_remove(packet);
+            csp_if_eth_pbuf_remove(&pbuf_list, packet);
 
             if (csp_id_strip(packet) != 0) {
                 printf("eth rx packet discarded due to error in ID field\n");
@@ -438,11 +332,11 @@ void * csp_if_eth_rx_loop(void * param) {
 
         }
 
-        if (eth_debug) rx_packet_list_print();
+        if (eth_debug) csp_if_eth_pbuf_list_print(&pbuf_list);
 
         /* Remove potentially stalled partial packets */
 
-        rx_packet_list_cleanup();
+        csp_if_eth_pbuf_list_cleanup(&pbuf_list);
     }
 
     return NULL;
