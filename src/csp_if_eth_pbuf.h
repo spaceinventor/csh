@@ -47,7 +47,7 @@ csp_packet_t * csp_if_eth_pbuf_find(csp_packet_t ** plist, uint32_t pbuf_id);
 
 void csp_if_eth_pbuf_insert(csp_packet_t ** plist, csp_packet_t * packet);
 
-csp_packet_t * csp_if_eth_pbuf_get(csp_packet_t ** plist, uint32_t pbuf_id);
+csp_packet_t * csp_if_eth_pbuf_get(csp_packet_t ** plist, uint32_t pbuf_id, bool isr);
 
 void csp_if_eth_pbuf_remove(csp_packet_t ** plist, csp_packet_t * packet);
 

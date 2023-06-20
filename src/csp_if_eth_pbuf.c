@@ -43,7 +43,11 @@ uint16_t csp_if_eth_pbuf_unpack_head(uint8_t * buf,
 
 uint32_t csp_if_eth_pbuf_id_as_int32(uint8_t * buf) {
 
-    return *((uint32_t*)buf);
+    // Cast causes a cast-align error, hence the copying.
+    // Endian is not an issue. The value must be uniqueue, otherwise arbitrary.
+    uint32_t id;
+    memcpy(&id, buf, sizeof(id));
+    return id;
 
 }
 
@@ -160,8 +164,11 @@ void csp_if_eth_pbuf_list_cleanup(csp_packet_t ** plist) {
 void csp_if_eth_pbuf_print(const char * descr, csp_packet_t * packet) {
 
     if (packet) {
-        printf("%s %p id:%u Age:%lu,%lu,%lu rx:%u  flen:%u\n",
-            descr, packet, (unsigned)packet->cfpid, (unsigned long)csp_get_ms(), (unsigned long)packet->last_used, (unsigned long)(csp_get_ms() - packet->last_used), (unsigned)packet->rx_count, (unsigned)packet->frame_length);
+        printf("%s %p id:%u Age:%lu,%lu,%lu flen:%u\n",
+            descr, packet, 
+            (unsigned)packet->cfpid, 
+            (unsigned long)csp_get_ms(), (unsigned long)packet->last_used, (unsigned long)(csp_get_ms() - packet->last_used), 
+            (unsigned)packet->frame_length);
     } else {
         printf("Packet is null\n");
     }

@@ -274,12 +274,13 @@ void * csp_if_eth_rx_loop(void * param) {
         }
 
         if (seg_size > frame_length) {
-            printf("eth rx seg_size too high\n");
+            printf("eth rx seg_size(%u) > frame_length(%u)\n", (unsigned)seg_size, (unsigned)frame_length);
             continue;
         }
 
         if (seg_offset + seg_size > received_len) {
-            printf("eth rx seg_size too high\n");
+            printf("eth rx seg_offset(%u) + seg_size(%u) > received(%u)\n",
+                (unsigned)seg_offset, (unsigned)seg_size, (unsigned)received_len);
             continue;
         }
 
@@ -290,7 +291,7 @@ void * csp_if_eth_rx_loop(void * param) {
 
         /* Add packet segment */
 
-        csp_packet_t * packet = csp_if_eth_pbuf_get(&pbuf_list, csp_if_eth_pbuf_id_as_int32(&recvbuf[head_size]));
+        csp_packet_t * packet = csp_if_eth_pbuf_get(&pbuf_list, csp_if_eth_pbuf_id_as_int32(&recvbuf[head_size]), true);
 
         if (packet->frame_length == 0) {
             /* First segment */

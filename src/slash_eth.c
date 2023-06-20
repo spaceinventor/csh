@@ -194,7 +194,7 @@ static void eth_list_interfaces()
 
             int ret = eth_init_check(address->ifa_name);
             if (ret < 0) {
-                printf("ERROR %d\n", ret);
+                printf("InitError: %d\n", ret);
             }
             printf("----------------------------\n");
         }
@@ -209,53 +209,3 @@ static int eth_info(struct slash *slash)
     return SLASH_SUCCESS;
 }
 slash_command_sub(eth, info, eth_info, "", "List devices");
-
-
-static char selected_device[20];
-
-static const char * eth_select_interface(const char * device)
-{
-    selected_device[0] = 0;
-
-    // Create link of interface adresses
-    struct ifaddrs *addresses;
-    if (getifaddrs(&addresses) == -1)  {
-        printf("eth_select_interface: getifaddrs call failed\n");
-    } else {
-        bool found = false;
-        struct ifaddrs *address = addresses;
-        for( ; address && !found; address = address->ifa_next) {
-            if (address->ifa_addr) {
-                printf("cmp:%d '%s' '%s'\n", strncmp(device, address->ifa_name, strlen(device)), device, address->ifa_name);
-                if (strncmp(device, address->ifa_name, strlen(device)) == 0) {
-                    strncpy(selected_device, address->ifa_name, sizeof(selected_device));
-                    found = true;
-                }
-            }
-        }
-        freeifaddrs(addresses);
-    }
-    return (const char *)selected_device;
-}
-
-static int eth_select(struct slash *slash)
-{
-    char * device = "e";
-
-    optparse_t * parser = optparse_new("eth test", "[node]\nTests ethernet");
-    optparse_add_help(parser);
-    optparse_add_string(parser, 'e', "device", "STR", &device, "Ethernet device name or name prefix (defaults to e)");
-
-    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
-    if (argi < 0) {
-        optparse_del(parser);
-	    return SLASH_EINVAL;
-    }
-
-    const char * selected = eth_select_interface(device);
-    printf("SELECTED  '%s' -> '%s'\n", device, selected);
-
-    optparse_del(parser);
-    return SLASH_SUCCESS;
-}
-slash_command_sub(eth, select, eth_select, "", "Select device");
