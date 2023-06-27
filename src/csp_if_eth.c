@@ -1,5 +1,6 @@
 #include "csp_if_eth.h"
-#include "csp_if_eth_pbuf.h"
+#include <csp/interfaces/csp_if_eth_pbuf.h>
+
 #include <csp/csp.h>
 #include <csp/csp_interface.h>
 #include <csp/csp_id.h>

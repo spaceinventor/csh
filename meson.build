@@ -47,7 +47,6 @@ csh_sources = [
 	'src/stdbuf_client.c',
 	'src/randombytes.c',
 	'src/csp_if_eth.c',
-	'src/csp_if_eth_pbuf.c',
 	'src/csp_scan.c',
 	'src/spaceboot_slash.c',
 	'src/nav.c',

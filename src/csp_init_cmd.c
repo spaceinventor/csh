@@ -22,8 +22,6 @@
 #include <csp/csp_rtable.h>
 #include <ifaddrs.h>
 
-#define DEB printf("%s:%d\n", __FILE__, __LINE__);
-
 void * router_task(void * param) {
 	while(1) {
 		csp_route_work();

@@ -42,8 +42,6 @@
 #include "base16.h"
 #include "known_hosts.h"
 
-#define DEB printf("%s:%d\n", __FILE__, __LINE__);
-
 slash_command_group(eth, "Ethernet");
 
 extern bool eth_debug;
