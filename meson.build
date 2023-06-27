@@ -60,6 +60,7 @@ csh_sources = [
 	'src/rs_encode.c',
 	'src/ccsds_randomize.c',
 	'src/vts.c',
+	'src/walkdir.c',
 ]
 
 if lua_dep.found()
