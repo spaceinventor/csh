@@ -37,7 +37,7 @@ lua_dep = dependency('lua5.4', required: false)
 csh_sources = [
 	'src/main.c',
 	'src/slash_csp.c',
-	'src/slash_eth.c',	
+#	'src/slash_eth.c',	
 	'src/csp_debug_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',
@@ -46,7 +46,7 @@ csh_sources = [
 	'src/stdbuf_mon.c',
 	'src/stdbuf_client.c',
 	'src/randombytes.c',
-	'src/csp_if_eth.c',
+#	'src/csp_if_eth.c',
 	'src/csp_scan.c',
 	'src/spaceboot_slash.c',
 	'src/nav.c',
