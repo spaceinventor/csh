@@ -3,6 +3,8 @@
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include <slash/dflopt.h>
+#include <param/param.h>
+#include <param/param_list.h>
 #include <dlfcn.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -24,6 +26,7 @@ static char wpath[ADDIN_MAX_PATH_SIZE];
 typedef void (*libmain_t)(int argc, char ** argv);
 typedef void (*libinfo_t)(void);
 typedef void (*get_slash_ptrs_t)(struct slash_command ** start, struct slash_command ** stop);
+typedef void (*get_param_ptrs_t)(param_t ** start, param_t ** stop);
 
 typedef struct addin_entry_s addin_entry_t;
 struct addin_entry_s {
@@ -35,6 +38,7 @@ struct addin_entry_s {
     libmain_t libmain_f;
     libinfo_t libinfo_f;
 	get_slash_ptrs_t get_slash_ptrs_f;
+	get_param_ptrs_t get_param_ptrs_f;
 
     addin_entry_t * next;
 };
@@ -76,6 +80,7 @@ addin_entry_t * load_addin(const char * path) {
     e->libmain_f = dlsym(handle, "libmain");
     e->libinfo_f = dlsym(handle, "libinfo");
     e->get_slash_ptrs_f = dlsym(handle, "get_slash_pointers");
+    e->get_param_ptrs_f = dlsym(handle, "get_param_pointers");
 
     e->handle = handle;
 
@@ -206,6 +211,13 @@ static int addin_load_cmd(struct slash *slash) {
         struct slash_command * stop;
         e->get_slash_ptrs_f(&start, &stop);
         slash_command_list_add(slash, start, stop);
+    }
+
+    if (e->get_param_ptrs_f) {
+        param_t * start;
+        param_t * stop;
+        e->get_param_ptrs_f(&start, &stop);
+        param_list_add_section(param_list_head(), start, stop);
     }
 
     return SLASH_SUCCESS;
