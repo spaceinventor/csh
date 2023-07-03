@@ -21,8 +21,9 @@ struct lib_info_t {
 
 static char wpath[ADDIN_MAX_PATH_SIZE];
 
-typedef void (*main_t)(int argc, char ** argv);
-typedef void (*info_t)(void);
+typedef void (*libmain_t)(int argc, char ** argv);
+typedef void (*libinfo_t)(void);
+typedef void (*get_slash_ptrs_t)(struct slash_command ** start, struct slash_command ** stop);
 
 typedef struct addin_entry_s addin_entry_t;
 struct addin_entry_s {
@@ -31,8 +32,9 @@ struct addin_entry_s {
     char path[ADDIN_MAX_PATH_SIZE];
     const char * file_name;
 
-    main_t main_f;
-    info_t info_f;
+    libmain_t libmain_f;
+    libinfo_t libinfo_f;
+	get_slash_ptrs_t get_slash_ptrs_f;
 
     addin_entry_t * next;
 };
@@ -42,7 +44,6 @@ typedef void (*info_t) (void);
 
 addin_entry_t * load_addin(const char * path) {
 
-printf("load '%s'\n", path);
     void * handle = dlopen(path, RTLD_NOW);
     if (!handle)
     {
@@ -71,20 +72,10 @@ printf("load '%s'\n", path);
     }
     e->file_name = &(path[i]);
 
-    /* Get reference to main and info functions */
-    e->main_f = dlsym(handle, "main");
-    if (!e->main_f) {
-        printf("Main function not found.\n");
-        dlclose(handle);
-        return 0;
-    }
-
-    e->info_f = dlsym(handle, "info");
-    if (!e->info_f) {
-        printf("Info function not found.\n");
-        dlclose(handle);
-        return 0;
-    }
+    /* Get references to addin API functions */
+    e->libmain_f = dlsym(handle, "libmain");
+    e->libinfo_f = dlsym(handle, "libinfo");
+    e->get_slash_ptrs_f = dlsym(handle, "get_slash_pointers");
 
     e->handle = handle;
 
@@ -206,9 +197,16 @@ static int addin_load_cmd(struct slash *slash) {
     printf("INITIALIZING: %s\n", e->file_name);
     printf("\033[0m\n");
 
-    e->main_f(0, 0);
+    if (e->libmain_f) {
+        e->libmain_f(slash->argc, slash->argv);
+    }
 
-    printf("Returned from main\n");
+    if (e->get_slash_ptrs_f) {
+        struct slash_command * start;
+        struct slash_command * stop;
+        e->get_slash_ptrs_f(&start, &stop);
+        slash_command_list_add(slash, start, stop);
+    }
 
     return SLASH_SUCCESS;
 
@@ -220,15 +218,13 @@ static int addin_info_cmd(struct slash *slash) {
 
     printf("Addin information\n");
 
-    addin_entry_t * e = addin_queue;
-    while (e) {
+    for (addin_entry_t * e = addin_queue; e; e = e->next) {
         printf("  %-30s %-80s\n", e->file_name, e->path);
-        e->info_f();
+        if (e->libinfo_f) {
+            e->libinfo_f();
+        }
         printf("\n");
-
-        e = e->next;
     }
-
 
     return SLASH_SUCCESS;
 
