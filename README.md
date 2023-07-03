@@ -65,3 +65,25 @@ When the file is deleted (rebuild) setcap needs to be run
 again
 
     sudo setcap cap_net_raw,cap_net_admin+ep ./builddir/csh
+
+
+## Addin support
+
+src/slash_addin.c defines a command, addin load, for loading a shared library as an addin, and a command, addin info, for listing loaded addins.
+
+### Addin API
+
+An addin optionally defines the following functions
+
+```
+libmain(int argc, char ** argv)
+```
+If defined, this is called once after having loaded the addin. The function is intended to initialize the addin after which it must return, as the CSH command line interface that is calling the function will otherwise hang.
+
+```
+libinfo()
+```
+If defined, this is called by the addin info call. The intention is to provide a means of providing information on the state of the addin, like statistics.
+
+See https://github.com/spaceinventor/csh_addin_example for example usage.
+
