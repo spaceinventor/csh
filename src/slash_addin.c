@@ -27,6 +27,7 @@ typedef void (*libmain_t)(int argc, char ** argv);
 typedef void (*libinfo_t)(void);
 typedef void (*get_slash_ptrs_t)(struct slash_command ** start, struct slash_command ** stop);
 typedef void (*get_param_ptrs_t)(param_t ** start, param_t ** stop);
+typedef void (*get_vmem_ptrs_t)(vmem_t ** start, vmem_t ** stop);
 
 typedef struct addin_entry_s addin_entry_t;
 struct addin_entry_s {
@@ -39,6 +40,7 @@ struct addin_entry_s {
     libinfo_t libinfo_f;
 	get_slash_ptrs_t get_slash_ptrs_f;
 	get_param_ptrs_t get_param_ptrs_f;
+	get_vmem_ptrs_t get_vmem_ptrs_f;
 
     addin_entry_t * next;
 };
@@ -52,7 +54,6 @@ addin_entry_t * load_addin(const char * path) {
     if (!handle)
     {
         printf("Could no load library '%s' %s\n", path, dlerror());
-        dlclose(handle);
         return 0;
     }
 
@@ -81,6 +82,7 @@ addin_entry_t * load_addin(const char * path) {
     e->libinfo_f = dlsym(handle, "libinfo");
     e->get_slash_ptrs_f = dlsym(handle, "get_slash_pointers");
     e->get_param_ptrs_f = dlsym(handle, "get_param_pointers");
+    e->get_vmem_ptrs_f = dlsym(handle, "get_vmem_pointers");
 
     e->handle = handle;
 
@@ -218,6 +220,13 @@ static int addin_load_cmd(struct slash *slash) {
         param_t * stop;
         e->get_param_ptrs_f(&start, &stop);
         param_list_add_section(param_list_head(), start, stop);
+    }
+
+    if (e->get_vmem_ptrs_f) {
+        vmem_t * start;
+        vmem_t * stop;
+        e->get_vmem_ptrs_f(&start, &stop);
+        vmem_list_add_section(vmem_list_head(), start, stop);
     }
 
     return SLASH_SUCCESS;
