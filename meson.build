@@ -56,8 +56,6 @@ csh_sources = [
 	'src/hk_param_sniffer.c',
 	'src/lock.c',
 	'src/csp_init_cmd.c',
-	'src/rs_encode.c',
-	'src/ccsds_randomize.c',
 	'src/vts.c',
 	'src/walkdir.c',
 ]
