@@ -1,0 +1,3 @@
+#!/bin/sh
+ninja -C builddir clean
+ninja -C builddir install

@@ -24,44 +24,53 @@ sudo pip3 install meson ninja
 Sometimes needed:
 ```
 link /usr/sbin/ninja /usr/local/lib/python3.5/dist-packages/ninja
+export PATH=~/.local/bin:$PATH
 ```
 
-Build
+Build:
 ```
-git clone https://github.com/spaceinventor/csh.git
+git clone --recurse-submodules https://github.com/spaceinventor/csh.git
 cd csh
-git submodule update --init --recursive
-
-meson . builddir
-cd builddir
-ninja
+./configure
+./install
 ```
 
 ### Run
 
 To setup CAN sudo is required:
 
-sudo ./caninit.sh
-
-On subsequent launches, sudo is not needed.
+```
+caninit
+```
 
 Then launch two instances
-`./csh -f conf1.yaml`
-And
-`./csh -f conf2.yaml`
+`csh -i conf1.csh`
+and
+`csh -i conf2.csh`
 
 Then on instance 1 type `ping 2`
 
-note: you need to setup the two different configuration files, so they can speak to eachother.
+Note: you need to setup the two different configuration files, so they can speak to each other, e.g.
+```
+csp init
+csp add can -d 1
+```
 
+Special CAN configurations in CSH
+=================================
 
+If change of baudrate is requred, give permission for 'csh' to access network configuration in order to setup the CAN interface. When the file is deleted (rebuild) setcap needs to be run again
 
-Setup can as non root
-=====================
+```
+sudo setcap cap_net_raw,cap_net_admin+ep ./builddir/csh
+```
 
-Give permission for 'csh' to access network configuration
-in order to setup the CAN interface baudrate and +up
-When the file is deleted (rebuild) setcap needs to be run
-again
+Windows support
+===============
+CSH does not have native support for running in Windows, but it is possible to use Microsoft WSL, to enable support for Windows based machines.
 
-    sudo setcap cap_net_raw,cap_net_admin+ep ./builddir/csh
+In a powershell, run the following command
+```
+wsl --install
+```
+After a reboot, you can then start the application WSL to get a virtual Ubuntu environment and follow the guidelines for installing CSH in Linux as above. Windows by default does not forward USB devices to WSL entities. To enable USB forwarding, follow the guide in https://learn.microsoft.com/en-us/windows/wsl/connect-usb.
