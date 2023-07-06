@@ -6,11 +6,13 @@
 #include <param/param.h>
 #include <param/param_list.h>
 #include <dlfcn.h>
+#include <pwd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -238,14 +240,29 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
 
 }
 
+static char installdir[100] = {};
+
+static const char * get_installdir() {
+
+    if (strlen(installdir) == 0) {
+        const char * path = getenv("HOME");
+        if (!path) {
+            path = getpwuid(getuid())->pw_dir;
+        }
+        strcpy(installdir, path);
+        strcat(installdir, "/.local/lib");
+    }
+    return installdir;
+}
+
 void build_addin_list(char * path, char * search_str, unsigned max_depth) {
 
     /* Clear search list */
 	lib_search.lib_count = 0;
     lib_search.search_str = search_str;
 
-    /* Always search for installed libraries */
-    strcpy(wpath, "~/.local/lib");
+    /* Always search for libraries in ${HOME}/.local/lib */
+    strcpy(wpath, get_installdir());
     walkdir(wpath, ADDIN_MAX_PATH_SIZE - 10, max_depth, dir_callback, file_callback, &lib_search);
 
     if (!path) {
@@ -302,7 +319,7 @@ static int addin_load_cmd(struct slash *slash) {
 
     if (lib_search.lib_count == 0) {
         printf("\033[31m\n");
-        printf("No addins found in ~/.local/lib");
+        printf("No addins found in %s", get_installdir());
         if (path) {
             printf(";%s", path);
         }
@@ -331,7 +348,7 @@ static int addin_load_cmd(struct slash *slash) {
             return SLASH_EUSAGE;
         }
         index = atoi(c);
-
+printf("%d %d\n", __LINE__, index);
         if (index >= lib_search.lib_count) {
             printf("\033[31m\n");
             printf("Value (%d) is out of bounds.\n", index);
@@ -340,9 +357,10 @@ static int addin_load_cmd(struct slash *slash) {
         }
 
     	selected = lib_search.libs[index].path;
+printf("%d %d '%s'\n", __LINE__, index, selected);
 
         printf("\033[32m\n");
-        printf("SELECTED: %s\n", path);
+        printf("SELECTED: %s\n", selected);
         printf("\033[0m\n");
 
         printf("Type 'yes' + enter to continue: ");
@@ -354,6 +372,8 @@ static int addin_load_cmd(struct slash *slash) {
             return SLASH_EUSAGE;
         }
     }
+
+printf("selected '%s'\n", selected);
 
     addin_entry_t * e = load_addin(selected);
 
