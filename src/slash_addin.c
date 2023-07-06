@@ -116,18 +116,18 @@ addin_entry_t * load_addin(const char * path) {
 
 void initialize_addin(addin_entry_t * e, struct slash *slash, const char * args) {
 
-    /* call libmain */
     if (e->libmain_f) {
         /* Split args in argc and argv. Last argv must be zero. */
         char * argv[ADDIN_LIBMAIN_ARGS_MAX] = {};
         argv[0] = e->path;
         int argc = 1;
-        for (char * p = strtok((char*)args, " "); 
-             p && (argc < ADDIN_LIBMAIN_ARGS_MAX-1); 
-             p = strtok(0, " ")) {
-            argv[argc++] = p;
+        if (args) {
+            for (char * p = strtok((char*)args, " "); 
+                p && (argc < ADDIN_LIBMAIN_ARGS_MAX-1); 
+                p = strtok(0, " ")) {
+                argv[argc++] = p;
+            }
         }
-
         e->libmain_f(argc, argv);
     }
 
@@ -228,12 +228,10 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
 
     /* Verify not already loaded */
     for (addin_entry_t * e = addin_queue; e; e = e->next) {
-printf("%s %s   %s %s  %d\n", e->file, e->path, last_entry, path_and_file, strcmp(e->file, last_entry));
         if (strcmp(e->file, last_entry) == 0) {
             return;
         }
     }
-printf("\n");
 
     /* Add info struct to search list */
 	search->lib_count++;
@@ -248,7 +246,6 @@ void build_addin_list(char * path, char * search_str, unsigned max_depth) {
 
     /* Always search for installed libraries */
     strcpy(wpath, "~/.local/lib");
-    printf("Searching: %s\n", wpath);
     walkdir(wpath, ADDIN_MAX_PATH_SIZE - 10, max_depth, dir_callback, file_callback, &lib_search);
 
     if (!path) {
@@ -266,7 +263,6 @@ void build_addin_list(char * path, char * search_str, unsigned max_depth) {
         if ((path[i] == ';') || (path[i] == 0)) {
             /* Terminate and process current path */
             strcpy(wpath, cur_path);
-            printf("Searching: %s\n", wpath);
             walkdir(wpath, ADDIN_MAX_PATH_SIZE - 10, max_depth, dir_callback, file_callback, &lib_search);
             /* Prepare next path */
             cur_path = &path[i+1];
@@ -304,15 +300,13 @@ static int addin_load_cmd(struct slash *slash) {
 
     build_addin_list(path, search_str, max_depth);
 
-printf("\n");
-for (addin_entry_t * e = addin_queue; e; e = e->next) {
-    printf("%p %s %s\n", e, e->file, e->path);
-}
-printf("\n");
-
     if (lib_search.lib_count == 0) {
         printf("\033[31m\n");
-        printf("No addins found.\n");
+        printf("No addins found in ~/.local/lib");
+        if (path) {
+            printf(";%s", path);
+        }
+        printf("\n");
         printf("\033[0m\n");
         return SLASH_EUSAGE;
     }
