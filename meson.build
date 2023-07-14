@@ -38,6 +38,7 @@ csh_sources = [
 	'src/main.c',
 	'src/slash_addin.c',
 	'src/slash_csp.c',
+	'src/slash_eth.c',
 	'src/csp_debug_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',

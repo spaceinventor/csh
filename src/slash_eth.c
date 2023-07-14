@@ -21,7 +21,6 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "csp_if_eth.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -33,6 +32,7 @@
 #include <csp/csp_debug.h>
 #include <csp_autoconfig.h>
 #include <csp/csp_hooks.h>
+#include <csp/interfaces/csp_if_eth.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <linux/netdevice.h>
