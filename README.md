@@ -74,3 +74,38 @@ In a powershell, run the following command
 wsl --install
 ```
 After a reboot, you can then start the application WSL to get a virtual Ubuntu environment and follow the guidelines for installing CSH in Linux as above. Windows by default does not forward USB devices to WSL entities. To enable USB forwarding, follow the guide in https://learn.microsoft.com/en-us/windows/wsl/connect-usb.
+
+
+## Addin support
+
+src/slash_addin.c defines a command, addin load, for loading a shared library as an addin, and a command, addin info, for listing loaded addins.
+
+### Addin API
+
+An addin optionally defines the following functions
+
+```
+libmain(int argc, char ** argv)
+```
+If defined, this is called once after having loaded the addin. The function is intended to initialize the addin after which it must return, as the CSH command line interface that is calling the function will otherwise hang.
+
+```
+libinfo()
+```
+If defined, this is called by the addin info call. The intention is to provide a means of providing information on the state of the addin, like statistics.
+
+See https://github.com/spaceinventor/csh_example for example usage.
+
+### Features moved to addins
+
+The following addins were implemented as a more thorough test of the addin implementation.
+
+`csh_hk`: `hk retrieve`.
+`csh_cortex`: `csp add cortex` and cortex implementation.
+`csh_cspftp`: implemented directly as an addin.
+`cping`: Concurrent, hence faster, ping and scan in one command `cping`.
+
+``Observe that hk retrieve and cortex implementation is removed from plain CSH and must be added by addin load command.``
+
+
+

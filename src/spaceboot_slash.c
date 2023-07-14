@@ -1,4 +1,5 @@
 
+#include "walkdir.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -248,51 +249,6 @@ static void file_callback(const char * path, const char * last_entry, void * cus
 	}
 }
 
-static void walk_dir(char * path, size_t path_size, unsigned depth, 
-					 bool (*dir_cb)(const char *, const char *, void *), 
-					 void (*file_cb)(const char *, const char *, void *), 
-					 void * custom)
-{
-    DIR * p = opendir(path);
-	if (p == 0) {
-		return;
-	}
-	
-    struct dirent * entry;
-	struct stat stat_info;
-
-    while ((entry = readdir(p)) != NULL) {
-		// Save path length
-		size_t path_len = strlen(path);
-
-		strncat(path, "/", path_size - strlen(path));
-		strncat(path, entry->d_name, path_size - strlen(path));
-
-		// entry->d_type is not set on some file systems, like sshfs mount of si
-		lstat(path, &stat_info);
-		bool isdir = S_ISDIR(stat_info.st_mode);
-		bool isfile = S_ISREG(stat_info.st_mode);
-
-  		// Ignore '.', '..' and hidden entries
-        if (((isdir && depth) || isfile) && (entry->d_name[0] != '.')) {
-        	if (isdir) {
-				if (dir_cb && dir_cb(path, entry->d_name, custom)) {
-					walk_dir(path, path_size, depth-1, dir_cb, file_cb, custom);
-				}
-			} 
-			else {
-				if (file_cb) {
-					file_cb(path, entry->d_name, custom);
-				}
-			}
-		}
-
-		// Restore path length
-		path[path_len] = 0;
-    }
-    closedir(p);
-}
-
 static int upload_and_verify(int node, int address, char * data, int len) {
 
 	unsigned int timeout = 10000;
@@ -381,7 +337,7 @@ static int slash_csp_program(struct slash * slash) {
 		bin_info.addr_max = vmem.vaddr + vmem.size;
 		bin_info.count = 0;
 			printf("node 3 %d\n", slash_dfl_node);
-		walk_dir(wpath, BIN_PATH_MAX_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
+		walkdir(wpath, BIN_PATH_MAX_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
 			printf("node 4 %d\n", slash_dfl_node);
 		if (bin_info.count) {
 			for (unsigned i = 0; i < bin_info.count; i++) {
@@ -510,7 +466,7 @@ static int slash_sps(struct slash * slash) {
 	bin_info.addr_min = vmem.vaddr;
 	bin_info.addr_max = vmem.vaddr + vmem.size;
 	bin_info.count = 0;
-	walk_dir(wpath, BIN_PATH_MAX_SIZE, 10, dir_callback, file_callback, &bin_info);
+	walkdir(wpath, BIN_PATH_MAX_SIZE, 10, dir_callback, file_callback, &bin_info);
 	
 	if (bin_info.count) {
 		for (unsigned i = 0; i < bin_info.count; i++) {

@@ -36,8 +36,8 @@ lua_dep = dependency('lua5.4', required: false)
 
 csh_sources = [
 	'src/main.c',
+	'src/slash_addin.c',
 	'src/slash_csp.c',
-	'src/slash_eth.c',	
 	'src/csp_debug_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',
@@ -46,20 +46,16 @@ csh_sources = [
 	'src/stdbuf_mon.c',
 	'src/stdbuf_client.c',
 	'src/randombytes.c',
-	'src/csp_if_eth.c',
 	'src/csp_scan.c',
 	'src/spaceboot_slash.c',
 	'src/nav.c',
 	'src/serial.c',
 	'src/known_hosts.c',
-	'src/hk_retrieve.c',
 	'src/hk_param_sniffer.c',
 	'src/lock.c',
 	'src/csp_init_cmd.c',
-	'src/csp_if_cortex.c',
-	'src/rs_encode.c',
-	'src/ccsds_randomize.c',
 	'src/vts.c',
+	'src/walkdir.c',
 ]
 
 if lua_dep.found()
@@ -81,7 +77,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 csh = executable('csh', csh_sources,
 	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, lua_dep, curl_dep],
-	link_args : ['-Wl,-Map=csh.map', '-lm'],
+	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic'],
 	install : true,
 )
 
