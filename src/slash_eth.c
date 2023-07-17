@@ -118,7 +118,7 @@ int eth_init_check(char * device) {
 	/* fill sockaddr_ll struct to prepare binding */
 	struct sockaddr_ll my_addr;
 	my_addr.sll_family = AF_PACKET;
-	my_addr.sll_protocol = htons(ETH_TYPE_CSP);
+	my_addr.sll_protocol = htons(CSP_ETH_TYPE_CSP);
 	my_addr.sll_ifindex = if_idx.ifr_ifindex;
 
 	/* bind socket  */

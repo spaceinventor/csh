@@ -17,6 +17,7 @@
 #include <csp/interfaces/csp_if_udp.h>
 #include <csp/interfaces/csp_if_eth.h>
 #include <csp/drivers/can_socketcan.h>
+#include <csp/drivers/eth_linux.h>
 #include <csp/drivers/usart.h>
 #include <csp/csp_rtable.h>
 #include <ifaddrs.h>
