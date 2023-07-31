@@ -24,7 +24,9 @@
 		"complex": "c",
 		"iomanip": "c",
 		"ctime": "c",
-		"string_view": "c"
+		"string_view": "c",
+		"typeindex": "c",
+		"typeinfo": "c"
 	},
 	"files.exclude": {
 		"**/.gitignore": true,
@@ -34,5 +36,5 @@
 		"configure":true,
 		"pack":true,
 	},
-	"C_Cpp.default.compileCommands": "builddir/vscode_compile_commands.json",
+	"C_Cpp.default.compileCommands": "builddir/compile_commands.json",
 }

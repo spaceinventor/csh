@@ -271,9 +271,8 @@ slash_command_subsub(csp, add, can, csp_ifadd_can_cmd, NULL, "Add a new CAN inte
 
 #endif
 
-static void eth_select_interface(const char ** device)
-{
-    printf("eth_select_interface('%s')\n", *device);
+static void eth_select_interface(const char ** device) {
+
     static char selected[20];
     selected[0] = 0;
 
@@ -289,9 +288,6 @@ static void eth_select_interface(const char ** device)
             if (address->ifa_addr && strcmp("lo", address->ifa_name) != 0) {
                 if (strncmp(*device, address->ifa_name, strlen(*device)) == 0) {
                     strncpy(selected, address->ifa_name, sizeof(selected));
-                    if (strlen(*device) != strlen(address->ifa_name)) {
-                        printf("  Device found '%s'\n", selected);
-                    }
                 }
             }
         }
@@ -345,11 +341,10 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
 		return SLASH_EINVAL;
     }
 
-    csp_iface_t * iface;
-    iface = malloc(sizeof(csp_iface_t));
-    memset(iface, 0, sizeof(csp_iface_t));
+    csp_iface_t * iface = NULL;
 
-    csp_if_eth_init(iface, device, name, mtu, promisc == 1);
+    // const char * device, const char * ifname, int mtu, unsigned int node_id, csp_iface_t ** iface, bool promisc
+    csp_eth_init(device, name, mtu, addr, promisc == 1, &iface);
 
     iface->is_default = dfl;
     iface->addr = addr;
