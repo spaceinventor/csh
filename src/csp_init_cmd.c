@@ -52,6 +52,7 @@ static int csp_init_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -97,6 +98,7 @@ static int csp_init_cmd(struct slash *slash) {
 	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
 	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
 
+    /* no optparse_del() here as the arg string pointers might be used */
 	return SLASH_SUCCESS;
 }
 
@@ -125,6 +127,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -149,6 +152,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -203,6 +207,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int error = csp_usart_open_and_add_kiss_interface(&conf, name, &iface);
     if (error != CSP_ERR_NONE) {
         printf("Failed to add kiss interface\n");
+        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
@@ -241,6 +246,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -257,6 +263,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     int error = csp_can_socketcan_open_and_add_interface(device, name, addr, baud, promisc, &iface);
     if (error != CSP_ERR_NONE) {
         csp_print("failed to add CAN interface [%s], error: %d", device, error);
+        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
@@ -380,6 +387,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -411,6 +419,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -473,6 +482,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -512,9 +522,11 @@ static int csp_routeadd_cmd(struct slash *slash) {
 
     if (csp_rtable_load(route) == 1) { /* function returns number of routes added */
         printf("Added route %s\n", route);
+        optparse_del(parser);
     	return SLASH_SUCCESS;
     } else {
         printf("Error during route add\n");
+        optparse_del(parser);
         return SLASH_EINVAL;
     }
 }

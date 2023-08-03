@@ -98,6 +98,7 @@ static int slash_csp_switch(struct slash * slash) {
 	/* Expect slot */
 	if (++argi >= slash->argc) {
 		printf("missing slot number\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -109,6 +110,7 @@ static int slash_csp_switch(struct slash * slash) {
 
 	reset_to_flash(node, slot, times, type);
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -306,6 +308,7 @@ static int slash_csp_program(struct slash * slash) {
 	/* Expect slot */
 	if (++argi >= slash->argc) {
 		printf("missing slot number\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -319,6 +322,7 @@ static int slash_csp_program(struct slash * slash) {
 	vmem_list_t vmem = vmem_list_find(node, 5000, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	} else {
 		printf("  Found vmem\n");
@@ -348,6 +352,8 @@ static int slash_csp_program(struct slash * slash) {
 			printf("\033[31m\n");
 			printf("  Found no valid binary for the selected slot.\n");
 			printf("\033[0m\n");
+
+            optparse_del(parser);
 			return SLASH_EINVAL;
 		}
 	}
@@ -360,6 +366,7 @@ static int slash_csp_program(struct slash * slash) {
 		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
+            optparse_del(parser);
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
@@ -371,6 +378,7 @@ static int slash_csp_program(struct slash * slash) {
     printf("ABOUT TO PROGRAM: %s\n", path);
     printf("\033[0m\n");
     if (ping(node) == 0) {
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -380,14 +388,18 @@ static int slash_csp_program(struct slash * slash) {
     
     if (strcmp(c, "yes") != 0) {
         printf("Abort\n");
+        optparse_del(parser);
         return SLASH_EUSAGE;
     }
 
 	char * data;
 	int len;
 	if (image_get(path, &data, &len) < 0) {
+        optparse_del(parser);
 		return SLASH_EIO;
 	}
+
+    optparse_del(parser);
 	return upload_and_verify(node, vmem.vaddr, data, len);
 }
 
@@ -426,6 +438,7 @@ static int slash_sps(struct slash * slash) {
 	/* Expect from slot */
 	if (++argi >= slash->argc) {
 		printf("missing from number\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -434,6 +447,7 @@ static int slash_sps(struct slash * slash) {
 	/* Expect to slot */
 	if (++argi >= slash->argc) {
 		printf("missing to number\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -454,6 +468,7 @@ static int slash_sps(struct slash * slash) {
 	vmem_list_t vmem = vmem_list_find(node, 5000, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	} else {
 		printf("  Found vmem\n");
@@ -477,6 +492,7 @@ static int slash_sps(struct slash * slash) {
 		printf("\033[31m\n");
 		printf("  Found no valid binary for the selected slot.\n");
 		printf("\033[0m\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -486,6 +502,7 @@ static int slash_sps(struct slash * slash) {
 		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
+            optparse_del(parser);
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
@@ -497,6 +514,7 @@ static int slash_sps(struct slash * slash) {
     printf("ABOUT TO PROGRAM: %s\n", path);
     printf("\033[0m\n");
     if (ping(node) == 0) {
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -504,6 +522,7 @@ static int slash_sps(struct slash * slash) {
 	char * data;
 	int len;
 	if (image_get(path, &data, &len) < 0) {
+        optparse_del(parser);
 		return SLASH_EIO;
 	}
 	
@@ -512,6 +531,7 @@ static int slash_sps(struct slash * slash) {
 		reset_to_flash(node, to, 1, type);
 	}
 
+    optparse_del(parser);
 	return result;
 }
 

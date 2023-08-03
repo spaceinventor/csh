@@ -369,6 +369,7 @@ static int elfparse(struct slash * slash) {
 	/* Expect filename */
 	if (++argi >= slash->argc) {
 		printf("missing filename\n");
+		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -379,6 +380,7 @@ static int elfparse(struct slash * slash) {
 	elf_version(EV_CURRENT);
 	int fd = open(filename, O_RDONLY);
 	if (fd < 0)
+		optparse_del(parser);
 		return SLASH_EINVAL;
 
 	Elf *elf = elf_begin(fd, ELF_C_READ, NULL);
@@ -404,6 +406,7 @@ static int elfparse(struct slash * slash) {
             break;
     }
 
+	optparse_del(parser);
     return SLASH_SUCCESS;
 
 out_elf:
@@ -412,6 +415,7 @@ out_elf:
 out: 
     printf("Error\n");
 	close(fd);
+	optparse_del(parser);
 	return SLASH_EINVAL;
 }
 

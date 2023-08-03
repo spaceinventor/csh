@@ -88,6 +88,7 @@ static int vts_init(struct slash * slash) {
 	sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockfd < 0) {
 		printf("Failed to get socket for VTS\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -98,12 +99,14 @@ static int vts_init(struct slash * slash) {
     if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr)<=0) {
         printf("Invalid address/ Address not supported\n");
 		close(sockfd);
+        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 
     if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         printf("Connection failed\n");
 		close(sockfd);
+        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 
@@ -111,6 +114,7 @@ static int vts_init(struct slash * slash) {
 	if (send(sockfd, init_cmd, strlen(init_cmd), MSG_NOSIGNAL) == -1) {
 		printf("Failed to send init\n");
 		close(sockfd);
+        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 

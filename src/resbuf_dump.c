@@ -103,6 +103,7 @@ static int resbuf_dump_slash(struct slash *slash) {
 	vmem_list_t vmem = resbuf_get_base(node, 1000);
 	if (vmem.size == 0 || vmem.vaddr == 0) {
 		printf("Could not find result buffer on node %u\n", node);
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -120,9 +121,13 @@ static int resbuf_dump_slash(struct slash *slash) {
 	printf("Got resbuf size %u in %u out %u\n", vmem.size, in, out);
 
 	if (in > vmem.size)
+        optparse_del(parser);
 		return SLASH_EINVAL;
+
 	if (out > vmem.size)
+        optparse_del(parser);
 		return SLASH_EINVAL;
+
 
 	while(1) {
 		fprintf(fpout, "%c", data[out++]);
@@ -134,6 +139,7 @@ static int resbuf_dump_slash(struct slash *slash) {
 		}
 	}
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

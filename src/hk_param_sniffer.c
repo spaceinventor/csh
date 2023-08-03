@@ -54,6 +54,7 @@ static int hk_timeoffset(struct slash *slash) {
 		printf("Current satellite EPOCH is %s", ctime(&local_epoch));
 	}
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

@@ -32,10 +32,12 @@ static int lua_run_cmd(struct slash *slash) {
         FILE * file = fopen(filename, "a");
         if (file == NULL) {
             printf("File not found %s\n", filename);
+            optparse_del(parser);
             return SLASH_EINVAL;
         }
         fclose(file);
         luaL_dofile(L, filename);
+        optparse_del(parser);
         return SLASH_SUCCESS;
     }
     
@@ -48,7 +50,12 @@ static int lua_run_cmd(struct slash *slash) {
 	}
 
     printf("Running %s\n", line);
-    luaL_dostring(L, line);
+    if(luaL_dostring(L, line)){
+        const  char *msg = lua_tostring(L, -1);
+        printf("Error: %s\n", msg);
+        lua_pop(L, 1);
+    }
+    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 

@@ -115,6 +115,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	if (vmem.size == 0 || vmem.vaddr == 0) {
 		printf("Could not find stdbuffer on node %u\n", node);
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -165,6 +166,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	};
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
