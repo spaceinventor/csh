@@ -379,11 +379,12 @@ static int elfparse(struct slash * slash) {
 
 	elf_version(EV_CURRENT);
 	int fd = open(filename, O_RDONLY);
-	if (fd < 0)
-		optparse_del(parser);
+    if (fd < 0) {
+        optparse_del(parser);
 		return SLASH_EINVAL;
+    }
 
-	Elf *elf = elf_begin(fd, ELF_C_READ, NULL);
+    Elf *elf = elf_begin(fd, ELF_C_READ, NULL);
 	if (elf == NULL)
 		goto out;
 
