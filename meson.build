@@ -3,6 +3,7 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 	'c_std=gnu11', 
 	'b_lto=false',
 	'default_library=static',
+	'slash:builtins=true',
 	'csp:packet_padding_bytes=42', 
 	'csp:buffer_count=1000',
 	'csp:buffer_size=2048',

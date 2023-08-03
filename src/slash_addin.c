@@ -26,11 +26,12 @@ slash_command_group(addin, "addin");
  * Load and create list of libraries 
  */
 
-typedef void (*libmain_t)(int argc, char ** argv);
+/* Library init signature versions:
+    1 = void libmain(void)
+*/
+__attribute__((used)) const int apm_init_version = 1;  // NOTE: Must be updated when APM init signature(s) change.
+typedef void (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
-typedef void (*get_slash_ptrs_t)(struct slash_command ** start, struct slash_command ** stop);
-typedef void (*get_param_ptrs_t)(param_t ** start, param_t ** stop);
-typedef void (*get_vmem_ptrs_t)(vmem_t ** start, vmem_t ** stop);
 
 typedef struct addin_entry_s addin_entry_t;
 struct addin_entry_s {
@@ -42,9 +43,6 @@ struct addin_entry_s {
     char args[256];
     libmain_t libmain_f;
     libinfo_t libinfo_f;
-	get_slash_ptrs_t get_slash_ptrs_f;
-	get_param_ptrs_t get_param_ptrs_f;
-	get_vmem_ptrs_t get_vmem_ptrs_f;
 
     addin_entry_t * next;
 };
@@ -104,9 +102,6 @@ addin_entry_t * load_addin(const char * path) {
     /* Get references to addin API functions */
     e->libmain_f = dlsym(handle, "libmain");
     e->libinfo_f = dlsym(handle, "libinfo");
-    e->get_slash_ptrs_f = dlsym(handle, "get_slash_pointers");
-    e->get_param_ptrs_f = dlsym(handle, "get_param_pointers");
-    e->get_vmem_ptrs_f = dlsym(handle, "get_vmem_pointers");
 
     e->handle = handle;
 
@@ -118,40 +113,14 @@ addin_entry_t * load_addin(const char * path) {
 
 void initialize_addin(addin_entry_t * e, struct slash *slash, const char * args) {
 
+    const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
+    if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
+        fprintf(stderr, "APM init function version mismatch, refusing to load %s\n", e->file);
+        return;
+    }
+
     if (e->libmain_f) {
-        /* Split args in argc and argv. Last argv must be zero. */
-        char * argv[ADDIN_LIBMAIN_ARGS_MAX] = {};
-        argv[0] = e->path;
-        int argc = 1;
-        if (args) {
-            for (char * p = strtok((char*)args, " "); 
-                p && (argc < ADDIN_LIBMAIN_ARGS_MAX-1); 
-                p = strtok(0, " ")) {
-                argv[argc++] = p;
-            }
-        }
-        e->libmain_f(argc, argv);
-    }
-
-    if (e->get_slash_ptrs_f) {
-        struct slash_command * start;
-        struct slash_command * stop;
-        e->get_slash_ptrs_f(&start, &stop);
-        slash_command_list_add(slash, start, stop);
-    }
-
-    if (e->get_param_ptrs_f) {
-        param_t * start;
-        param_t * stop;
-        e->get_param_ptrs_f(&start, &stop);
-        param_list_add_section(param_list_head(), start, stop);
-    }
-
-    if (e->get_vmem_ptrs_f) {
-        vmem_t * start;
-        vmem_t * stop;
-        e->get_vmem_ptrs_f(&start, &stop);
-        vmem_list_add_section(vmem_list_head(), start, stop);
+        e->libmain_f();
     }
 }
 
