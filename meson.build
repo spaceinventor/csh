@@ -29,7 +29,10 @@ if not curl_dep.found()
   error('libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.')
 endif
 
-csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
+# .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
+# Specifically; functions/symbols that are unused during static linking,
+# but that may be called after dynamic linking by APMs.
+csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 libelf_dep = dependency('libelf', required: false)
