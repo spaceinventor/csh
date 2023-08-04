@@ -25,8 +25,8 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 add_global_arguments('-I../include', language: 'c')
 
 curl_dep = dependency('libcurl', required: false)
-if curl_dep.found()
-    add_global_arguments('-DHAVE_LIBCURL', language: 'c')
+if not curl_dep.found()
+  error('libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.')
 endif
 
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
@@ -59,6 +59,7 @@ csh_sources = [
 	'src/csp_init_cmd.c',
 	'src/vts.c',
 	'src/walkdir.c',
+    'src/victoria_metrics.c', 
 ]
 
 if lua_dep.found()
@@ -69,11 +70,6 @@ if libelf_dep.found()
 	csh_sources += 'src/elfparse.c'
 endif
 
-if curl_dep.found()
-    csh_sources += files([
-      'src/victoria_metrics.c', 
-      ])
-endif
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
