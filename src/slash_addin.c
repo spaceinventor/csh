@@ -28,9 +28,10 @@ slash_command_group(addin, "addin");
 
 /* Library init signature versions:
     1 = void libmain(void)
+    2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = 1;  // NOTE: Must be updated when APM init signature(s) change.
-typedef void (*libmain_t)(void);
+__attribute__((used)) const int apm_init_version = 2;  // NOTE: Must be updated when APM init signature(s) change.
+typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
 typedef struct addin_entry_s addin_entry_t;
@@ -119,8 +120,17 @@ void initialize_addin(addin_entry_t * e, struct slash *slash, const char * args)
         return;
     }
 
+    int res = 1;
     if (e->libmain_f) {
-        e->libmain_f();
+        res = e->libmain_f();
+    }
+
+    if (res) {
+        fprintf(stderr, "Failed to add APM \"%s\", self destruction initiated!\n", e->file);
+#ifdef SLASH_HAVE_TERMIOS_H
+	tcsetattr(slash->fd_read, TCSANOW, &slash->original);
+#endif
+    exit(1);
     }
 }
 
