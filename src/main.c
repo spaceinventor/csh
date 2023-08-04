@@ -131,21 +131,30 @@ uint64_t clock_get_nsec(void) {
 void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
 	printf("\n");
-	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
+	printf("Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
 	printf("\n");
 }
 
+#ifdef PARAM_HAVE_SCHEDULER
 void * onehz_task(void * param) {
 	while(1) {
-#ifdef PARAM_HAVE_SCHEDULER
 		csp_timestamp_t scheduler_time = {};
-        csp_clock_get_time(&scheduler_time);
-        param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
-#endif
+		csp_clock_get_time(&scheduler_time);
+		param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
 		sleep(1);
 	}
 	return NULL;
 }
+
+static int cmd_sch_update(struct slash *slash) {
+
+	static pthread_t onehz_handle;
+	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
+
+	return SLASH_SUCCESS;
+}
+slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server each second");
+#endif
 
 	
 int main(int argc, char **argv) {
@@ -181,7 +190,7 @@ int main(int argc, char **argv) {
 		printf("  ***********************\n\n");
 
 		printf("\033[32m");
-		printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
+		printf("  Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
 		printf("  Compiled: %s git: %s\n\n", __DATE__, version_string);
 
 		printf("\033[0m");
@@ -213,18 +222,16 @@ int main(int argc, char **argv) {
 
 	vmem_file_init(&vmem_dummy);
 
-	static pthread_t onehz_handle;
-	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
 
 	/** Persist hosts file */
 	char * homedir = getenv("HOME");
-    char path[100];
+	char path[100];
 
 	if (strlen(homedir)) {
-        snprintf(path, 100, "%s/csh_hosts", homedir);
-    } else {
-        snprintf(path, 100, "csh_hosts");
-    }
+		snprintf(path, 100, "%s/csh_hosts", homedir);
+	} else {
+		snprintf(path, 100, "csh_hosts");
+	}
 
 	slash_run(slash, path, 0);
 
