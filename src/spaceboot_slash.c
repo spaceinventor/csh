@@ -34,7 +34,7 @@ static int ping(int node) {
 	return 1;
 }
 
-static void reset_to_flash(int node, int flash, int times, int type) {
+static void reset_to_flash(int node, int flash, int times, int type, int ms) {
 
 	param_t * boot_img[4];
 	/* Setup remote parameters */
@@ -63,7 +63,6 @@ static void reset_to_flash(int node, int flash, int times, int type) {
 	printf("  Rebooting");
 	csp_reboot(node);
 	int step = 25;
-	int ms = 1000;
 	while (ms > 0) {
 		printf(".");
 		fflush(stdout);
@@ -83,11 +82,13 @@ static int slash_csp_switch(struct slash * slash) {
 
 	unsigned int node = slash_dfl_node;
 	unsigned int times = 1;
+	unsigned int reboot_delay = 1000;
 
     optparse_t * parser = optparse_new("switch", "<slot>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 'c', "count", "NUM", 0, &times, "number of times to boot into this slow (deafult = 1)");
+	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -108,7 +109,7 @@ static int slash_csp_switch(struct slash * slash) {
 	if (slot >= 2)
 		type = 1;
 
-	reset_to_flash(node, slot, times, type);
+	reset_to_flash(node, slot, times, type, reboot_delay);
 
     optparse_del(parser);
 	return SLASH_SUCCESS;
@@ -289,9 +290,9 @@ static int slash_csp_program(struct slash * slash) {
 	unsigned int ack_timeout = 2000;
 	unsigned int ack_count = 2;
 	optparse_add_unsigned(parser, 'w', "window", "NUM", 0, &window, "rdp window (default = 3 packets)");
-	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10 seconds)");
-	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5 seconds)");
-	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2 seconds)");
+	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10000)");
+	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5000)");
+	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2000)");
 	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &ack_count, "rdp ack for each (default = 2 packets)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -420,11 +421,13 @@ static int slash_sps(struct slash * slash) {
 	unsigned int packet_timeout = 5000;
 	unsigned int ack_timeout = 2000;
 	unsigned int ack_count = 2;
+	unsigned int reboot_delay = 1000;
 	optparse_add_unsigned(parser, 'w', "window", "NUM", 0, &window, "rdp window (default = 3 packets)");
-	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10 seconds)");
-	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5 seconds)");
-	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2 seconds)");
+	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10000 ms)");
+	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5000 ms)");
+	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2000 ms)");
 	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &ack_count, "rdp ack for each (default = 2 packets)");
+	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -459,7 +462,7 @@ static int slash_sps(struct slash * slash) {
 	if (to >= 2)
 		type = 1;
 
-	reset_to_flash(node, from, 1, type);
+	reset_to_flash(node, from, 1, type, reboot_delay);
 
 	char vmem_name[5];
 	snprintf(vmem_name, 5, "fl%u", to);
@@ -528,7 +531,7 @@ static int slash_sps(struct slash * slash) {
 	
 	int result = upload_and_verify(node, vmem.vaddr, data, len);
 	if (result == SLASH_SUCCESS) {
-		reset_to_flash(node, to, 1, type);
+		reset_to_flash(node, to, 1, type, reboot_delay);
 	}
 
     optparse_del(parser);
