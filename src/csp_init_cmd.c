@@ -312,7 +312,6 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     static int ifidx = 0;
     char name[10];
     sprintf(name, "ETH%u", ifidx++);
-    sprintf(name, "ETH");
     const char * device = "e";
    
     int promisc = 0;
@@ -323,7 +322,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     optparse_t * parser = optparse_new("csp add eth", "<addr>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'e', "device", "STR", (char **)&device, "Ethernet device name or name prefix (defaults to enp)");
-    optparse_add_set(parser, 'p', "promisc", 0, &promisc, "Promiscous Mode");
+    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
     optparse_add_int(parser, 'b', "mtu", "NUM", 0, &mtu, "MTU in bytes (default 1200)");
