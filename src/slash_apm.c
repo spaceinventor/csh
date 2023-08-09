@@ -243,6 +243,8 @@ void build_apm_list(lib_search_t* lib_search) {
 
 static int apm_load_cmd(struct slash *slash) {
 
+    char path[WALKDIR_MAX_PATH_SIZE];
+
     lib_search_t lib_search;
     lib_search.path = NULL;
     lib_search.search_str = NULL;
@@ -259,11 +261,13 @@ static int apm_load_cmd(struct slash *slash) {
     }
 
     if (lib_search.path == NULL) {
-        lib_search.path = getenv("HOME");
-        if (!lib_search.path) {
-            lib_search.path = getpwuid(getuid())->pw_dir;
+        char * p = getenv("HOME");
+        if (p == NULL) {
+            p = getpwuid(getuid())->pw_dir;
         }
-        strcat(lib_search.path, "/.local/lib/csh");
+        strcpy(path, p);
+        strcat(path, "/.local/lib/csh");
+        lib_search.path = path;
     }
 
     build_apm_list(&lib_search);
