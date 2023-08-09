@@ -79,7 +79,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 csh = executable('csh', csh_sources,
 	dependencies : [slash_dep, csp_dep, param_dep, libelf_dep, lua_dep, curl_dep],
-	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic'],
+	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
 )
 
