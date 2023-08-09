@@ -40,7 +40,7 @@ lua_dep = dependency('lua5.4', required: false)
 
 csh_sources = [
 	'src/main.c',
-	'src/slash_addin.c',
+	'src/slash_apm.c',
 	'src/slash_csp.c',
 	'src/slash_eth.c',
 	'src/csp_debug_param.c',

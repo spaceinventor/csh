@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-slash_command_group(addin, "addin");
+slash_command_group(apm, "apm");
 
 /**
  * Load and create list of libraries 
@@ -26,12 +26,12 @@ slash_command_group(addin, "addin");
     1 = void libmain(void)
     2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = 2;  // NOTE: Must be updated when APM init signature(s) change.
+__attribute__((used)) const int apm_init_version = 3;  // NOTE: Must be updated when APM init signature(s) change.
 typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
-typedef struct addin_entry_s addin_entry_t;
-struct addin_entry_s {
+typedef struct apm_entry_s apm_entry_t;
+struct apm_entry_s {
     void * handle;
 
     char path[WALKDIR_MAX_PATH_SIZE];
@@ -41,20 +41,20 @@ struct addin_entry_s {
     libmain_t libmain_f;
     libinfo_t libinfo_f;
 
-    addin_entry_t * next;
+    apm_entry_t * next;
 };
 
-static addin_entry_t * addin_queue = 0; 
+static apm_entry_t * apm_queue = 0; 
 typedef void (*info_t) (void);
 
-static void addin_queue_add(addin_entry_t * e) {
+static void apm_queue_add(apm_entry_t * e) {
 
     if (!e) {
         return;
     }
 
-    e->next = addin_queue;
-    addin_entry_t * prev = 0;
+    e->next = apm_queue;
+    apm_entry_t * prev = 0;
 
     while (e->next && (strcmp(e->file, e->next->file) > 0)) {
         prev = e->next;
@@ -66,12 +66,12 @@ static void addin_queue_add(addin_entry_t * e) {
         prev->next = e;
     } else {
         /* Insert as first entry */
-        addin_queue = e;
+        apm_queue = e;
     }
 
 }
 
-addin_entry_t * load_addin(const char * path) {
+apm_entry_t * load_apm(const char * path) {
 
     void * handle = dlopen(path, RTLD_NOW);
     if (!handle)
@@ -80,7 +80,7 @@ addin_entry_t * load_addin(const char * path) {
         return 0;
     }
 
-    addin_entry_t * e = malloc(sizeof(addin_entry_t));
+    apm_entry_t * e = malloc(sizeof(apm_entry_t));
 
     if (!e) {
         printf("Memory allocation error.\n");
@@ -96,19 +96,19 @@ addin_entry_t * load_addin(const char * path) {
     }
     e->file = &(e->path[i]);
 
-    /* Get references to addin API functions */
+    /* Get references to APM API functions */
     e->libmain_f = dlsym(handle, "libmain");
     e->libinfo_f = dlsym(handle, "libinfo");
 
     e->handle = handle;
 
-    addin_queue_add(e);
+    apm_queue_add(e);
 
     return e;
 
 }
 
-void initialize_addin(addin_entry_t * e, struct slash *slash) {
+void initialize_apm(apm_entry_t * e, struct slash *slash) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
@@ -200,7 +200,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
     init_info(info, path_and_file);
 
     /* Verify not already loaded */
-    for (addin_entry_t * e = addin_queue; e; e = e->next) {
+    for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (strcmp(e->file, last_entry) == 0) {
             return;
         }
@@ -211,7 +211,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
 
 }
 
-void build_addin_list(lib_search_t* lib_search) {
+void build_apm_list(lib_search_t* lib_search) {
 
     /* Clear search list */
 	lib_search->lib_count = 0;
@@ -241,16 +241,16 @@ void build_addin_list(lib_search_t* lib_search) {
  * Slash command
  */
 
-static int addin_load_cmd(struct slash *slash) {
+static int apm_load_cmd(struct slash *slash) {
 
     lib_search_t lib_search;
     lib_search.path = NULL;
     lib_search.search_str = NULL;
 
-    optparse_t * parser = optparse_new("addin load", "-f <filename> -p <pathname>");
+    optparse_t * parser = optparse_new("apm load", "-f <filename> -p <pathname>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'p', "path", "PATHNAME", &lib_search.path, "Search paths separated by ';'");
-    optparse_add_string(parser, 'f', "file", "FILENAME", &lib_search.search_str, "Search string on addin file name");
+    optparse_add_string(parser, 'f', "file", "FILENAME", &lib_search.search_str, "Search string on APM file name");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -266,15 +266,15 @@ static int addin_load_cmd(struct slash *slash) {
         strcat(lib_search.path, "/.local/lib/csh");
     }
 
-    build_addin_list(&lib_search);
+    build_apm_list(&lib_search);
 
     if (lib_search.lib_count == 0) {
-        printf("\033[31mNo addins found in %s\033[0m\n", lib_search.path);
+        printf("\033[31mNo APMs found in %s\033[0m\n", lib_search.path);
         return SLASH_EUSAGE;
     }
 
     for (int i = 0; i < lib_search.lib_count; i++) {
-        addin_entry_t * e = load_addin(lib_search.libs[i].path);
+        apm_entry_t * e = load_apm(lib_search.libs[i].path);
 
         if (!e) {
             printf("\033[31mError loading %s\033[0m\n", e->path);
@@ -283,7 +283,7 @@ static int addin_load_cmd(struct slash *slash) {
 
         printf("\033[32mLoaded: %s\033[0m\n", e->path);
 
-        initialize_addin(e, slash);
+        initialize_apm(e, slash);
         free(e);
     }
 
@@ -291,15 +291,15 @@ static int addin_load_cmd(struct slash *slash) {
 
 }
 
-slash_command_sub(addin, load, addin_load_cmd, "", "Load an addin");
+slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM");
 
-static int addin_info_cmd(struct slash *slash) {
+static int apm_info_cmd(struct slash *slash) {
 
 	char * search_str = 0;
 
-    optparse_t * parser = optparse_new("addin info", "<search>");
+    optparse_t * parser = optparse_new("apm info", "<search>");
     optparse_add_help(parser);
-    optparse_add_string(parser, 's', "search", "SEARCHSTR", &search_str, "Search string on addin file name");
+    optparse_add_string(parser, 's', "search", "SEARCHSTR", &search_str, "Search string on APM file name");
  
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -312,7 +312,7 @@ static int addin_info_cmd(struct slash *slash) {
 		search_str = slash->argv[argi];
 	}
 
-    for (addin_entry_t * e = addin_queue; e; e = e->next) {
+    for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (!search_str || strstr(e->file, search_str)) {
             printf("  %-30s %-80s\n", e->file, e->path);
             if (e->libinfo_f) {
@@ -326,4 +326,4 @@ static int addin_info_cmd(struct slash *slash) {
 
 }
 
-slash_command_sub(addin, info, addin_info_cmd, "", "Information on addins");
+slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");

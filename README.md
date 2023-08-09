@@ -76,36 +76,33 @@ wsl --install
 After a reboot, you can then start the application WSL to get a virtual Ubuntu environment and follow the guidelines for installing CSH in Linux as above. Windows by default does not forward USB devices to WSL entities. To enable USB forwarding, follow the guide in https://learn.microsoft.com/en-us/windows/wsl/connect-usb.
 
 
-## Addin support
+## Extension support
 
-src/slash_addin.c defines a command, addin load, for loading a shared library as an addin, and a command, addin info, for listing loaded addins.
+src/slash_apm.c defines a command, apm load, for loading a shared library as an APM, and a command, ap, info, for listing loaded APMs.
 
-### Addin API
+### APM API
 
-An addin optionally defines the following functions
+An APM optionally defines the following functions
 
 ```
 libmain(int argc, char ** argv)
 ```
-If defined, this is called once after having loaded the addin. The function is intended to initialize the addin after which it must return, as the CSH command line interface that is calling the function will otherwise hang.
+If defined, this is called once after having loaded the APM. The function is intended to initialize the APM after which it must return, as the CSH command line interface that is calling the function will otherwise hang.
 
 ```
 libinfo()
 ```
-If defined, this is called by the addin info call. The intention is to provide a means of providing information on the state of the addin, like statistics.
+If defined, this is called by the APM info call. The intention is to provide a means of providing information on the state of the APM, like statistics.
 
 See https://github.com/spaceinventor/csh_example for example usage.
 
-### Features moved to addins
+### Features moved to APMs
 
-The following addins were implemented as a more thorough test of the addin implementation.
+The following APMs were implemented as a more thorough test of the APM implementation.
 
-`csh_hk`: `hk retrieve`.
-`csh_cortex`: `csp add cortex` and cortex implementation.
-`csh_cspftp`: implemented directly as an addin.
+`csh_hk`: `hk retrieve` For retrieving historical telemetry stored on an OBC.
+`csh_cortex`: `csp add cortex` cortex CSP interface implementation.
+`csh_cspftp`: FTP client over CSP.
 `cping`: Concurrent, hence faster, ping and scan in one command `cping`.
 
 ``Observe that hk retrieve and cortex implementation is removed from plain CSH and must be added by addin load command.``
-
-
-
