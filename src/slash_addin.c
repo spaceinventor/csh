@@ -18,10 +18,6 @@
 
 slash_command_group(addin, "addin");
 
-#define ADDIN_MAX_PATH_SIZE 256
-#define ADDIN_SEARCH_MAX 20
-#define ADDIN_LIBMAIN_ARGS_MAX 40
-
 /**
  * Load and create list of libraries 
  */
@@ -38,7 +34,7 @@ typedef struct addin_entry_s addin_entry_t;
 struct addin_entry_s {
     void * handle;
 
-    char path[ADDIN_MAX_PATH_SIZE];
+    char path[WALKDIR_MAX_PATH_SIZE];
     const char * file;
 
     char args[256];
@@ -87,12 +83,12 @@ addin_entry_t * load_addin(const char * path) {
     addin_entry_t * e = malloc(sizeof(addin_entry_t));
 
     if (!e) {
-        printf("Memmory allocation error.\n");
+        printf("Memory allocation error.\n");
         dlclose(handle);
         return 0;
     }
 
-    strncpy(e->path, path, ADDIN_MAX_PATH_SIZE - 1);
+    strncpy(e->path, path, WALKDIR_MAX_PATH_SIZE - 1);
 
     size_t i = strlen(e->path);
     while ((i > 0) && (e->path[i-1] != '/')) {
@@ -112,7 +108,7 @@ addin_entry_t * load_addin(const char * path) {
 
 }
 
-void initialize_addin(addin_entry_t * e, struct slash *slash, const char * args) {
+void initialize_addin(addin_entry_t * e, struct slash *slash) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
@@ -141,21 +137,17 @@ void initialize_addin(addin_entry_t * e, struct slash *slash, const char * args)
 /* Info on a library */
 typedef struct lib_info_s lib_info_t;
 struct lib_info_s {
-	char path[ADDIN_MAX_PATH_SIZE];
+	char path[WALKDIR_MAX_PATH_SIZE];
     char time[30];
 };
 
-typedef struct lib_search_s lib_search_t;
-struct lib_search_s {
+typedef struct lib_search_s {
     char * path;
-    char * file;
     char * search_str;
 
 	unsigned lib_count;
-	lib_info_t libs[ADDIN_SEARCH_MAX];
-} lib_search;
-
-static char wpath[ADDIN_MAX_PATH_SIZE];
+	lib_info_t libs[WALKDIR_MAX_ENTRIES];
+} lib_search_t;
 
 void init_info(lib_info_t * info, const char * path) {
 
@@ -163,7 +155,7 @@ void init_info(lib_info_t * info, const char * path) {
         return;
     }
 
-    strncpy(info->path, path, ADDIN_MAX_PATH_SIZE);
+    strncpy(info->path, path, WALKDIR_MAX_PATH_SIZE);
 
     struct stat attrib;
     stat(path, &attrib);
@@ -184,7 +176,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
     lib_search_t * search = (lib_search_t*)custom;
 
     /* Verify info struct is available */
-    if (search->lib_count >= ADDIN_SEARCH_MAX) {
+    if (search->lib_count >= WALKDIR_MAX_ENTRIES) {
         return;
     }
 
@@ -219,50 +211,27 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
 
 }
 
-static char installdir[100] = {};
-
-static const char * get_installdir() {
-
-    if (strlen(installdir) == 0) {
-        const char * path = getenv("HOME");
-        if (!path) {
-            path = getpwuid(getuid())->pw_dir;
-        }
-        strcpy(installdir, path);
-        strcat(installdir, "/.local/lib");
-    }
-    return installdir;
-}
-
-void build_addin_list(char * path, char * search_str, unsigned max_depth) {
+void build_addin_list(lib_search_t* lib_search) {
 
     /* Clear search list */
-	lib_search.lib_count = 0;
-    lib_search.search_str = search_str;
+	lib_search->lib_count = 0;
 
-    /* Always search for libraries in ${HOME}/.local/lib */
-    strcpy(wpath, get_installdir());
-    walkdir(wpath, ADDIN_MAX_PATH_SIZE - 10, max_depth, dir_callback, file_callback, &lib_search);
-
-    if (!path) {
-        return;
-    }
+    char * path = lib_search->path;
+    char wpath[WALKDIR_MAX_PATH_SIZE];
 
     /* Split path on ';' and process each path */
-    const char * cur_path = path;
-    bool done = false;
-    for (size_t i = 0; !done; ++i) {
-        done = (path[i] == 0);
-        if (path[i] == ';') {
-            path[i] = 0;
-        }
-        if ((path[i] == ';') || (path[i] == 0)) {
-            /* Terminate and process current path */
-            strcpy(wpath, cur_path);
-            walkdir(wpath, ADDIN_MAX_PATH_SIZE - 10, max_depth, dir_callback, file_callback, &lib_search);
-            /* Prepare next path */
-            cur_path = &path[i+1];
-        }
+    while(path[0] != '\0') {
+
+        char* split = strchr(path, ';');
+
+        if (split != NULL) strncpy(wpath, path, split-path);
+        else strcpy(wpath, path);
+
+        walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, lib_search);
+
+        if (split == NULL) break;
+
+        path = split+1;
     }
 
 }
@@ -274,19 +243,14 @@ void build_addin_list(char * path, char * search_str, unsigned max_depth) {
 
 static int addin_load_cmd(struct slash *slash) {
 
-	char * path = 0;
-	char * search_str = 0;
-    int max_depth = 5;
-    int yes = 0;
-    char * args = 0;
+    lib_search_t lib_search;
+    lib_search.path = NULL;
+    lib_search.search_str = NULL;
 
     optparse_t * parser = optparse_new("addin load", "-f <filename> -p <pathname>");
     optparse_add_help(parser);
-    optparse_add_string(parser, 'p', "path", "PATHNAME", &path, "Search paths separated by ';'");
-    optparse_add_string(parser, 's', "search", "SEARCHSTR", &search_str, "Search string on addin file name");
-    optparse_add_int(parser, 'd', "depth", "MAXDEPTH", 10, &max_depth, "Max search depth. Number of levels of entering sub-directories.");
-    optparse_add_set(parser, 'y', "yes", 1, &yes, "Accept first found addin.");
-    optparse_add_string(parser, 'a', "args", "ARGS", &args, "Arguments passed to libmain.");
+    optparse_add_string(parser, 'p', "path", "PATHNAME", &lib_search.path, "Search paths separated by ';'");
+    optparse_add_string(parser, 'f', "file", "FILENAME", &lib_search.search_str, "Search string on addin file name");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -294,80 +258,34 @@ static int addin_load_cmd(struct slash *slash) {
 	    return SLASH_EINVAL;
     }
 
-    build_addin_list(path, search_str, max_depth);
+    if (lib_search.path == NULL) {
+        lib_search.path = getenv("HOME");
+        if (!lib_search.path) {
+            lib_search.path = getpwuid(getuid())->pw_dir;
+        }
+        strcat(lib_search.path, "/.local/lib/csh");
+    }
+
+    build_addin_list(&lib_search);
 
     if (lib_search.lib_count == 0) {
-        printf("\033[31m\n");
-        printf("No addins found in %s", get_installdir());
-        if (path) {
-            printf(";%s", path);
-        }
-        printf("\n");
-        printf("\033[0m\n");
+        printf("\033[31mNo addins found in %s\033[0m\n", lib_search.path);
         return SLASH_EUSAGE;
     }
 
-    const char * selected = lib_search.libs[0].path;
+    for (int i = 0; i < lib_search.lib_count; i++) {
+        addin_entry_t * e = load_addin(lib_search.libs[i].path);
 
-    if (!yes) {
-        /* Manual selection of file from list */
-
-        for (unsigned i = 0; i < lib_search.lib_count; i++) {
-            lib_info_t * info = &lib_search.libs[i];
-            printf("  %u: %s %s\n", i, info->time, info->path);
-        }
-
-        int index = 0;
-        printf("Type number to select: ");
-        char * c = slash_readline(slash);
-        if (strlen(c) == 0) {
-            printf("\033[31m\n");
-            printf("Entry (%s) not accepted. Nothing done.\n", c);
-            printf("\033[0m\n");
-            return SLASH_EUSAGE;
-        }
-        index = atoi(c);
-printf("%d %d\n", __LINE__, index);
-        if (index >= lib_search.lib_count) {
-            printf("\033[31m\n");
-            printf("Value (%d) is out of bounds.\n", index);
-            printf("\033[0m\n");
+        if (!e) {
+            printf("\033[31mError loading %s\033[0m\n", e->path);
             return SLASH_EUSAGE;
         }
 
-    	selected = lib_search.libs[index].path;
-printf("%d %d '%s'\n", __LINE__, index, selected);
+        printf("\033[32mLoaded: %s\033[0m\n", e->path);
 
-        printf("\033[32m\n");
-        printf("SELECTED: %s\n", selected);
-        printf("\033[0m\n");
-
-        printf("Type 'yes' + enter to continue: ");
-        c = slash_readline(slash);
-        if (strcmp(c, "yes") != 0) {
-            printf("\033[31m\n");
-            printf("Entry (%s) not accepted. Nothing done.\n", c);
-            printf("\033[0m\n");
-            return SLASH_EUSAGE;
-        }
+        initialize_addin(e, slash);
+        free(e);
     }
-
-printf("selected '%s'\n", selected);
-
-    addin_entry_t * e = load_addin(selected);
-
-    if (!e) {
-        printf("\033[31m\n");
-        printf("ERROR LOADING: %s\n", e->path);
-        printf("\033[0m\n");
-        return SLASH_EUSAGE;
-    }
-
-    printf("\033[32m\n");
-    printf("LOADED: %s\n", e->path);
-    printf("\033[0m\n");
-
-    initialize_addin(e, slash, args);
 
     return SLASH_SUCCESS;
 

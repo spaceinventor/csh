@@ -191,17 +191,14 @@ static void upload(int node, int address, char * data, int len) {
 #endif
 
 
-#define BIN_PATH_MAX_ENTRIES 10
-#define BIN_PATH_MAX_SIZE 100
-
 struct bin_info_t {
 	uint32_t addr_min;
 	uint32_t addr_max;
 	unsigned count;
-	char entries[BIN_PATH_MAX_ENTRIES][BIN_PATH_MAX_SIZE];
+	char entries[WALKDIR_MAX_ENTRIES][WALKDIR_MAX_PATH_SIZE];
 } bin_info;
 
-static char wpath[BIN_PATH_MAX_SIZE];
+static char wpath[WALKDIR_MAX_PATH_SIZE];
 
 // Binary file byte offset of entry point address.
 // C21: 4, E70: 2C4
@@ -242,12 +239,12 @@ static void file_callback(const char * path, const char * last_entry, void * cus
 {
     struct bin_info_t * binf = (struct bin_info_t *)custom; 
 	if (binf && is_valid_binary(path, binf)) {
-		if (binf->count < BIN_PATH_MAX_ENTRIES) {
-			strncpy(binf->entries[binf->count], path, BIN_PATH_MAX_SIZE);
+		if (binf->count < WALKDIR_MAX_ENTRIES) {
+			strncpy(binf->entries[binf->count], path, WALKDIR_MAX_PATH_SIZE);
 			binf->count++;
 		}
 		else {
-			printf("More than %u binaries found. Searched stopped.\n", BIN_PATH_MAX_ENTRIES);
+			printf("More than %u binaries found. Searched stopped.\n", WALKDIR_MAX_ENTRIES);
 		}
 	}
 }
@@ -332,7 +329,7 @@ static int slash_csp_program(struct slash * slash) {
 	}
 
 	if (filename) {
-		strncpy(bin_info.entries[0], filename, BIN_PATH_MAX_SIZE);
+		strncpy(bin_info.entries[0], filename, WALKDIR_MAX_PATH_SIZE);
 		bin_info.count = 0;
 	}
 	else {
@@ -342,7 +339,7 @@ static int slash_csp_program(struct slash * slash) {
 		bin_info.addr_max = vmem.vaddr + vmem.size;
 		bin_info.count = 0;
 			printf("node 3 %d\n", slash_dfl_node);
-		walkdir(wpath, BIN_PATH_MAX_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
+			walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
 			printf("node 4 %d\n", slash_dfl_node);
 		if (bin_info.count) {
 			for (unsigned i = 0; i < bin_info.count; i++) {
@@ -484,7 +481,7 @@ static int slash_sps(struct slash * slash) {
 	bin_info.addr_min = vmem.vaddr;
 	bin_info.addr_max = vmem.vaddr + vmem.size;
 	bin_info.count = 0;
-	walkdir(wpath, BIN_PATH_MAX_SIZE, 10, dir_callback, file_callback, &bin_info);
+	walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info);
 	
 	if (bin_info.count) {
 		for (unsigned i = 0; i < bin_info.count; i++) {

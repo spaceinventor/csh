@@ -39,6 +39,9 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define WALKDIR_MAX_ENTRIES 10
+#define WALKDIR_MAX_PATH_SIZE 256
+
 /**
  * @brief Walks a directory
  * 
