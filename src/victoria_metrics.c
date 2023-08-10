@@ -18,6 +18,7 @@
 
 #include <csp/csp.h>
 #include <param/param_queue.h>
+#include <param/param_string.h>
 #include "param_sniffer.h"
 
 static pthread_t vm_push_thread;
@@ -179,6 +180,28 @@ void vm_add(char * metric_line) {
 
     // Unlock the buffer mutex
     pthread_mutex_unlock(&buffer_mutex);
+}
+
+void vm_add_param(param_t * param) {
+
+    if(param->type == PARAM_TYPE_STRING || param->type == PARAM_TYPE_DATA){
+        return;
+    }
+    static char outstr[1000] = {};
+    static char valstr[100] = {};
+    int arr_cnt = param->array_size;
+    if (arr_cnt < 0)
+        arr_cnt = 1;
+
+    struct timeval tv;
+	gettimeofday(&tv, NULL);
+	uint64_t time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
+
+    for (int j = 0; j < arr_cnt; j++) {
+        param_value_str(param, j, valstr, 100);
+        snprintf(outstr, 1000, "%s{node=\"%u\", idx=\"%u\"} %s %"PRIu64"\n", param->name, param->node, j, valstr, time_ms);
+        vm_add(outstr);
+    }
 }
 
 static int vm_start_cmd(struct slash * slash) {

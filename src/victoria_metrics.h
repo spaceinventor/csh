@@ -6,4 +6,7 @@
  */
 #pragma once
 
+#include <param/param.h>
+
 void vm_add(char * metric_line);
+void vm_add_param(param_t * param);
