@@ -245,6 +245,7 @@ int main(int argc, char **argv) {
 	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
 	slash_run(slash, buildpath, 0);
 
+	int ret = 0;
 	/* Interactive or one-shot mode */
 	if (remain > 0) {
 		char ex[LINE_SIZE] = {};
@@ -262,7 +263,7 @@ int main(int argc, char **argv) {
 		slash->length = strlen(slash->buffer);
 		slash_refresh(slash, 1);
 		printf("\n");
-		slash_execute(slash, ex);
+		ret = slash_execute(slash, ex);
 	} else {
 		printf("\n\n");
 
@@ -272,5 +273,5 @@ int main(int argc, char **argv) {
 	printf("\n");
 	slash_destroy(slash);
 
-	return 0;
+	return ret;
 }
