@@ -288,7 +288,6 @@ static int apm_load_cmd(struct slash *slash) {
         printf("\033[32mLoaded: %s\033[0m\n", e->path);
 
         initialize_apm(e, slash);
-        free(e);
     }
 
     return SLASH_SUCCESS;
@@ -318,12 +317,12 @@ static int apm_info_cmd(struct slash *slash) {
 
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (!search_str || strstr(e->file, search_str)) {
-            printf("  %-30s %-80s\n", e->file, e->path);
+            printf("  \033[32m%-30s\033[0m %-80s\n", e->file, e->path);
             if (e->libinfo_f) {
                 e->libinfo_f();
             }
+            printf("\n");
         }
-        printf("\n");
     }
 
     return SLASH_SUCCESS;
