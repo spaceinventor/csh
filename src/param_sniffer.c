@@ -21,9 +21,7 @@
 
 extern int prometheus_started;
 
-#ifdef HAVE_LIBCURL
 extern int vm_running;
-#endif /* HAVE_LIBCURL */
 
 int sniffer_running = 0;
 pthread_t param_sniffer_thread;
@@ -105,11 +103,9 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
             break;
         }
 
-#ifdef HAVE_LIBCURL
         if(vm_running){
             vm_add(tmp);
         }
-#endif /* HAVE_LIBCURL */
 
         if(prometheus_started){
             prometheus_add(tmp);
