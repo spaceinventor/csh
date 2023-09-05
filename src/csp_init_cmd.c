@@ -310,7 +310,7 @@ static void eth_select_interface(const char ** device) {
 static int csp_ifadd_eth_cmd(struct slash *slash) {
 
     static int ifidx = 0;
-    char name[10];
+    char name[CSP_IFLIST_NAME_MAX + 1];
     sprintf(name, "ETH%u", ifidx++);
     const char * device = "e";
    
