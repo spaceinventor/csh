@@ -280,17 +280,7 @@ static int slash_csp_program(struct slash * slash) {
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO");
 
-	/* RDPOPT */
-	unsigned int window = 3;
-	unsigned int conn_timeout = 10000;
-	unsigned int packet_timeout = 5000;
-	unsigned int ack_timeout = 2000;
-	unsigned int ack_count = 2;
-	optparse_add_unsigned(parser, 'w', "window", "NUM", 0, &window, "rdp window (default = 3 packets)");
-	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10000)");
-	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5000)");
-	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2000)");
-	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &ack_count, "rdp ack for each (default = 2 packets)");
+	rdp_opt_add(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -298,10 +288,7 @@ static int slash_csp_program(struct slash * slash) {
 	    return SLASH_EINVAL;
     }
 
-	printf("Setting rdp options: %u %u %u %u %u\n", window, conn_timeout, packet_timeout, ack_timeout, ack_count);
-	csp_rdp_set_opt(window, conn_timeout, packet_timeout, 1, ack_timeout, ack_count);
-
-	printf("node 1 %d\n", slash_dfl_node);
+	rdp_opt_set();
 
 	/* Expect slot */
 	if (++argi >= slash->argc) {
@@ -338,9 +325,7 @@ static int slash_csp_program(struct slash * slash) {
 		bin_info.addr_min = vmem.vaddr;
 		bin_info.addr_max = vmem.vaddr + vmem.size;
 		bin_info.count = 0;
-			printf("node 3 %d\n", slash_dfl_node);
-			walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
-			printf("node 4 %d\n", slash_dfl_node);
+		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
 		if (bin_info.count) {
 			for (unsigned i = 0; i < bin_info.count; i++) {
 				printf("  %u: %s\n", i, bin_info.entries[i]);
@@ -355,8 +340,6 @@ static int slash_csp_program(struct slash * slash) {
 			return SLASH_EINVAL;
 		}
 	}
-
-	printf("node 2 %d\n", slash_dfl_node);
 
 	int index = 0;
 	if (bin_info.count > 1) {
@@ -398,7 +381,10 @@ static int slash_csp_program(struct slash * slash) {
 	}
 
     optparse_del(parser);
-	return upload_and_verify(node, vmem.vaddr, data, len);
+
+	int result = upload_and_verify(node, vmem.vaddr, data, len);
+	rdp_opt_reset();
+	return result;
 }
 
 slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program");
@@ -407,24 +393,14 @@ slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program")
 static int slash_sps(struct slash * slash) {
 
 	unsigned int node = slash_dfl_node;
+	unsigned int reboot_delay = 1000;
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-
-	/* RDPOPT */
-	unsigned int window = 3;
-	unsigned int conn_timeout = 10000;
-	unsigned int packet_timeout = 5000;
-	unsigned int ack_timeout = 2000;
-	unsigned int ack_count = 2;
-	unsigned int reboot_delay = 1000;
-	optparse_add_unsigned(parser, 'w', "window", "NUM", 0, &window, "rdp window (default = 3 packets)");
-	optparse_add_unsigned(parser, 'c', "conn_timeout", "NUM", 0, &conn_timeout, "rdp connection timeout (default = 10000 ms)");
-	optparse_add_unsigned(parser, 'p', "packet_timeout", "NUM", 0, &packet_timeout, "rdp packet timeout (default = 5000 ms)");
-	optparse_add_unsigned(parser, 'k', "ack_timeout", "NUM", 0, &ack_timeout, "rdp max acknowledgement interval (default = 2000 ms)");
-	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &ack_count, "rdp ack for each (default = 2 packets)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
+
+	rdp_opt_add(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -432,8 +408,7 @@ static int slash_sps(struct slash * slash) {
 	    return SLASH_EINVAL;
     }
 
-	printf("Setting rdp options: %u %u %u %u %u\n", window, conn_timeout, packet_timeout, ack_timeout, ack_count);
-	csp_rdp_set_opt(window, conn_timeout, packet_timeout, 1, ack_timeout, ack_count);
+	rdp_opt_set();
 
 	/* Expect from slot */
 	if (++argi >= slash->argc) {
@@ -532,6 +507,9 @@ static int slash_sps(struct slash * slash) {
 	}
 
     optparse_del(parser);
+
+	rdp_opt_reset();
+
 	return result;
 }
 
