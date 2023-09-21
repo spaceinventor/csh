@@ -37,7 +37,6 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 #ifdef PARAM_HAVE_SCHEDULER
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
-VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
 
 int slash_prompt(struct slash * slash) {
 
@@ -219,9 +218,6 @@ int main(int argc, char **argv) {
 #ifdef PARAM_HAVE_SCHEDULER
 	param_schedule_server_init();
 #endif
-
-	vmem_file_init(&vmem_dummy);
-
 
 	/** Persist hosts file */
 	char * homedir = getenv("HOME");
