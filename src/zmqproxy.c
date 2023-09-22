@@ -121,6 +121,10 @@ void handle_event(int event, int value, char *address){
         case ZMQ_EVENT_DISCONNECTED:
             printf("Client disconnected on %s\n", address);
             break;
+        case ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL:
+            /*  Unspecified system errors during handshake. Event value is an errno.      */
+            printf("Unspecified system errors during handshake %s errno: %d\n", address, value);
+            break;
         default:
             printf("event: 0x%x\n", event);
             break;
@@ -248,10 +252,10 @@ int main(int argc, char ** argv) {
 	csp_conf.version = 2;
 
     int opt;
-    while ((opt = getopt(argc, argv, "dhagv:s:p:f:")) != -1) {
+    while ((opt = getopt(argc, argv, "hagv:d:s:p:f:")) != -1) {
         switch (opt) {
             case 'd':
-                debug = 1;
+                debug = atoi(optarg);
                 break;
             case 'v':
             	csp_conf.version = atoi(optarg);
@@ -276,8 +280,8 @@ int main(int argc, char ** argv) {
             }
             default:
                 printf("Usage:\n"
-                       " -d \t\tEnable debug\n"
-                	   " -v VERSION\tcsp version\n"
+                       " -d DEBUG_LVL\t1 = connections, 2 = packets, 3 = both\n"
+                	   " -v VERSION\tcsp version: (default = 2)\n"
                 	   " -s SUB_STR\tsubscriber port: tcp://localhost:7000\n"
                 	   " -p PUB_STR\tpublisher  port: tcp://localhost:6000\n"
                 	   " -f LOGFILE\tLog to this file\n"
@@ -336,9 +340,12 @@ int main(int argc, char ** argv) {
     assert(zmq_bind(backend, pub_str) == 0);
     printf("Publisher task listening on %s\n", pub_str);
 
-    if(debug){
+    if(debug & 2){
         pthread_t capworker;
         pthread_create(&capworker, NULL, task_capture, NULL);
+    }
+
+    if(debug & 1){
         pthread_t monfworker;
         pthread_create(&monfworker, NULL, task_monitor_frontend, NULL);
         pthread_t monbworker;
