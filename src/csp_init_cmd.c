@@ -176,7 +176,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate");
-    optparse_add_string(parser, 'u', "uart", "STR", &device, "UART device name (defaults to ttyUSB0)");
+    optparse_add_string(parser, 'u', "uart", "STR", &device, "UART device name (defaults to /dev/ttyUSB0)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
