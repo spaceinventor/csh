@@ -30,7 +30,6 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp/csp_debug.h>
-#include <csp_autoconfig.h>
 #include <csp/csp_hooks.h>
 #include <csp/interfaces/csp_if_eth.h>
 #include <sys/types.h>
