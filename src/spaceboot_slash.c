@@ -274,11 +274,13 @@ static int slash_csp_program(struct slash * slash) {
 
 	unsigned int node = slash_dfl_node;
 	char * filename = NULL;
+	int force = 0;
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO");
+    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO)");
+    optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
 
 	rdp_opt_add(parser);
 
@@ -364,14 +366,16 @@ static int slash_csp_program(struct slash * slash) {
 	}
     printf("\n");
 
-	printf("Type 'yes' + enter to continue: ");
-	char * c = slash_readline(slash);
-    
-    if (strcmp(c, "yes") != 0) {
-        printf("Abort\n");
-        optparse_del(parser);
-        return SLASH_EUSAGE;
-    }
+	if (!force) {
+		printf("Type 'yes' + enter to continue: ");
+		char * c = slash_readline(slash);
+
+		if (strcmp(c, "yes") != 0) {
+			printf("Abort\n");
+			optparse_del(parser);
+			return SLASH_EUSAGE;
+		}
+	}
 
 	char * data;
 	int len;
