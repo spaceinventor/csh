@@ -29,7 +29,7 @@ FILE *logfile;
 
 static unsigned int hk_node = 0;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp, unsigned int src_node) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp) {
 
     char tmp[1000] = {};
 
@@ -45,12 +45,7 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
     }
 
     double vts_arr[4];
-    int vts = 0;
-    if (src_node == hk_node) {
-      vts = 0;
-    } else {
-      vts = check_vts(param->node, param->id);
-    }
+    int vts = check_vts(param->node, param->id);
 
     uint64_t time_ms;
     if (timestamp > 0) {
@@ -200,7 +195,7 @@ static void * param_sniffer(void * param) {
             }
             param_t * param = param_list_find_id(node, id);
             if (param) {	
-                param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp, packet->id.src);
+                param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);
                 break;

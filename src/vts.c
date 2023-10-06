@@ -37,6 +37,9 @@ int check_vts(uint16_t node, uint16_t id){
     return 0;
 }
 
+static uint64_t last_q_hat_time = 0;
+static uint64_t last_pos_time = 0;
+
 void vts_add(double arr[4], uint16_t id, int count, uint64_t time_ms){
     char buf[1000];
     uint64_t timestamp = time_ms / 1000;
@@ -47,20 +50,22 @@ void vts_add(double arr[4], uint16_t id, int count, uint64_t time_ms){
         printf("VTS send failed!\n");
     }
 
-    if(id == Q_HAT_ID && count == 4){
+    if(id == Q_HAT_ID && count == 4 && timestamp > last_q_hat_time){
         sprintf(buf, "DATA %f orbit_sim_quat \"%f %f %f %f\"\n", jd_cnes, arr[3], arr[0], arr[1], arr[2]);
         //printf("%s", buf);
         if(send(sockfd, buf, strlen(buf), MSG_NOSIGNAL) == -1){
             printf("VTS send failed!\n");
         }
+        last_q_hat_time = timestamp;
     }
 
-    if(id == ORBIT_POS && count == 3){
+    if(id == ORBIT_POS && count == 3 && timestamp > last_pos_time){
         sprintf(buf, "DATA %f orbit_prop_pos \"%f %f %f\"\n", jd_cnes, arr[0]/1000, arr[1]/1000, arr[2]/1000); // convert to km
         //printf("%s", buf);
         if(send(sockfd, buf, strlen(buf), MSG_NOSIGNAL) == -1){
             printf("VTS send failed!\n");
         }
+        last_pos_time = timestamp;
     }
 }
 
