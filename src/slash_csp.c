@@ -473,13 +473,15 @@ static int slash_csp_cmp_time(struct slash *slash)
 {
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
+	unsigned int timestamp = 0;
 	int sync = 0;
 
-    optparse_t * parser = optparse_new("time", "[timestamp]");
+    optparse_t * parser = optparse_new("time", "");
     optparse_add_help(parser);
-	optparse_add_set(parser, 's', "sync", 1, &sync, "sync time");
+	optparse_add_set(parser, 's', "sync", 1, &sync, "sync time with CSH");
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+    optparse_add_unsigned(parser, 'T', "timestamp", "NUM", 0, &timestamp, "timestamp to configure in remote node)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -487,12 +489,12 @@ static int slash_csp_cmp_time(struct slash *slash)
 	    return SLASH_EINVAL;
     }
 
-	/* Optional timestamp */
-	int timestamp = 0;
-	if (++argi < slash->argc) {
-		timestamp = atoi(slash->argv[argi]);
-	}
-	
+    if (sync != 0 && timestamp != 0) {
+		printf("You cannot sync with both a specific timestamp and the local time\n");
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
 	struct csp_cmp_message message;
 
 	csp_timestamp_t localtime;
@@ -524,4 +526,4 @@ static int slash_csp_cmp_time(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(time, slash_csp_cmp_time, "<node> <timestamp (0 GET, -1 SETLOCAL)> [timeout]", "Time");
+slash_command(time, slash_csp_cmp_time, NULL, "Get or synchronize timestamp");
