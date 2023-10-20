@@ -28,9 +28,9 @@ int vm_running = 0;
 #define SERVER_PORT_AUTH 8427
 #define BUFFER_SIZE      10 * 1024 * 1024
 
-char buffer[BUFFER_SIZE];
-size_t buffer_size = 0;
-pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static char buffer[BUFFER_SIZE];
+static size_t buffer_size = 0;
+static pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct {
     int use_ssl;
@@ -42,7 +42,7 @@ typedef struct {
     char * server_ip;
 } vm_args;
 
-size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
+static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata) {
     return size * nmemb;
 }
 
@@ -52,7 +52,6 @@ void * vm_push(void * arg) {
 
     CURL * curl;
     CURLcode res;
-    curl_global_init(CURL_GLOBAL_ALL);
     struct curl_slist * headers = NULL;
 
     curl = curl_easy_init();
@@ -130,10 +129,11 @@ void * vm_push(void * arg) {
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
-            printf("Failed push: %s", curl_easy_strerror(res));
+            printf("Failed push: %s\n", curl_easy_strerror(res));
+        } else {
+            buffer_size = 0;
         }
 
-        buffer_size = 0;
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
@@ -148,7 +148,6 @@ void * vm_push(void * arg) {
     if (headers) {
         curl_slist_free_all(headers);
     }
-    curl_global_cleanup();
     if (args->username) {
         free(args->username);
         args->username = NULL;
