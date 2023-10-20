@@ -12,6 +12,9 @@
 #include <csp/csp_yaml.h>
 #include <csp/csp_hooks.h>
 
+#include <curl/curl.h>
+#include "loki.h"
+
 #include <param/param.h>
 #ifdef PARAM_HAVE_COMMANDS
 #include <param/param_commands.h>
@@ -25,6 +28,7 @@
 #include "known_hosts.h"
 
 extern const char *version_string;
+extern int loki_running;
 
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    512
@@ -201,7 +205,12 @@ int main(int argc, char **argv) {
 		
 	}
 	srand(time(NULL));
-	
+
+ /** curl_global_init() should be invoked exactly once for each application that
+ * uses libcurl and before any call of other libcurl functions.
+ * This function is not thread-safe! */
+    curl_global_init(CURL_GLOBAL_ALL);
+
 	void serial_init(void);
 	serial_init();
 
@@ -231,6 +240,9 @@ int main(int argc, char **argv) {
 
 	slash_run(slash, path, 0);
 
+
+
+
 	/* Init file */
 	char buildpath[100];
 	if (strlen(dirname)) {
@@ -259,6 +271,17 @@ int main(int argc, char **argv) {
 		slash->length = strlen(slash->buffer);
 		slash_refresh(slash, 1);
 		printf("\n");
+
+        if(loki_running){
+            int ex_len = strlen(ex);
+            char * dup = malloc(ex_len + 2);
+            strncpy(dup, ex, ex_len);
+            dup[ex_len] = '\n';
+            dup[ex_len + 1] = '\0';
+            loki_add(dup, 1);
+            free(dup);
+        }
+
 		ret = slash_execute(slash, ex);
 	} else {
 		printf("\n\n");
@@ -268,6 +291,7 @@ int main(int argc, char **argv) {
 
 	printf("\n");
 	slash_destroy(slash);
+    curl_global_cleanup();
 
 	return ret;
 }

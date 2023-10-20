@@ -62,6 +62,7 @@ csh_sources = [
 	'src/vts.c',
 	'src/walkdir.c',
     'src/victoria_metrics.c', 
+    'src/loki.c', 
 ]
 
 if lua_dep.found()
