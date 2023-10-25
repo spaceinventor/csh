@@ -11,7 +11,8 @@
 #include <time.h>
 #include <csp/csp.h>
 
-void hk_epoch(time_t epoch);
-void hk_param_sniffer(csp_packet_t * packet);
+void hk_epoch(time_t epoch, int node);
+/* returns true if the packet was found to be for housekeeping */
+bool hk_param_sniffer(csp_packet_t * packet);
 
 #endif /* SRC_HK_PARAM_SNIFFER_H_ */

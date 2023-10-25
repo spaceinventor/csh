@@ -20,7 +20,6 @@
 
 #include "prometheus.h"
 #include "param_sniffer.h"
-#include "hk_param_sniffer.h"
 
 static pthread_t prometheus_tread;
 int prometheus_started = 0;
@@ -118,12 +117,10 @@ static int prometheus_start_cmd(struct slash *slash) {
 
     if(prometheus_started) return SLASH_SUCCESS;
 
-    int hk_node = 0;
     int logfile = 0;
 
     optparse_t * parser = optparse_new("prometheus start", "");
     optparse_add_help(parser);
-    optparse_add_int(parser, 'n', "hk_node", "NUM", 0, &hk_node, "Housekeeping node");
     optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -134,7 +131,7 @@ static int prometheus_start_cmd(struct slash *slash) {
     }
 
     prometheus_init();
-    param_sniffer_init(logfile, hk_node);
+    param_sniffer_init(logfile);
     prometheus_started = 1;
     optparse_del(parser);
 	return SLASH_SUCCESS;

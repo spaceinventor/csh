@@ -123,7 +123,7 @@ static int vts_init(struct slash * slash) {
 		return SLASH_EINVAL;
     }
 
-    param_sniffer_init(0, 0);
+    param_sniffer_init(0);
     printf("Streaming data to VTS at %s:%d\n", server_ip,port_num);
     vts_running = 1;
 

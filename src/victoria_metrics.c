@@ -207,7 +207,6 @@ static int vm_start_cmd(struct slash * slash) {
 
     if (vm_running) return SLASH_SUCCESS;
 
-    int hk_node = 0;
     int logfile = 0;
     char * tmp_username = NULL;
     char * tmp_password = NULL;
@@ -219,7 +218,6 @@ static int vm_start_cmd(struct slash * slash) {
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
     optparse_add_set(parser, 's', "ssl", 1, &(args->use_ssl), "Use SSL/TLS");
     optparse_add_int(parser, 'P', "server-port", "NUM", 0, &(args->port), "Overwrite default port");
-    optparse_add_int(parser, 'n', "hk_node", "NUM", 0, &hk_node, "Housekeeping node");
     optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
     optparse_add_set(parser, 'S', "skip-verify", 1, &(args->skip_verify), "Skip verification of the server's cert and hostname");
     optparse_add_set(parser, 'v', "verbose", 1, &(args->verbose), "Verbose connect");
@@ -253,8 +251,7 @@ static int vm_start_cmd(struct slash * slash) {
     }
     args->server_ip = strdup(slash->argv[argi]);
 
-    // if param_sniffer_init has already been called you can not change/set hk_node or logfile args
-    param_sniffer_init(logfile, hk_node);
+    param_sniffer_init(logfile);
     pthread_create(&vm_push_thread, NULL, &vm_push, args);
     vm_running = 1;
     optparse_del(parser);

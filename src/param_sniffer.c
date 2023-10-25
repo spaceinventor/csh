@@ -20,14 +20,11 @@
 #include "vts.h"
 
 extern int prometheus_started;
-
 extern int vm_running;
 
 int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
-
-static unsigned int hk_node = 0;
 
 int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp) {
 
@@ -147,8 +144,7 @@ static void * param_sniffer(void * param) {
     while(1) {
         csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
 
-        if (packet->id.src == hk_node) {
-            hk_param_sniffer(packet);
+        if(hk_param_sniffer(packet)){
             csp_buffer_free(packet);
             continue;
         }
@@ -206,13 +202,11 @@ static void * param_sniffer(void * param) {
     return NULL;
 }
 
-void param_sniffer_init(int add_logfile, int node) {
+void param_sniffer_init(int add_logfile) {
 
     if(sniffer_running){
         return;
     }
-
-    hk_node = node;
 
     if (add_logfile) {
         logfile = fopen("param_sniffer.log", "a");

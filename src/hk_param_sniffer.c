@@ -22,18 +22,37 @@
 #include "param_sniffer.h"
 
 pthread_t hk_param_sniffer_thread;
+#define MAX_HKS 16
 
-static time_t local_epoch = 0;
+typedef struct local_epoch_s
+{
+	int count;
+	time_t local_epoch[MAX_HKS];
+	int node[MAX_HKS];
+} local_epoch_t;
+static local_epoch_t hks = {0};
 
-void hk_epoch(time_t epoch) {
+void hk_epoch(time_t epoch, int node) {
 
-	local_epoch = epoch;
-	printf("Setting satellite EPOCH to %s", ctime(&local_epoch));
+	// update existing
+	for (size_t i = 0; i < hks.count; i++){
+		if(hks.node[i] == node){
+			hks.local_epoch[i] = epoch;
+			printf("Updating hk node %u EPOCH to %lu\n", node, epoch);
+			return;
+		}
+	}
+	hks.node[hks.count] = node;
+	hks.local_epoch[hks.count++] = epoch;
+	
+	printf("Setting new hk node %u EPOCH to %lu\n", node, epoch);
 }
 
 static int hk_timeoffset(struct slash *slash) {
 
-    optparse_t * parser = optparse_new("hk timeoffset", "Satellite epoch time in seconds relative to Jan 1th 1970");
+	unsigned int node = slash_dfl_node;
+    optparse_t * parser = optparse_new("hk timeoffset [epoch]", "Satellite epoch time in seconds relative to Jan 1th 1970");
+    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -41,7 +60,7 @@ static int hk_timeoffset(struct slash *slash) {
 	    return SLASH_EINVAL;
     }
 
-	/* Check if name is present */
+	/* Check if time_offset is present */
 	int time_offset = 0;
 	if (++argi < slash->argc) {
 		time_offset = atoi(slash->argv[argi]);
@@ -49,9 +68,13 @@ static int hk_timeoffset(struct slash *slash) {
 
 	
 	if (time_offset > 0) {
-		hk_epoch(time_offset);
+		hk_epoch(time_offset, node);
 	} else {
-		printf("Current satellite EPOCH is %s", ctime(&local_epoch));
+		for (size_t i = 0; i < hks.count; i++){
+			if(hks.node[i] == node){
+				printf("Current satellite EPOCH is %s\nSeconds: %lu\n", ctime(&hks.local_epoch[i]), hks.local_epoch[i]);
+			}
+		}
 	}
 
     optparse_del(parser);
@@ -60,15 +83,30 @@ static int hk_timeoffset(struct slash *slash) {
 
 slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL);
 
-void hk_param_sniffer(csp_packet_t * packet) {
+bool hk_param_sniffer(csp_packet_t * packet) {
+
 
 	if (packet->id.sport != 13) {
-		return;
+		return false;
 	}
 
 	if (param_sniffer_crc(packet) < 0) {
-		return;
+		return false;
 	}
+
+	time_t local_epoch = 0;
+	bool found = false;
+
+    for (int i = 0; i < hks.count; i++) {
+        if (packet->id.src == hks.node[i]) {
+			local_epoch = hks.local_epoch[i];
+			found = true;
+        }
+	}
+	if(!found){
+		return false;
+	}
+
 
 	/* Protocol has a header size of 5, and RDP adds 5 bytes to the end of the packet if activated */
 	size_t header_size = 5;
@@ -99,4 +137,5 @@ void hk_param_sniffer(csp_packet_t * packet) {
 			param_sniffer_log(NULL, &queue, param, offset, &reader, *param->timestamp);
 		}
 	}
+	return true;
 }
