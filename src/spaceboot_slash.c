@@ -403,13 +403,13 @@ static int slash_csp_program(struct slash * slash) {
 		uint32_t crc_node;
 		vmem_calculate_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 		if (crc_node == crc) {
-		    printf("\033[32m\n");
+			printf("\033[32m\n");
 			printf("  Success\n");
-		    printf("\033[0m\n");
+			printf("\033[0m\n");
 		} else {
-		    printf("\033[31m\n");
+			printf("\033[31m\n");
 			printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
-		    printf("\033[0m\n");
+			printf("\033[0m\n");
 			result = SLASH_ENOSPC;
 		}
 	} else {
