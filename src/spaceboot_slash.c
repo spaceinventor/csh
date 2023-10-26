@@ -392,11 +392,8 @@ static int slash_csp_program(struct slash * slash) {
 	int result = SLASH_SUCCESS;
 
 	if (do_crc32) {
-		csp_crc32_t crc_obj;
 		uint32_t crc;
-		csp_crc32_init(&crc_obj);
-		csp_crc32_update(&crc_obj, data, len);
-		crc = csp_crc32_final(&crc_obj);
+		crc = csp_crc32_memory(data, len);
 		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
 		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
