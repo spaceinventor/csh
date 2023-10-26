@@ -22,6 +22,7 @@
 
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
+#include <csp/csp_crc32.h>
 
 static int ping(int node) {
 
@@ -275,12 +276,14 @@ static int slash_csp_program(struct slash * slash) {
 	unsigned int node = slash_dfl_node;
 	char * filename = NULL;
 	int force = 0;
+	int do_crc32 = 0;
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
+    optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
 	rdp_opt_add(parser);
 
@@ -386,7 +389,30 @@ static int slash_csp_program(struct slash * slash) {
 
     optparse_del(parser);
 
-	int result = upload_and_verify(node, vmem.vaddr, data, len);
+	int result = SLASH_SUCCESS;
+
+	if (do_crc32) {
+		uint32_t crc;
+		crc = csp_crc32_memory((const uint8_t *)data, len);
+		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
+		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
+		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
+		uint32_t crc_node;
+		vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
+		if (crc_node == crc) {
+			printf("\033[32m\n");
+			printf("  Success\n");
+			printf("\033[0m\n");
+		} else {
+			printf("\033[31m\n");
+			printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+			printf("\033[0m\n");
+			result = SLASH_ENOSPC;
+		}
+	} else {
+		result = upload_and_verify(node, vmem.vaddr, data, len);
+	}
+
 	rdp_opt_reset();
 	return result;
 }

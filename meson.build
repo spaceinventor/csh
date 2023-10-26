@@ -29,6 +29,11 @@ if not curl_dep.found()
   error('libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.')
 endif
 
+zmq_dep = dependency('libzmq', required: false)
+if not zmq_dep.found()
+  error('libzmq not found! Please install libzmq3-dev or the appropriate package for your system.')
+endif
+
 # .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
 # Specifically; functions/symbols that are unused during static linking,
 # but that may be called after dynamic linking by APMs.
@@ -82,7 +87,7 @@ custom_target('size', output: ['dummy.txt'], command: [find_program('size'), csh
 
 zmqproxy_sources = ['src/zmqproxy.c']
 zmqproxy = executable('zmqproxy', zmqproxy_sources,
-	dependencies : [csp_dep],
+	dependencies : [csp_dep, zmq_dep],
 	install : true,
 )
 
