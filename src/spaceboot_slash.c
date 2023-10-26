@@ -393,12 +393,12 @@ static int slash_csp_program(struct slash * slash) {
 
 	if (do_crc32) {
 		uint32_t crc;
-		crc = csp_crc32_memory(data, len);
+		crc = csp_crc32_memory((const uint8_t *)data, len);
 		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
 		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
 		uint32_t crc_node;
-		vmem_calculate_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
+		vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 		if (crc_node == crc) {
 			printf("\033[32m\n");
 			printf("  Success\n");
