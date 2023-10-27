@@ -59,8 +59,12 @@ static int csp_init_cmd(struct slash *slash) {
 	static struct utsname info;
 	uname(&info);
 
-    if (hostname == NULL)
+    if (hostname == NULL){
         hostname = info.nodename;
+    }else{
+        strncpy(info.nodename, hostname, 65);
+        hostname = info.nodename;
+    }
 
     if (model == NULL)
         model = info.version;
