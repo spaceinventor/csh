@@ -114,19 +114,24 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     static int ifidx = 0;
 
     char name[10];
-    char *sec_key = NULL;
     sprintf(name, "ZMQ%u", ifidx++);
     
     int promisc = 0;
     int mask = 8;
     int dfl = 0;
+    char * key_file = NULL;
+    char sec_key[41] = {0};
+    unsigned int subport = CSP_ZMQPROXY_SUBSCRIBE_PORT;
+    unsigned int pubport = CSP_ZMQPROXY_PUBLISH_PORT;
 
     optparse_t * parser = optparse_new("csp add zmq", "<addr> <server>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
-    optparse_add_string(parser, 'a', "auth", "SECKEY", &sec_key, "Secret key");
+    optparse_add_string(parser, 'a', "auth_file", "STR", &key_file, "file containing private key for zmqproxy (default: None)");
+    optparse_add_unsigned(parser, 'S', "subport", "NUM", 0, &subport, "Subscriber port of zmqproxy (default: 6000)");
+    optparse_add_unsigned(parser, 'P', "pubport", "NUM", 0, &pubport, "Publisher port of zmqproxy (default: 7000)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
@@ -150,8 +155,26 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 	}
     char * server = slash->argv[argi];
 
+    if(key_file){
+
+        FILE *file = fopen(key_file, "r");
+        if(file == NULL){
+            printf("Could not open config %s\n", key_file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+        if (fgets(sec_key, sizeof(sec_key), file) == NULL) {
+            printf("Failed to read secret key from file.\n");
+            fclose(file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+        fclose(file);
+    }
+
     csp_iface_t * iface;
-    csp_zmqhub_init_filter2((const char *) name, server, addr, mask, promisc, &iface, sec_key);
+    csp_zmqhub_init_filter2((const char *) name, server, addr, mask, promisc, &iface, sec_key, subport, pubport);
     iface->is_default = dfl;
     iface->addr = addr;
 	iface->netmask = mask;

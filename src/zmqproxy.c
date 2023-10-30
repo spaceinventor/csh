@@ -275,15 +275,15 @@ int main(int argc, char ** argv) {
             case 'g':{
                 char public_key[CURVE_KEYLEN], secret_key[CURVE_KEYLEN];
                 zmq_curve_keypair(public_key, secret_key);
-                printf("Secret key: %s\nPublic key: %s\n", public_key, secret_key);
+                printf("Secret key: %s\n", secret_key);
                 return 0;
             }
             default:
                 printf("Usage:\n"
                        " -d DEBUG_LVL\t1 = connections, 2 = packets, 3 = both\n"
                 	   " -v VERSION\tcsp version: (default = 2)\n"
-                	   " -s SUB_STR\tsubscriber port: tcp://localhost:7000\n"
-                	   " -p PUB_STR\tpublisher  port: tcp://localhost:6000\n"
+                	   " -s SUB_STR\tsubscriber port: (default = tcp://0.0.0.0:6000)\n"
+                	   " -p PUB_STR\tpublisher  port: (default = tcp://0.0.0.0:7000)\n"
                 	   " -f LOGFILE\tLog to this file\n"
                 	   " -a AUTH\tEnable authentication and encryption\n"
                 	   " -g GEN \tGenerate keypair\n"
