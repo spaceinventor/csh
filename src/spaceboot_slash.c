@@ -191,12 +191,20 @@ static void upload(int node, int address, char * data, int len) {
 }
 #endif
 
+typedef struct bin_file_ident_s {
+	bool valid;
+	char hostname[32+1];
+	char model[32+1];
+	char version_string[32+1];
+	uint32_t stext;
+} bin_file_ident_t;
 
 struct bin_info_t {
 	uint32_t addr_min;
 	uint32_t addr_max;
 	unsigned count;
-	char entries[WALKDIR_MAX_ENTRIES][WALKDIR_MAX_PATH_SIZE];
+	bin_file_ident_t idents[WALKDIR_MAX_ENTRIES];
+	char files[WALKDIR_MAX_ENTRIES][WALKDIR_MAX_PATH_SIZE];
 } bin_info;
 
 static char wpath[WALKDIR_MAX_PATH_SIZE];
@@ -205,30 +213,77 @@ static char wpath[WALKDIR_MAX_PATH_SIZE];
 // C21: 4, E70: 2C4
 static const uint32_t entry_offsets[] = { 4, 0x2c4 };
 
-bool is_valid_binary(const char * path, struct bin_info_t * binf)
+bool is_valid_binary(const char * path, struct bin_info_t * binf, bin_file_ident_t * binf_ident)
 {
+	binf_ident->valid = false;
+
+	/* 1. does the file have the .bin extention */
 	int len = strlen(path);
 	if ((len <= 4) || (strcmp(&(path[len-4]), ".bin") != 0)) {
 		return false;
 	}
 
+	/* 2. read all the data from the file */
 	char * data;
 	if (image_get((char*)path, &data, &len) < 0) {
 		return false;
 	}
 
-	if (binf->addr_min + len <= binf->addr_max) {
-		uint32_t addr = 0;
-		for (size_t i = 0; i < sizeof(entry_offsets)/sizeof(uint32_t); i++) {
-			addr = *((uint32_t *) &data[entry_offsets[i]]);
-			if ((binf->addr_min <= addr) && (addr <= binf->addr_max)) {
-				free(data);
-				return true;
+	/* 3. detect if there is a IDENT structure at the end */
+	bool ident_found = false;
+	char *ident_str[3] = { &binf_ident->hostname[0], &binf_ident->model[0], &binf_ident->version_string[0] };
+	int32_t idx = -4;
+	if (!memcmp(&data[len + idx], "\xC0\xDE\xBA\xD0", 4)) {
+		idx -= 4;
+
+		/* 3.1. grab the stext address (start of text) */
+		binf_ident->stext = ((uint32_t *)(&data[len + idx]))[0];
+
+		/* 3.2. verify that the entry lies within the vmem area to be programmed */
+		if ((binf->addr_min <= binf_ident->stext) && (binf->addr_max >= binf_ident->stext) && ((binf->addr_min + len) <= binf->addr_max)) {
+			/* 3.2.1. scan for an other magic marker */
+			char *ident_begin = NULL;
+			do {
+				idx--;
+				if (!memcmp(&data[len + idx], "\xBA\xD0\xFA\xCE", 4)) {
+					ident_begin = &data[len + idx + 4];
+					break;
+				}
+			} while (idx >= -256);
+			/* 3.2.2. if we found the beginning, we can extract IDENT strings */
+			char *ident_iter;
+			uint8_t ident_id;
+			for (ident_iter = ident_begin, ident_id = 0; ident_iter && (ident_iter < &data[len - 4] && ident_id < 3); ident_id++) {
+				if (ident_iter) {
+					strncpy(ident_str[ident_id], ident_iter, 32);
+				}
+				ident_iter += (strlen(ident_iter) + 1);
+				ident_found = true;
+				binf_ident->valid = true;
+			}
+		} else {
+			/* We found the magic marker and the entry point address, but it did not match the area */
+			free(data);
+			return false;
+		}
+	}
+
+	if (!ident_found) {
+		/* 4. analyze the "magic position" for a valid value - might be the Reset_Handler address in the vector table */
+		if (binf->addr_min + len <= binf->addr_max) {
+			uint32_t addr = 0;
+			for (size_t i = 0; i < sizeof(entry_offsets)/sizeof(uint32_t); i++) {
+				addr = *((uint32_t *) &data[entry_offsets[i]]);
+				if ((binf->addr_min <= addr) && (addr <= binf->addr_max)) {
+					free(data);
+					return true;
+				}
 			}
 		}
 	}
+
 	free(data);
-	return false;
+	return ident_found;
 }
 
 static bool dir_callback(const char * path, const char * last_entry, void * custom) 
@@ -238,10 +293,12 @@ static bool dir_callback(const char * path, const char * last_entry, void * cust
 
 static void file_callback(const char * path, const char * last_entry, void * custom)
 {
-    struct bin_info_t * binf = (struct bin_info_t *)custom; 
-	if (binf && is_valid_binary(path, binf)) {
+    struct bin_info_t * binf = (struct bin_info_t *)custom;
+	bin_file_ident_t binf_ident;
+	if (binf && is_valid_binary(path, binf, &binf_ident)) {
 		if (binf->count < WALKDIR_MAX_ENTRIES) {
-			strncpy(binf->entries[binf->count], path, WALKDIR_MAX_PATH_SIZE);
+			binf->idents[binf->count] = binf_ident;
+			strncpy(&binf->files[binf->count][0], path, WALKDIR_MAX_PATH_SIZE);
 			binf->count++;
 		}
 		else {
@@ -321,19 +378,23 @@ static int slash_csp_program(struct slash * slash) {
 	}
 
 	if (filename) {
-		strncpy(bin_info.entries[0], filename, WALKDIR_MAX_PATH_SIZE);
+		strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE);
 		bin_info.count = 0;
 	}
 	else {
 		printf("  Searching for valid binaries\n");
 		strcpy(wpath, ".");
 		bin_info.addr_min = vmem.vaddr;
-		bin_info.addr_max = vmem.vaddr + vmem.size;
+		bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
 		bin_info.count = 0;
 		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
 		if (bin_info.count) {
-			for (unsigned i = 0; i < bin_info.count; i++) {
-				printf("  %u: %s\n", i, bin_info.entries[i]);
+ 			for (unsigned i = 0; i < bin_info.count; i++) {
+				if (bin_info.idents[i].valid) {
+					printf("  %u: %s (%s, %s, %s, 0x%08"PRIX32")\n", i, &bin_info.files[i][0], bin_info.idents[i].hostname, bin_info.idents[i].model, bin_info.idents[i].version_string, bin_info.idents[i].stext);
+				} else {
+					printf("  %u: %s\n", i, &bin_info.files[i][0]);
+				}
 			}
 		}
 		else {
@@ -348,7 +409,7 @@ static int slash_csp_program(struct slash * slash) {
 
 	int index = 0;
 	if (bin_info.count > 1) {
-		printf("Type number to select file: ");
+		printf("Type number to select file:\n");
 		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
@@ -358,7 +419,7 @@ static int slash_csp_program(struct slash * slash) {
 		index = atoi(c);
 	}
 	
-	char * path = bin_info.entries[index];
+	char * path = bin_info.files[index];
 
     printf("\033[31m\n");
     printf("ABOUT TO PROGRAM: %s\n", path);
@@ -370,7 +431,7 @@ static int slash_csp_program(struct slash * slash) {
     printf("\n");
 
 	if (!force) {
-		printf("Type 'yes' + enter to continue: ");
+		printf("Type 'yes' + enter to continue:\n");
 		char * c = slash_readline(slash);
 
 		if (strcmp(c, "yes") != 0) {
@@ -490,7 +551,7 @@ static int slash_sps(struct slash * slash) {
 	
 	if (bin_info.count) {
 		for (unsigned i = 0; i < bin_info.count; i++) {
-			printf("  %u: %s\n", i, bin_info.entries[i]);
+			printf("  %u: %s\n", i, bin_info.files[i]);
 		}
 	}
 	else {
@@ -513,7 +574,7 @@ static int slash_sps(struct slash * slash) {
 		index = atoi(c);
 	}
 	
-	char * path = bin_info.entries[index];
+	char * path = bin_info.files[index];
 
     printf("\033[31m\n");
     printf("ABOUT TO PROGRAM: %s\n", path);
