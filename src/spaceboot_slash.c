@@ -480,6 +480,7 @@ static int slash_csp_program(struct slash * slash) {
 	} else {
 		result = upload_and_verify(node, vmem.vaddr, data, len);
 	}
+	free(data);
 
 	rdp_opt_reset();
 	return result;
@@ -603,6 +604,8 @@ static int slash_sps(struct slash * slash) {
 	if (result == SLASH_SUCCESS) {
 		reset_to_flash(node, to, 1, type, reboot_delay);
 	}
+
+	free(data);
 
     optparse_del(parser);
 
