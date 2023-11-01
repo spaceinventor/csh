@@ -459,14 +459,21 @@ static int slash_csp_program(struct slash * slash) {
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
 		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
 		uint32_t crc_node;
-		vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
-		if (crc_node == crc) {
-			printf("\033[32m\n");
-			printf("  Success\n");
-			printf("\033[0m\n");
+		int res = vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
+		if (res >= 0) {
+			if (crc_node == crc) {
+				printf("\033[32m\n");
+				printf("  Success\n");
+				printf("\033[0m\n");
+			} else {
+				printf("\033[31m\n");
+				printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+				printf("\033[0m\n");
+				result = SLASH_ENOSPC;
+			}
 		} else {
 			printf("\033[31m\n");
-			printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+			printf("  Communication failure: %"PRId32"\n", res);
 			printf("\033[0m\n");
 			result = SLASH_ENOSPC;
 		}
