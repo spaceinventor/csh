@@ -480,9 +480,11 @@ static int slash_csp_program(struct slash * slash) {
 	} else {
 		result = upload_and_verify(node, vmem.vaddr, data, len);
 	}
+
 	free(data);
 
 	rdp_opt_reset();
+
 	return result;
 }
 
@@ -493,11 +495,13 @@ static int slash_sps(struct slash * slash) {
 
 	unsigned int node = slash_dfl_node;
 	unsigned int reboot_delay = 1000;
+	int do_crc32 = 0;
 
-    optparse_t * parser = optparse_new("program", "<slot>");
+    optparse_t * parser = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
+    optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
 	rdp_opt_add(parser);
 
@@ -553,13 +557,16 @@ static int slash_sps(struct slash * slash) {
 	printf("  Searching for valid binaries\n");
 	strcpy(wpath, ".");
 	bin_info.addr_min = vmem.vaddr;
-	bin_info.addr_max = vmem.vaddr + vmem.size;
+	bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
 	bin_info.count = 0;
 	walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info);
-	
 	if (bin_info.count) {
 		for (unsigned i = 0; i < bin_info.count; i++) {
-			printf("  %u: %s\n", i, bin_info.files[i]);
+			if (bin_info.idents[i].valid) {
+				printf("  %u: %s (%s, %s, %s, 0x%08"PRIX32")\n", i, &bin_info.files[i][0], bin_info.idents[i].hostname, bin_info.idents[i].model, bin_info.idents[i].version_string, bin_info.idents[i].stext);
+			} else {
+				printf("  %u: %s\n", i, &bin_info.files[i][0]);
+			}
 		}
 	}
 	else {
@@ -600,14 +607,44 @@ static int slash_sps(struct slash * slash) {
 		return SLASH_EIO;
 	}
 	
-	int result = upload_and_verify(node, vmem.vaddr, data, len);
+    optparse_del(parser);
+
+	int result = SLASH_SUCCESS;
+
+	if (do_crc32) {
+		uint32_t crc;
+		crc = csp_crc32_memory((const uint8_t *)data, len);
+		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
+		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
+		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
+		uint32_t crc_node;
+		int res = vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
+		if (res >= 0) {
+			if (crc_node == crc) {
+				printf("\033[32m\n");
+				printf("  Success\n");
+				printf("\033[0m\n");
+			} else {
+				printf("\033[31m\n");
+				printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+				printf("\033[0m\n");
+				result = SLASH_ENOSPC;
+			}
+		} else {
+			printf("\033[31m\n");
+			printf("  Communication failure: %"PRId32"\n", res);
+			printf("\033[0m\n");
+			result = SLASH_ENOSPC;
+		}
+	} else {
+		result = upload_and_verify(node, vmem.vaddr, data, len);
+	}
+
 	if (result == SLASH_SUCCESS) {
 		reset_to_flash(node, to, 1, type, reboot_delay);
 	}
 
 	free(data);
-
-    optparse_del(parser);
 
 	rdp_opt_reset();
 
