@@ -480,7 +480,6 @@ static int slash_csp_program(struct slash * slash) {
 	} else {
 		result = upload_and_verify(node, vmem.vaddr, data, len);
 	}
-	free(data);
 
 	free(data);
 
