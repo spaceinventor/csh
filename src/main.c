@@ -13,7 +13,6 @@
 #include <csp/csp_hooks.h>
 
 #include <curl/curl.h>
-#include "loki.h"
 
 #include <param/param.h>
 #ifdef PARAM_HAVE_COMMANDS
@@ -28,7 +27,6 @@
 #include "known_hosts.h"
 
 extern const char *version_string;
-extern int loki_running;
 
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    512
@@ -271,16 +269,6 @@ int main(int argc, char **argv) {
 		slash->length = strlen(slash->buffer);
 		slash_refresh(slash, 1);
 		printf("\n");
-
-        if(loki_running){
-            int ex_len = strlen(ex);
-            char * dup = malloc(ex_len + 2);
-            strncpy(dup, ex, ex_len);
-            dup[ex_len] = '\n';
-            dup[ex_len + 1] = '\0';
-            loki_add(dup, 1);
-            free(dup);
-        }
 
 		ret = slash_execute(slash, ex);
 	} else {
