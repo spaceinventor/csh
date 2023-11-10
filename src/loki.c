@@ -12,7 +12,6 @@
 
 #include <csp/csp.h>
 
-/*THIS IS BETA FEATURE*/
 // TODO maybe a thread that empties a buffer
 // static pthread_t loki_thread;
 int loki_running = 0;
@@ -317,7 +316,7 @@ static int loki_start_cmd(struct slash * slash) {
     pthread_t thread_id;
     pthread_create(&thread_id, NULL, &read_pipe, NULL);
     loki_running = 1;
-    printf("Loki logging started this is a BETA feature!\n");
+    printf("Loki logging started\n");
 
     optparse_del(parser);
 
