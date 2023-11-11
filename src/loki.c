@@ -17,7 +17,7 @@
 int loki_running = 0;
 
 #define SERVER_PORT      3100
-#define BUFFER_SIZE      10 * 1024
+#define BUFFER_SIZE      1024 * 1024
 
 // TODO reduce buffers and or use malloc
 static char buffer[BUFFER_SIZE] = {0};
