@@ -32,6 +32,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #define CURVE_KEYLEN 41
 
+// #define ZMQ_PROXY_LOSSY
+#ifdef ZMQ_PROXY_LOSSY
+#include <time.h>
+#include <csp/arch/csp_time.h>
+#include <csp/arch/csp_queue.h>
+void zmq_proxy_lossy(double loss_prob, double corr_prob, double delay_prob, int delay_ms);
+#endif
+
 int csp_id_strip(csp_packet_t * packet);
 int csp_id_setup_rx(csp_packet_t * packet);
 extern csp_conf_t csp_conf;
@@ -205,7 +213,7 @@ static void * task_capture(void *arg) {
 
     while (1) {
     	zmq_msg_t msg;
-        zmq_msg_init_size(&msg, CSP_ZMQ_MTU + 16);
+        zmq_msg_init(&msg);
 
         /* Receive data */
         if (zmq_msg_recv(&msg, subscriber, 0) < 0) {
@@ -247,12 +255,23 @@ static void * task_capture(void *arg) {
     }
 }
 
+
 int main(int argc, char ** argv) {
 
 	csp_conf.version = 2;
+#ifdef ZMQ_PROXY_LOSSY
+    double loss_prob = 0.0;
+    double corr_prob = 0.0;
+    double delay_prob = 0.0;
+    int enable_lossy = 0;
+    int delay_ms = 0;
+    char * shortopts = "hagv:d:s:p:f:L:C:D:T:";
+#else
+    char * shortopts = "hagv:d:s:p:f:";
+#endif
 
     int opt;
-    while ((opt = getopt(argc, argv, "hagv:d:s:p:f:")) != -1) {
+    while ((opt = getopt(argc, argv, shortopts)) != -1) {
         switch (opt) {
             case 'd':
                 debug = atoi(optarg);
@@ -278,6 +297,23 @@ int main(int argc, char ** argv) {
                 printf("Secret key: %s\n", secret_key);
                 return 0;
             }
+#ifdef ZMQ_PROXY_LOSSY
+            case 'L':
+            	loss_prob = atof(optarg);
+                enable_lossy = 1;
+                break;
+            case 'C':
+            	corr_prob = atof(optarg);
+                enable_lossy = 1;
+                break;
+            case 'D':
+            	delay_prob = atof(optarg);
+                enable_lossy = 1;
+                break;
+            case 'T':
+            	delay_ms = atoi(optarg);
+                break;
+#endif
             default:
                 printf("Usage:\n"
                        " -d DEBUG_LVL\t1 = connections, 2 = packets, 3 = both\n"
@@ -287,6 +323,12 @@ int main(int argc, char ** argv) {
                 	   " -f LOGFILE\tLog to this file\n"
                 	   " -a AUTH\tEnable authentication and encryption\n"
                 	   " -g GEN \tGenerate keypair\n"
+#ifdef ZMQ_PROXY_LOSSY
+                	   " -L LOSS \tProxy with a packet loss probability ex. 0.1 == 10%%\n"
+                	   " -C CORR \tProxy with a packet corruption probability ex. 0.1 == 10%%\n"
+                	   " -D DELAY \tProxy with a packet delays probability ex. 0.1 == 10%%\n"
+                	   " -T TIME \tSet delay time ex. 100ms\n"
+#endif
                 		);
                 exit(1);
                 break;
@@ -352,6 +394,12 @@ int main(int argc, char ** argv) {
         pthread_create(&monbworker, NULL, task_monitor_backend, NULL);
     }
 
+#ifdef ZMQ_PROXY_LOSSY
+    if(enable_lossy){
+        zmq_proxy_lossy(loss_prob, corr_prob, delay_prob, delay_ms);
+    }
+#endif
+
     zmq_proxy(frontend, backend, NULL);
 
     printf("Closing ZMQproxy");
@@ -359,3 +407,94 @@ int main(int argc, char ** argv) {
 
     return 0;
 }
+
+#ifdef ZMQ_PROXY_LOSSY
+typedef struct {
+    zmq_msg_t msg;
+    uint32_t timestamp_tx;
+} delayed_msg_t;
+
+static csp_queue_handle_t delay_handle;
+
+static void * task_delay_send(void *arg) {
+    while(1){
+front:
+        int count = csp_queue_size(delay_handle);
+        for(int i = 0; i < count; i++){
+            delayed_msg_t dmsg; 
+            csp_queue_dequeue(delay_handle, &dmsg, 0);
+
+            if(csp_get_ms() > dmsg.timestamp_tx) {
+                zmq_msg_send(&dmsg.msg, backend, 0);
+                printf("Delayed packet send\n");
+                zmq_msg_close(&dmsg.msg);
+                goto front;
+            } else {
+                csp_queue_enqueue(delay_handle, &dmsg, 0);
+            }
+        }
+        usleep(100);
+    }
+    return NULL;
+}
+
+void zmq_proxy_lossy(double loss_prob, double corr_prob, double delay_prob, int delay_ms) {
+    delay_handle = csp_queue_create_static(1024, sizeof(delayed_msg_t), NULL, NULL);
+    printf("WARNING PACKET LOSS/CORRUPTION ON \n%.2f%% LOSS \n%.2f%% CORRUPTION\n", loss_prob * 100, corr_prob * 100);
+    printf("%.2f%% DELAYED BY %dms\n", delay_prob * 100, delay_ms);
+    srand(time(NULL));
+    zmq_pollitem_t items[] = {
+        { frontend, 0, ZMQ_POLLIN, 0 },
+        { backend, 0, ZMQ_POLLIN, 0 }
+    };
+    pthread_t delayworker;
+    pthread_create(&delayworker, NULL, task_delay_send, NULL);
+
+    while (1) {
+        zmq_poll(items, 2, -1);
+        if (items[0].revents & ZMQ_POLLIN) {
+            zmq_msg_t msg;
+            zmq_msg_init(&msg);
+            zmq_msg_recv(&msg, frontend, 0);
+
+            /* Simulate corrupted packet */
+            if ((double)rand() / RAND_MAX < corr_prob) {
+                printf("Packet corrupted\n");
+                unsigned int size = zmq_msg_size(&msg);
+                if (size > 0) {
+                    unsigned char *data = zmq_msg_data(&msg);
+                    unsigned int rand_byte = rand() % size;
+                    int rand_bit = rand() % 8;
+                    data[rand_byte] ^= (1 << rand_bit);
+                }
+            }
+
+            /* Simulate packet loss */
+            if ((double)rand() / RAND_MAX > loss_prob) {
+                /* Simulate packet delay */
+                if ((double)rand() / RAND_MAX < delay_prob) {
+                    delayed_msg_t delayed_msg;
+                    zmq_msg_init(&delayed_msg.msg);
+                    zmq_msg_copy(&delayed_msg.msg, &msg);
+                    printf("Delayed packet\n");
+                    delayed_msg.timestamp_tx = csp_get_ms() + delay_ms;
+                    csp_queue_enqueue(delay_handle, &delayed_msg, 0);
+                    zmq_msg_close(&msg);
+                    continue;
+                }
+                zmq_msg_send(&msg, backend, 0);
+            } else {
+                printf("Packet dropped\n");
+            }
+            zmq_msg_close(&msg);
+        }
+        if (items[1].revents & ZMQ_POLLIN) {
+            zmq_msg_t msg;
+            zmq_msg_init(&msg);
+            zmq_msg_recv(&msg, backend, 0);
+            zmq_msg_send(&msg, frontend, 0);
+            zmq_msg_close(&msg);
+        }
+    }
+}
+#endif
