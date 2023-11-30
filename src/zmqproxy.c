@@ -31,18 +31,28 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <arpa/inet.h>
 
 #define CURVE_KEYLEN 41
-
 // #define ZMQ_PROXY_LOSSY
-#ifdef ZMQ_PROXY_LOSSY
-#include <time.h>
-#include <csp/arch/csp_time.h>
-#include <csp/arch/csp_queue.h>
-void zmq_proxy_lossy(double loss_prob, double corr_prob, double delay_prob, int delay_ms);
-#endif
 
 int csp_id_strip(csp_packet_t * packet);
 int csp_id_setup_rx(csp_packet_t * packet);
 extern csp_conf_t csp_conf;
+
+#ifdef ZMQ_PROXY_LOSSY
+#include <time.h>
+#include <csp/arch/csp_time.h>
+#include <csp/arch/csp_queue.h>
+void zmq_proxy_lossy();
+
+double loss_prob = 0.0;
+double corr_prob = 0.0;
+double delay_prob = 0.0;
+int enable_lossy = 0;
+int delay_ms = 0;
+int seed = 0;
+char * shortopts = "hagv:d:s:p:f:L:C:D:T:S:";
+#else
+char * shortopts = "hagv:d:s:p:f:";
+#endif
 
 int debug = 0;
 char * sub_str = "tcp://0.0.0.0:6000";
@@ -259,16 +269,6 @@ static void * task_capture(void *arg) {
 int main(int argc, char ** argv) {
 
 	csp_conf.version = 2;
-#ifdef ZMQ_PROXY_LOSSY
-    double loss_prob = 0.0;
-    double corr_prob = 0.0;
-    double delay_prob = 0.0;
-    int enable_lossy = 0;
-    int delay_ms = 0;
-    char * shortopts = "hagv:d:s:p:f:L:C:D:T:";
-#else
-    char * shortopts = "hagv:d:s:p:f:";
-#endif
 
     int opt;
     while ((opt = getopt(argc, argv, shortopts)) != -1) {
@@ -313,6 +313,9 @@ int main(int argc, char ** argv) {
             case 'T':
             	delay_ms = atoi(optarg);
                 break;
+            case 'S':
+            	seed = atoi(optarg);
+                break;
 #endif
             default:
                 printf("Usage:\n"
@@ -328,6 +331,7 @@ int main(int argc, char ** argv) {
                 	   " -C CORR \tProxy with a packet corruption probability ex. 0.1 == 10%%\n"
                 	   " -D DELAY \tProxy with a packet delays probability ex. 0.1 == 10%%\n"
                 	   " -T TIME \tSet delay time ex. 100ms\n"
+                	   " -S SEED \tSeed random number gen else time is used ex 5432542\n"
 #endif
                 		);
                 exit(1);
@@ -396,7 +400,7 @@ int main(int argc, char ** argv) {
 
 #ifdef ZMQ_PROXY_LOSSY
     if(enable_lossy){
-        zmq_proxy_lossy(loss_prob, corr_prob, delay_prob, delay_ms);
+        zmq_proxy_lossy();
     }
 #endif
 
@@ -438,11 +442,15 @@ front:
     return NULL;
 }
 
-void zmq_proxy_lossy(double loss_prob, double corr_prob, double delay_prob, int delay_ms) {
+void zmq_proxy_lossy() {
     delay_handle = csp_queue_create_static(1024, sizeof(delayed_msg_t), NULL, NULL);
     printf("WARNING PACKET LOSS/CORRUPTION ON \n%.2f%% LOSS \n%.2f%% CORRUPTION\n", loss_prob * 100, corr_prob * 100);
     printf("%.2f%% DELAYED BY %dms\n", delay_prob * 100, delay_ms);
-    srand(time(NULL));
+    if (seed) {
+        srand(seed);
+    } else {
+        srand(time(NULL));
+    }
     zmq_pollitem_t items[] = {
         { frontend, 0, ZMQ_POLLIN, 0 },
         { backend, 0, ZMQ_POLLIN, 0 }
