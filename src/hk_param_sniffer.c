@@ -28,11 +28,11 @@ typedef struct local_epoch_s
 {
 	int count;
 	time_t local_epoch[MAX_HKS];
-	int node[MAX_HKS];
+	uint16_t node[MAX_HKS];
 } local_epoch_t;
 static local_epoch_t hks = {0};
 
-void hk_epoch(time_t epoch, int node) {
+void hk_set_epoch(time_t epoch, uint16_t node) {
 
 	// update existing
 	for (size_t i = 0; i < hks.count; i++){
@@ -68,7 +68,7 @@ static int hk_timeoffset(struct slash *slash) {
 
 	
 	if (time_offset > 0) {
-		hk_epoch(time_offset, node);
+		hk_set_epoch(time_offset, node);
 	} else {
 		for (size_t i = 0; i < hks.count; i++){
 			if(hks.node[i] == node){
@@ -83,6 +83,18 @@ static int hk_timeoffset(struct slash *slash) {
 
 slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL);
 
+bool hk_get_epoch(time_t* local_epoch, uint16_t node) {
+
+    for (int i = 0; i < hks.count; i++) {
+        if (node == hks.node[i]) {
+			*local_epoch = hks.local_epoch[i];
+			return true;
+        }
+	}
+
+	return false;
+}
+
 bool hk_param_sniffer(csp_packet_t * packet) {
 
 
@@ -95,14 +107,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 	}
 
 	time_t local_epoch = 0;
-	bool found = false;
-
-    for (int i = 0; i < hks.count; i++) {
-        if (packet->id.src == hks.node[i]) {
-			local_epoch = hks.local_epoch[i];
-			found = true;
-        }
-	}
+	bool found = hk_get_epoch(&local_epoch, packet->id.src);
 	if(!found){
 		return false;
 	}
