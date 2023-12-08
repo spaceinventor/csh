@@ -138,7 +138,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	while(1) {
 
-		param_pull_queue(&pull_q, 0, node, 100);
+		param_pull_queue(&pull_q, CSP_PRIO_HIGH, 0, node, 100);
 		int in = param_get_uint16(stdbuf_in);
 		int out = param_get_uint16(stdbuf_out);
 
