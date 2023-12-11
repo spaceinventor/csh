@@ -43,13 +43,18 @@ extern csp_conf_t csp_conf;
 #include <csp/arch/csp_queue.h>
 void zmq_proxy_lossy();
 
+int hdx_powerup_start_ms = 0;
+int hdx_node = 0;
+int hdx_last_tx_ms = 0;
+int hdx_powerup_delay = 30;
+int hdx_powerdown_delay = 100;
 double loss_prob = 0.0;
 double corr_prob = 0.0;
 double delay_prob = 0.0;
 int enable_lossy = 0;
 int delay_ms = 0;
 int seed = 0;
-char * shortopts = "hagv:d:s:p:f:L:C:D:T:S:";
+char * shortopts = "hagv:d:s:p:f:L:C:D:T:S:N:U:O:";
 #else
 char * shortopts = "hagv:d:s:p:f:";
 #endif
@@ -316,6 +321,16 @@ int main(int argc, char ** argv) {
             case 'S':
             	seed = atoi(optarg);
                 break;
+            case 'N':
+            	hdx_node = atoi(optarg);
+                enable_lossy = 1;
+                break;
+            case 'U':
+            	hdx_powerup_delay = atoi(optarg);
+                break;
+            case 'O':
+            	hdx_powerdown_delay = atoi(optarg);
+                break;
 #endif
             default:
                 printf("Usage:\n"
@@ -332,6 +347,9 @@ int main(int argc, char ** argv) {
                 	   " -D DELAY \tProxy with a packet delays probability ex. 0.1 == 10%%\n"
                 	   " -T TIME \tSet delay time ex. 100ms\n"
                 	   " -S SEED \tSeed random number gen else time is used ex 5432542\n"
+                	   " -N NODE \tSelect node as half duplex\n"
+                	   " -U PWRUP \tTX power up time ms\n"
+                	   " -O PWRDWN \tTX power down time ms\n"
 #endif
                 		);
                 exit(1);
@@ -416,6 +434,7 @@ int main(int argc, char ** argv) {
 typedef struct {
     zmq_msg_t msg;
     uint32_t timestamp_tx;
+    int hdx;
 } delayed_msg_t;
 
 static csp_queue_handle_t delay_handle;
@@ -432,6 +451,10 @@ front:
                 zmq_msg_send(&dmsg.msg, backend, 0);
                 printf("Delayed packet send\n");
                 zmq_msg_close(&dmsg.msg);
+                if(dmsg.hdx){
+                    hdx_last_tx_ms = csp_get_ms();
+                    hdx_powerup_start_ms = 0;
+                }
                 goto front;
             } else {
                 csp_queue_enqueue(delay_handle, &dmsg, 0);
@@ -443,6 +466,7 @@ front:
 }
 
 void zmq_proxy_lossy() {
+
     delay_handle = csp_queue_create_static(1024, sizeof(delayed_msg_t), NULL, NULL);
     printf("WARNING PACKET LOSS/CORRUPTION ON \n%.2f%% LOSS \n%.2f%% CORRUPTION\n", loss_prob * 100, corr_prob * 100);
     printf("%.2f%% DELAYED BY %dms\n", delay_prob * 100, delay_ms);
@@ -458,12 +482,53 @@ void zmq_proxy_lossy() {
     pthread_t delayworker;
     pthread_create(&delayworker, NULL, task_delay_send, NULL);
 
+    csp_packet_t * packet = malloc(CSP_ZMQ_MTU + 16);
+    assert(packet != NULL);
+
     while (1) {
         zmq_poll(items, 2, -1);
         if (items[0].revents & ZMQ_POLLIN) {
             zmq_msg_t msg;
             zmq_msg_init(&msg);
             zmq_msg_recv(&msg, frontend, 0);
+
+            /* Simulate half duplex on target node */
+            if(hdx_node){
+                int datalen = zmq_msg_size(&msg);
+
+                /* Copy to packet */
+                csp_id_setup_rx(packet);
+                memcpy(packet->frame_begin, zmq_msg_data(&msg), datalen);
+                packet->frame_length = datalen;
+
+                /* Parse header */
+                csp_id_strip(packet);
+
+                if(packet->id.src == hdx_node && csp_get_ms() > hdx_last_tx_ms + hdx_powerdown_delay){
+                    if(!hdx_powerup_start_ms){
+                        hdx_powerup_start_ms = csp_get_ms();
+                    }
+                    delayed_msg_t delayed_msg = {0};
+                    delayed_msg.hdx = 1;
+                    zmq_msg_init(&delayed_msg.msg);
+                    zmq_msg_copy(&delayed_msg.msg, &msg);
+                    printf("HDX: TX Delayed packet\n");
+                    delayed_msg.timestamp_tx = hdx_powerup_start_ms + hdx_powerup_delay;
+                    csp_queue_enqueue(delay_handle, &delayed_msg, 0);
+                    zmq_msg_close(&msg);
+                    continue;
+                }
+
+                if(packet->id.src == hdx_node){
+                    hdx_last_tx_ms = csp_get_ms();
+                }
+
+                if(packet->id.dst == hdx_node && hdx_last_tx_ms + hdx_powerdown_delay > csp_get_ms()){
+                    printf("HDX: RX packet drop\n");
+                    zmq_msg_close(&msg);
+                    continue;
+                }
+            }
 
             /* Simulate corrupted packet */
             if ((double)rand() / RAND_MAX < corr_prob) {
@@ -481,7 +546,7 @@ void zmq_proxy_lossy() {
             if ((double)rand() / RAND_MAX > loss_prob) {
                 /* Simulate packet delay */
                 if ((double)rand() / RAND_MAX < delay_prob) {
-                    delayed_msg_t delayed_msg;
+                    delayed_msg_t delayed_msg = {0};
                     zmq_msg_init(&delayed_msg.msg);
                     zmq_msg_copy(&delayed_msg.msg, &msg);
                     printf("Delayed packet\n");
