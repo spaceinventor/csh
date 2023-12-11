@@ -514,7 +514,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
 
-#if CSP_HAVE_RTABLE
+#if CSP_USE_RTABLE
 static int csp_routeadd_cmd(struct slash *slash) {
 
     char route[50];

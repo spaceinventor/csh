@@ -38,7 +38,7 @@ slash_command_group(csp, "Cubesat Space Protocol");
 static int slash_csp_info(struct slash *slash)
 {
 #if (CSP_HAVE_STDIO)
-#if (CSP_HAVE_RTABLE)
+#if (CSP_USE_RTABLE)
 	csp_rtable_print();
 #endif
 	csp_conn_print_table();
