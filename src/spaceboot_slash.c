@@ -118,46 +118,6 @@ static int slash_csp_switch(struct slash * slash) {
 
 slash_command(switch, slash_csp_switch, "<slot>", "switch");
 
-static vmem_list_t vmem_list_find(int node, int timeout, char * name, int namelen) {
-	vmem_list_t ret = {};
-
-	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, CSP_O_CRC32);
-	if (conn == NULL)
-		return ret;
-
-	csp_packet_t * packet = csp_buffer_get(sizeof(vmem_request_t));
-	vmem_request_t * request = (void *)packet->data;
-	request->version = 1;
-	request->type = VMEM_SERVER_LIST;
-	packet->length = sizeof(vmem_request_t);
-
-	csp_send(conn, packet);
-
-	/* Wait for response */
-	packet = csp_read(conn, timeout);
-	if (packet == NULL) {
-		printf("No response\n");
-		csp_close(conn);
-		return ret;
-	}
-
-	for (vmem_list_t * vmem = (void *)packet->data; (intptr_t)vmem < (intptr_t)packet->data + packet->length; vmem++) {
-		// printf(" %u: %-5.5s 0x%08X - %u typ %u\r\n", vmem->vmem_id, vmem->name, (unsigned int) be32toh(vmem->vaddr), (unsigned int) be32toh(vmem->size), vmem->type);
-		if (strncmp(vmem->name, name, namelen) == 0) {
-			ret.vmem_id = vmem->vmem_id;
-			ret.type = vmem->type;
-			memcpy(ret.name, vmem->name, 5);
-			ret.vaddr = be32toh(vmem->vaddr);
-			ret.size = be32toh(vmem->size);
-		}
-	}
-
-	csp_buffer_free(packet);
-	csp_close(conn);
-
-	return ret;
-}
-
 static int image_get(char * filename, char ** data, int * len) {
 
 	/* Open file */
@@ -366,7 +326,7 @@ static int slash_csp_program(struct slash * slash) {
 
 	printf("  Requesting VMEM name: %s...\n", vmem_name);
 
-	vmem_list_t vmem = vmem_list_find(node, 5000, vmem_name, strlen(vmem_name));
+	vmem_list_t vmem = vmem_client_find(node, slash_dfl_timeout, 1, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
         optparse_del(parser);
@@ -543,7 +503,7 @@ static int slash_sps(struct slash * slash) {
 	snprintf(vmem_name, 5, "fl%u", to);
 	printf("  Requesting VMEM name: %s...\n", vmem_name);
 
-	vmem_list_t vmem = vmem_list_find(node, 5000, vmem_name, strlen(vmem_name));
+	vmem_list_t vmem = vmem_client_find(node, slash_dfl_timeout, 1, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
         optparse_del(parser);
