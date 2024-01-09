@@ -83,12 +83,12 @@ static int resbuf_dump_slash(struct slash *slash) {
 	FILE * fpout = stdout;
 
 	if(filename) {
+		char filename2[64];
 		if (strcmp(filename, "timestamp") == 0) {
 			time_t t = time(NULL);
 			struct tm tm = *localtime(&t);
 			char timestamp[16];
 			strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", &tm);
-			char filename2[32];
 			snprintf(filename2, sizeof(filename2), "%u_%s.txt", node, timestamp);
 			filename = filename2;
 		}
