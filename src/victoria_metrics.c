@@ -226,12 +226,14 @@ static int vm_start_cmd(struct slash * slash) {
 
     if (argi < 0) {
         optparse_del(parser);
+        free(args);
         return SLASH_EINVAL;
     }
 
     if (++argi >= slash->argc) {
         printf("Missing server ip/domain\n");
         optparse_del(parser);
+        free(args);
         return SLASH_EINVAL;
     }
 
@@ -239,6 +241,7 @@ static int vm_start_cmd(struct slash * slash) {
         if (!tmp_password) {
             printf("Provide password with -p\n");
             optparse_del(parser);
+            free(args);
             return SLASH_EINVAL;
         }
         args->username = strdup(tmp_username);
