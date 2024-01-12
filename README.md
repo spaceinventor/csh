@@ -55,11 +55,11 @@ Details:
 
 1. There is a Dockerfile in `cross/rapsberrypi/Dockerfile` that does that for you:
   * run `docker build --platform linux/arm/v7 -t sysroot-build .` to build the image
-  * run 
-  ```
-docker run -v /home/jbl/workspace/csh/cross/rapsberrypi/sysroot:/sysroot -e LIST_OF_PACKAGES=libcurl4-openssl-dev libzmq3-dev --platform linux/arm/v7 -it sysroot-build
+  * run
 ```
-to create a usable, shared sysroot located in this example here `/home/jbl/workspace/csh/cross/rapsberrypi/sysroot`
+docker run -v /<path>/to/csh/cross/rapsberrypi/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build
+```
+to create a usable, shared sysroot located in this example here `/<path>/to/csh/cross/rapsberrypi/sysroot`
 
 2. run `meson setup --cross-file cross/rapsberrypi/cross_raspberrypi.txt build-raspberry`
 3. cd build-raspberry and run `ninja`
