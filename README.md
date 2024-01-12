@@ -1,8 +1,8 @@
-### CSP Shell
+# CSP Shell
 
 CSP Shell or `csh` pronounced *seashell* is a command line interpreter for running CSP and `libparam` based applications.
 
-### spaceinventor/satctl changes name to spaceinventor/csh
+## spaceinventor/satctl changes name to spaceinventor/csh
 
 `satctl` was originally a piece of software under license from 'Satlab A/S'. Since the current
 version of 'spaceinventor/satctl' has nothing to do with satlab or the original `satctl`
@@ -12,7 +12,7 @@ The process will be gradual to avoid too many broken links so the old repo will 
 But the software will be called `csh` (pronounced 'seashell') from now on.
 
 
-### Build
+## Build
 
 Requirements: libcurl4-openssl-dev build-essential, libsocketcan-dev, can-utils, libzmq3-dev, libyaml-dev, meson, ninja, pkg-config, fonts-powerline, python3-pip, libelf-dev, libbsd-dev
 
@@ -35,7 +35,36 @@ cd csh
 ./install
 ```
 
-### Run
+## Cross compile on a Linux PC for a RaspberryPI
+
+Prerequisistes:
+
+* you will need to install the ARM gcc package that matches the one used on the targetted RaspberryPI
+  * `gcc-12-arm-linux-gnueabihf` for the Debian bookworm based Raspberry Linux'es
+* you need a fairly recent version of Docker as well as the `qemu-user-static` package installed on the build PC
+
+### Steps
+
+Overview:
+
+1. build a `sysroot` containing whatever dependencies are needed to build CSH (as of now, this amounts to the `libcurl4-openssl-dev` and`libzmq3-dev` packages)
+2. Configure a Rapsberry-Meson build directory
+3. Build
+
+Details:
+
+1. There is a Dockerfile in `cross/rapsberrypi/Dockerfile` that does that for you:
+  * run `docker build --platform linux/arm/v7 -t sysroot-build .` to build the image
+  * run 
+  ```
+docker run -v /home/jbl/workspace/csh/cross/rapsberrypi/sysroot:/sysroot -e LIST_OF_PACKAGES=libcurl4-openssl-dev libzmq3-dev --platform linux/arm/v7 -it sysroot-build
+```
+to create a usable, shared sysroot located in this example here `/home/jbl/workspace/csh/cross/rapsberrypi/sysroot`
+
+2. run `meson setup --cross-file cross/rapsberrypi/cross_raspberrypi.txt build-raspberry`
+3. cd build-raspberry and run `ninja`
+
+## Run
 
 To setup CAN sudo is required:
 
