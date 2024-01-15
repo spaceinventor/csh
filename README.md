@@ -40,7 +40,8 @@ cd csh
 Prerequisistes:
 
 * you will need to install the ARM gcc package that matches the one used on the targetted RaspberryPI
-  * `gcc-12-arm-linux-gnueabihf` for the Debian bookworm based Raspberry Linux'es
+  * `gcc-12-arm-linux-gnueabihf` for the Debian bookworm based Raspberry Linux'es (32-bit)
+  * `gcc-aarch64-linux-gnu`  for the Debian bookworm based Raspberry Linux'es (64-bit)
 * you need a fairly recent version of Docker as well as the `qemu-user-static` package installed on the build PC
 
 ### Steps
@@ -53,16 +54,17 @@ Overview:
 
 Details:
 
-1. There is a Dockerfile in `cross/rapsberrypi/Dockerfile` that does that for you:
-  * run `docker build --platform linux/arm/v7 -t sysroot-build .` to build the image
-  * run
-```
-docker run -v /<path>/to/csh/cross/rapsberrypi/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build
-```
-to create a usable, shared sysroot located in this example here `/<path>/to/csh/cross/rapsberrypi/sysroot`
+1. There are Dockerfiles in `cross/raspberrypi/Dockerfile` that do that for you:
+  * run `docker build --platform linux/arm/v7 -t sysroot-build -f Dockerfile_gnueabihf .` to build the image (ARM 32-bit)
+  * run `docker build --platform linux/aarch64 -t sysroot-build -f Dockerfile_aarch64 .` to build the image (ARM 64-bit)
 
-2. run `meson setup --cross-file cross/rapsberrypi/cross_raspberrypi.txt build-raspberry`
-3. cd build-raspberry and run `ninja`
+```
+docker run -v /<path>/to/csh/cross/raspberrypi/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build
+```
+to create a usable, shared sysroot located in this example here `/<path>/to/csh/cross/raspberrypi/sysroot`
+
+2. run `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_aarch64.txt build-aarch64`
+3. cd build-aarch64 and run `ninja`
 
 ## Run
 
