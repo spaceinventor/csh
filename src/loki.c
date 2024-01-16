@@ -181,17 +181,29 @@ next:
 
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, log_len);
     curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
+    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
     res = curl_easy_perform(curl);
-    if (res != CURLE_OK) {
+    if(res != CURLE_OK){
         curl_err_count++;
         char res_str[512];
-        snprintf(res_str, 512, "LOKI CURL: %s\n", curl_easy_strerror(res));
+        long response_code;
+        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+        if (0 != response_code) {
+            // There is an HTTP response code to look at, so do that
+            snprintf(res_str, 512, "\033[1;31mLOKI CURL: http response code was: %ld\033[0m\n", response_code);
+        } else {
+            // An error occured in such way that there is no HTTP response code at all
+            snprintf(res_str, 512, "\033[1;31mLOKI CURL: %s\033[0m\n", curl_easy_strerror(res));
+        }
         write(old_stdout, res_str, strlen(res_str));
         if(curl_err_count > 5){
             loki_running = 0;
             curl_err_count = 0;
-            printf("\nLOKI LOGGING STOPPED!\n");
+            printf("\n\033[31mLOKI LOGGING STOPPED!\033[0m\n");
         }
+    } else {
+        // TODO: shouldn't the error count reset whenever we have a successful transaction ?
+        // curl_err_count = 0;
     }
     // Unlock the buffer mutex
     pthread_mutex_unlock(&buffer_mutex);
