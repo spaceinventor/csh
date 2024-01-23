@@ -274,7 +274,14 @@ int main(int argc, char **argv) {
 	} else {
 		printf("\n\n");
 
-		slash_loop(slash);
+		ret = slash_loop(slash);
+
+		if(ret == -ENOTTY){
+			printf("No TTY detected running as non-interactive\n");
+			while(1){
+				sleep(10);
+			}
+		}
 	}
 
 	printf("\n");
