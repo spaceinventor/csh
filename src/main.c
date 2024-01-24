@@ -230,12 +230,11 @@ int main(int argc, char **argv) {
 	char * homedir = getenv("HOME");
 	char path[100];
 
-	if (strlen(homedir)) {
+	if (homedir && strlen(homedir)) {
 		snprintf(path, 100, "%s/csh_hosts", homedir);
 	} else {
 		snprintf(path, 100, "csh_hosts");
 	}
-
 	slash_run(slash, path, 0);
 
 
@@ -243,7 +242,7 @@ int main(int argc, char **argv) {
 
 	/* Init file */
 	char buildpath[100];
-	if (strlen(dirname)) {
+	if (dirname && strlen(dirname)) {
 		snprintf(buildpath, 100, "%s/%s", dirname, initfile);
 	} else {
 		snprintf(buildpath, 100, "%s", initfile);

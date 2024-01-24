@@ -264,6 +264,11 @@ static int apm_load_cmd(struct slash *slash) {
         char * p = getenv("HOME");
         if (p == NULL) {
             p = getpwuid(getuid())->pw_dir;
+            if(p == NULL){
+                optparse_del(parser);
+                printf("No home folder found\n");
+                return SLASH_EINVAL;  
+            }
         }
         strcpy(path, p);
         strcat(path, "/.local/lib/csh");
