@@ -35,7 +35,7 @@ static int ping(int node) {
 	return 1;
 }
 
-static void reset_to_flash(int node, int flash, int times, int type, int ms) {
+static void reset_to_flash(int node, int flash, int times, int ms) {
 
 	param_t * boot_img[4];
 	/* Setup remote parameters */
@@ -54,12 +54,10 @@ static void reset_to_flash(int node, int flash, int times, int type, int ms) {
 	uint8_t zero = 0;
 	param_queue_add(&queue, boot_img[0], 0, &zero);
 	param_queue_add(&queue, boot_img[1], 0, &zero);
-	if (type == 1) {
-		param_queue_add(&queue, boot_img[2], 0, &zero);
-		param_queue_add(&queue, boot_img[3], 0, &zero);
-	}
+	param_queue_add(&queue, boot_img[2], 0, &zero);
+	param_queue_add(&queue, boot_img[3], 0, &zero);
 	param_queue_add(&queue, boot_img[flash], 0, &times);
-	param_push_queue(&queue, 1, node, 1000, 0);
+	param_push_queue(&queue, 1, node, 1000, 0, false);
 
 	printf("  Rebooting");
 	csp_reboot(node);
@@ -106,11 +104,7 @@ static int slash_csp_switch(struct slash * slash) {
 
 	unsigned int slot = atoi(slash->argv[argi]);
 
-	int type = 0;
-	if (slot >= 2)
-		type = 1;
-
-	reset_to_flash(node, slot, times, type, reboot_delay);
+	reset_to_flash(node, slot, times, reboot_delay);
 
     optparse_del(parser);
 	return SLASH_SUCCESS;
@@ -491,13 +485,7 @@ static int slash_sps(struct slash * slash) {
 
 	unsigned int to = atoi(slash->argv[argi]);
 
-	int type = 0;
-	if (from >= 2)
-		type = 1;
-	if (to >= 2)
-		type = 1;
-
-	reset_to_flash(node, from, 1, type, reboot_delay);
+	reset_to_flash(node, from, 1, reboot_delay);
 
 	char vmem_name[5];
 	snprintf(vmem_name, 5, "fl%u", to);
@@ -601,7 +589,7 @@ static int slash_sps(struct slash * slash) {
 	}
 
 	if (result == SLASH_SUCCESS) {
-		reset_to_flash(node, to, 1, type, reboot_delay);
+		reset_to_flash(node, to, 1, reboot_delay);
 	}
 
 	free(data);
