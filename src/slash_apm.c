@@ -284,7 +284,6 @@ static int apm_load_cmd(struct slash *slash) {
 
     if (lib_search.lib_count == 0) {
         printf("\033[31mNo APMs found in %s\033[0m\n", lib_search.path);
-        return SLASH_EUSAGE;
     }
 
     for (int i = 0; i < lib_search.lib_count; i++) {
