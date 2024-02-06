@@ -15,6 +15,8 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <limits.h>
+#include <libgen.h>
 
 slash_command_group(apm, "apm");
 
@@ -227,7 +229,7 @@ void build_apm_list(lib_search_t* lib_search) {
         if (split != NULL) strncpy(wpath, path, split-path);
         else strcpy(wpath, path);
 
-        walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, lib_search);
+        walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 1, dir_callback, file_callback, lib_search);
 
         if (split == NULL) break;
 
@@ -243,7 +245,8 @@ void build_apm_list(lib_search_t* lib_search) {
 
 static int apm_load_cmd(struct slash *slash) {
 
-    char path[WALKDIR_MAX_PATH_SIZE];
+    char path[WALKDIR_MAX_PATH_SIZE];    
+    int search_bin_path = 0;
 
     lib_search_t lib_search;
     lib_search.path = NULL;
@@ -262,6 +265,7 @@ static int apm_load_cmd(struct slash *slash) {
 
     if (lib_search.path == NULL) {
         char * p = getenv("HOME");
+        search_bin_path = 1;
         if (p == NULL) {
             p = getpwuid(getuid())->pw_dir;
             if(p == NULL){
@@ -274,6 +278,7 @@ static int apm_load_cmd(struct slash *slash) {
         strcat(path, "/.local/lib/csh");
         lib_search.path = path;
     }
+    
 
     build_apm_list(&lib_search);
 
@@ -294,9 +299,33 @@ static int apm_load_cmd(struct slash *slash) {
 
         initialize_apm(e, slash);
     }
+    if (search_bin_path){
+        char result[PATH_MAX];
+        int count = readlink("/proc/self/exe", result, PATH_MAX);
 
+        if (count != -1){
+            char *dir = dirname(result);
+            strncpy(path, dir, WALKDIR_MAX_PATH_SIZE);
+        }else{
+            perror("readlink");
+            return SLASH_EUSAGE;
+        }
+        build_apm_list(&lib_search);
+
+        for (int i = 0; i < lib_search.lib_count; i++){
+            apm_entry_t *e = load_apm(lib_search.libs[i].path);
+
+            if (!e){
+                printf("\033[31mError loading %s\033[0m\n", e->path);
+                return SLASH_EUSAGE;
+            }
+
+            printf("\033[32mLoaded: %s\033[0m\n", e->path);
+
+            initialize_apm(e, slash);
+        }
+    }
     return SLASH_SUCCESS;
-
 }
 
 slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM");
