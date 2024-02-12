@@ -248,11 +248,10 @@ int main(int argc, char **argv) {
 		snprintf(buildpath, 100, "%s", initfile);
 	}
 	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
-	slash_run(slash, buildpath, 0);
+	int ret = slash_run(slash, buildpath, 0);
 
-	int ret = 0;
 	/* Interactive or one-shot mode */
-	if (remain > 0) {
+	if (ret != SLASH_EXIT && remain > 0) {
 		char ex[LINE_SIZE] = {};
 
 		/* Build command string */
@@ -270,7 +269,7 @@ int main(int argc, char **argv) {
 		printf("\n");
 
 		ret = slash_execute(slash, ex);
-	} else {
+	} else if (ret != SLASH_EXIT) {
 		printf("\n\n");
 
 		ret = slash_loop(slash);
