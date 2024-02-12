@@ -157,9 +157,18 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
     if(key_file){
 
-        FILE *file = fopen(key_file, "r");
+        char key_file_local[256];
+        if (key_file[0] == '~') {
+            strcpy(key_file_local, getenv("HOME"));
+            strcpy(&key_file_local[strlen(key_file_local)], &key_file[1]);
+        }
+        else {
+            strcpy(key_file_local, key_file);
+        }
+
+        FILE *file = fopen(key_file_local, "r");
         if(file == NULL){
-            printf("Could not open config %s\n", key_file);
+            printf("Could not open config %s\n", key_file_local);
             optparse_del(parser);
             return SLASH_EINVAL;
         }
