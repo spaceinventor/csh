@@ -56,12 +56,19 @@ Details:
 
 1. There are Dockerfiles in `cross/raspberrypi/Dockerfile` that do that for you:
   * run `docker build --platform linux/arm/v7 -t sysroot-build -f Dockerfile_gnueabihf .` to build the image (ARM 32-bit)
-  * run `docker build --platform linux/aarch64 -t sysroot-build -f Dockerfile_aarch64 .` to build the image (ARM 64-bit)
+  * run `docker build --platform linux/aarch64 -t sysroot-build-aarch64 -f Dockerfile_aarch64 .` to build the image (ARM 64-bit)
+
 
 ```
-docker run -v /<path>/to/csh/cross/raspberrypi/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build
+docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build
 ```
-to create a usable, shared sysroot located in this example here `/<path>/to/csh/cross/raspberrypi/sysroot`
+or
+
+```
+docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/aarch64 -it sysroot-build-aarch64
+```
+
+to create a usable, shared sysroot located in this example here `/<path>/to/csh/sysroot`
 
 2. run `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_aarch64.txt build-aarch64`
 3. cd build-aarch64 and run `ninja`

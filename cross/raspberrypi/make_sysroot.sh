@@ -20,7 +20,7 @@ for deb in $DOWNLOAD/*.deb; do dpkg-deb -xv $deb .; done
 #cd ..
 #tar -cazf sysroot.tar.gz $SYSROOT
 
-bash -i
+# bash -i
 # # Get it and unpack it where you want that sysroot
 # scp pi@raspberrypi.local:~/sysroot.tar.gz .
 # tar -xf sysroot.tar.gz
