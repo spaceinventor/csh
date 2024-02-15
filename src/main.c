@@ -230,12 +230,11 @@ int main(int argc, char **argv) {
 	char * homedir = getenv("HOME");
 	char path[100];
 
-	if (strlen(homedir)) {
+	if (homedir && strlen(homedir)) {
 		snprintf(path, 100, "%s/csh_hosts", homedir);
 	} else {
 		snprintf(path, 100, "csh_hosts");
 	}
-
 	slash_run(slash, path, 0);
 
 
@@ -243,17 +242,16 @@ int main(int argc, char **argv) {
 
 	/* Init file */
 	char buildpath[100];
-	if (strlen(dirname)) {
+	if (dirname && strlen(dirname)) {
 		snprintf(buildpath, 100, "%s/%s", dirname, initfile);
 	} else {
 		snprintf(buildpath, 100, "%s", initfile);
 	}
 	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
-	slash_run(slash, buildpath, 0);
+	int ret = slash_run(slash, buildpath, 0);
 
-	int ret = 0;
 	/* Interactive or one-shot mode */
-	if (remain > 0) {
+	if (ret != SLASH_EXIT && remain > 0) {
 		char ex[LINE_SIZE] = {};
 
 		/* Build command string */
@@ -271,7 +269,7 @@ int main(int argc, char **argv) {
 		printf("\n");
 
 		ret = slash_execute(slash, ex);
-	} else {
+	} else if (ret != SLASH_EXIT) {
 		printf("\n\n");
 
 		ret = slash_loop(slash);

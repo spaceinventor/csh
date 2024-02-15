@@ -157,9 +157,18 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
     if(key_file){
 
-        FILE *file = fopen(key_file, "r");
+        char key_file_local[256];
+        if (key_file[0] == '~') {
+            strcpy(key_file_local, getenv("HOME"));
+            strcpy(&key_file_local[strlen(key_file_local)], &key_file[1]);
+        }
+        else {
+            strcpy(key_file_local, key_file);
+        }
+
+        FILE *file = fopen(key_file_local, "r");
         if(file == NULL){
-            printf("Could not open config %s\n", key_file);
+            printf("Could not open config %s\n", key_file_local);
             optparse_del(parser);
             return SLASH_EINVAL;
         }
@@ -462,7 +471,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
     int mask = 8;
     int dfl = 0;
 
-    optparse_t * parser = optparse_new("csp add udp", "<ifaddr> <tun src> <tun dst>");
+    optparse_t * parser = optparse_new("csp add tun", "<ifaddr> <tun src> <tun dst>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");

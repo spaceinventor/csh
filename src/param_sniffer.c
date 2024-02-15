@@ -81,7 +81,7 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
                 break;
             case PARAM_TYPE_DOUBLE: {
                 double tmp_dbl = mpack_expect_double(reader);
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %.12e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
                 if(vts){
                     vts_arr[i] = tmp_dbl;
                 }
