@@ -70,8 +70,8 @@ docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-open
 
 to create a usable, shared sysroot located in this example here `/<path>/to/csh/sysroot`
 
-2. run `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_aarch64.txt build-aarch64`
-3. cd build-aarch64 and run `ninja`
+2. run `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_aarch64.txt build-aarch64` or `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_gnueabihf.txt build-gnueabihf`
+3. run `ninja -C build-aarch64` or `ninja -C build-gnueabihf`
 
 ## Run
 
