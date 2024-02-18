@@ -121,8 +121,8 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     int dfl = 0;
     char * key_file = NULL;
     char sec_key[41] = {0};
-    unsigned int subport = CSP_ZMQPROXY_SUBSCRIBE_PORT;
-    unsigned int pubport = CSP_ZMQPROXY_PUBLISH_PORT;
+    unsigned int subport = 0;
+    unsigned int pubport = 0;
 
     optparse_t * parser = optparse_new("csp add zmq", "<addr> <server>");
     optparse_add_help(parser);
@@ -130,8 +130,8 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_set(parser, 'd', "default", 1, &dfl, "Set as default");
     optparse_add_string(parser, 'a', "auth_file", "STR", &key_file, "file containing private key for zmqproxy (default: None)");
-    optparse_add_unsigned(parser, 'S', "subport", "NUM", 0, &subport, "Subscriber port of zmqproxy (default: 6000)");
-    optparse_add_unsigned(parser, 'P', "pubport", "NUM", 0, &pubport, "Publisher port of zmqproxy (default: 7000)");
+    optparse_add_unsigned(parser, 'S', "subport", "NUM", 0, &subport, "Subscriber port of zmqproxy (default: 6000, encrypted: 6001)");
+    optparse_add_unsigned(parser, 'P', "pubport", "NUM", 0, &pubport, "Publisher port of zmqproxy (default: 7000, encrypted: 7001)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
@@ -154,6 +154,14 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 		return SLASH_EINVAL;
 	}
     char * server = slash->argv[argi];
+
+    if (subport == 0) {
+        subport = CSP_ZMQPROXY_SUBSCRIBE_PORT + ((key_file == NULL) ? 0 : 1);
+    }
+
+    if (pubport == 0) {
+        pubport = CSP_ZMQPROXY_PUBLISH_PORT + ((key_file == NULL) ? 0 : 1);
+    }
 
     if(key_file){
 
