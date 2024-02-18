@@ -15,12 +15,15 @@
 #include <curl/curl.h>
 
 #include <param/param.h>
+#include <param/param_queue.h>
 #ifdef PARAM_HAVE_COMMANDS
 #include <param/param_commands.h>
 #endif
 #ifdef PARAM_HAVE_SCHEDULER
 #include <param/param_scheduler.h>
 #endif
+
+#include <sc/sc_server.h>
 
 #include <vmem/vmem_file.h>
 
@@ -156,6 +159,27 @@ static int cmd_sch_update(struct slash *slash) {
 }
 slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server each second");
 #endif
+
+void * onehz_task(void * param) {
+	while(1) {
+		csp_timestamp_t scheduler_time = {};
+		csp_clock_get_time(&scheduler_time);
+		sc_tick(scheduler_time, 1000);
+		sleep(1);
+	}
+	return NULL;
+}
+
+static int cmd_sch_update(struct slash *slash) {
+
+	sc_init();
+
+	static pthread_t onehz_handle;
+	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
+
+	return SLASH_SUCCESS;
+}
+slash_command_sub(param_server, startv2, cmd_sch_update, "", "Update param server each second");
 
 	
 int main(int argc, char **argv) {
