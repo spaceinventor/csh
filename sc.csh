@@ -1,6 +1,6 @@
 csp init
 
-param_server start
+param_server startv2
 
 cmd new set test
 cmd add csp_print_packet 1
