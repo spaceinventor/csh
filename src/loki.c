@@ -202,8 +202,7 @@ next:
             printf("\n\033[31mLOKI LOGGING STOPPED!\033[0m\n");
         }
     } else {
-        // TODO: shouldn't the error count reset whenever we have a successful transaction ?
-        // curl_err_count = 0;
+        curl_err_count = 0;
     }
     // Unlock the buffer mutex
     pthread_mutex_unlock(&buffer_mutex);
