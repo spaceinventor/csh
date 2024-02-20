@@ -94,6 +94,10 @@ int strip_str(char *str) {
             *write_p = ' ';
             read_p++;
             write_p++;
+        } else if (*read_p == '"'){
+            *write_p = '\'';
+            read_p++;
+            write_p++;
         } else if (*read_p < 32) {
             read_p++;
         } else {
