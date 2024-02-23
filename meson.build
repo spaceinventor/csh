@@ -1,4 +1,5 @@
 project('csh', 'c', subproject_dir: 'lib', default_options: [
+	'csp_pipeline_config:slash=true', 
 	'buildtype=debug', 
 	'c_std=gnu11', 
 	'b_lto=false',
@@ -40,6 +41,8 @@ endif
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+lua_dep = dependency('lua5.4', required: false)
+csp_pipeline_config_dep = dependency('csp_pipeline_config', fallback: ['csp_pipeline_config', 'csp_pipeline_config_dep'], required: true).as_link_whole()
 
 csh_sources = [
 	'src/main.c',
@@ -73,7 +76,7 @@ csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', co
 
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, curl_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, lua_dep, curl_dep, csp_pipeline_config_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
 )

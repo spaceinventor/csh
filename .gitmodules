@@ -13,3 +13,6 @@
 [submodule "lib/yaml"]
 	path = lib/yaml
 	url = https://github.com/yaml/libyaml.git
+[submodule "lib/csp_pipeline_config"]
+	path = lib/csp_pipeline_config
+	url = git@github.com:Lindharden/csp_pipeline_config.git
