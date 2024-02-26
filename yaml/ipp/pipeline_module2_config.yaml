@@ -6,4 +6,8 @@
 
 - key: "flip_percent"
   type: 4
-  value: 0.20
+  value: 0.80
+
+- key: "flip_amount"
+  type: 3
+  value: 1
