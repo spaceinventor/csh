@@ -1,9 +1,0 @@
-# Use following keys for types #
-#   bool    = 2                #
-#   integer = 3                #
-#   float   = 4                #
-#   string  = 5                #
-
-- key: "flip_percent"
-  type: 4
-  value: 0.20
