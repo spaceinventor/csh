@@ -1,3 +1,7 @@
 - order: 1
-  name: "flip_horizontally"
+  param_id: 1
+  name: flip_horizontally
+
+- order: 2
   param_id: 2
+  name: bw_convert

@@ -1,4 +1,4 @@
-# Use following keys for types #
+# Use following keys for type  #
 #   bool    = 2                #
 #   integer = 3                #
 #   float   = 4                #
@@ -6,7 +6,7 @@
 
 - key: "flip_percent"
   type: 4
-  value: 0.80
+  value: 0.50
 
 - key: "flip_amount"
   type: 3
