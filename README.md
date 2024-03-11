@@ -55,12 +55,12 @@ Overview:
 Details:
 
 1. There are Dockerfiles in `cross/raspberrypi/Dockerfile` that do that for you:
-  * run `docker build --platform linux/arm/v7 -t sysroot-build -f Dockerfile_gnueabihf .` to build the image (ARM 32-bit)
+  * run `docker build --platform linux/arm/v7 -t sysroot-build-gnueabihf -f Dockerfile_gnueabihf .` to build the image (ARM 32-bit)
   * run `docker build --platform linux/aarch64 -t sysroot-build-aarch64 -f Dockerfile_aarch64 .` to build the image (ARM 64-bit)
 
 
 ```
-docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build
+docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build-gnueabihf
 ```
 or
 
