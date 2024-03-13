@@ -44,3 +44,30 @@ static int slash_cd(struct slash *slash) {
 }
 
 slash_command(cd, slash_cd, "", "change dir");
+
+static int slash_cat(struct slash *slash) {
+
+    if (slash->argc != 2) {
+        return SLASH_EUSAGE;
+    }
+
+    FILE *fp;
+    char buffer[512];
+
+    fp = fopen(slash->argv[1], "r");
+
+    if (fp == NULL) {
+        printf("Failed to open the file %s\n", slash->argv[1]);
+        return SLASH_EINVAL;
+    }
+
+    while (fgets(buffer, 512, fp) != NULL) {
+        printf("%s", buffer);
+    }
+
+    fclose(fp);
+
+	return SLASH_SUCCESS;
+}
+
+slash_command(cat, slash_cat, "[file]", "cat out file, no concat");
