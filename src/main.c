@@ -158,7 +158,7 @@ static int cmd_sch_update(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server each second");
-#endif
+#else
 
 void * onehz_task(void * param) {
 	while(1) {
@@ -180,7 +180,7 @@ static int cmd_sch_update(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 slash_command_sub(param_server, startv2, cmd_sch_update, "", "Update param server each second");
-
+#endif
 	
 int main(int argc, char **argv) {
 
