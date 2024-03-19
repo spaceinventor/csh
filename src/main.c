@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/utsname.h>
@@ -79,6 +80,7 @@ int slash_prompt(struct slash * slash) {
 
 	}
 
+#ifdef PARAM_HAVE_COMMANDS
 	extern param_queue_t param_queue;
 	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
 
@@ -108,7 +110,7 @@ int slash_prompt(struct slash * slash) {
 		len += 2 + strlen(param_queue.name);
 
 	}
-
+#endif
 	/* End of breadcrumb */
 	fore = back;
 	printf(" \e[0m\e[0;38;5;%um \e[0m", fore);

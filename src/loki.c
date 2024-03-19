@@ -14,7 +14,7 @@
 
 // TODO maybe a thread that empties a buffer
 // static pthread_t loki_thread;
-int loki_running = 0;
+static int loki_running = 0;
 
 #define SERVER_PORT      3100
 #define BUFFER_SIZE      1024 * 1024
@@ -224,6 +224,19 @@ static void *read_pipe(void *arg) {
         }
     }
     return NULL;
+}
+
+/* Log commands to a Loki instance if enabled */
+void slash_on_execute_hook(const char *line) {
+	if(loki_running){
+		int ex_len = strlen(line);
+		char * dup = malloc(ex_len + 2);
+		strncpy(dup, line, ex_len);
+		dup[ex_len] = '\n';
+		dup[ex_len + 1] = '\0';
+		loki_add(dup, 1);
+		free(dup);
+	}
 }
 
 
