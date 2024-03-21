@@ -50,7 +50,7 @@ int main(int argc, char **argv) {
 	csp_conf.model = "linux";
 	csp_init();
 
-    csp_iface_t * can_if = csp_can_socketcan_init(can_dev, 1000000, true);
+    csp_iface_t * can_if = csp_can_socketcan_init(can_dev, 0, 1000000, true);
     if (can_if == NULL) {
         printf("failed to add CAN interface [%s]\n", can_dev);
     }
@@ -60,7 +60,6 @@ int main(int argc, char **argv) {
     zmq_if->name = "ZMQ";
 
 #if (CSP_HAVE_STDIO)
-    csp_rtable_print();
     csp_iflist_print();
 #endif
 

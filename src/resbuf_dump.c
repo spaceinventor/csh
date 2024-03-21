@@ -76,19 +76,19 @@ static int resbuf_dump_slash(struct slash *slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
+      optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	FILE * fpout = stdout;
 
 	if(filename) {
+		char filename2[64];
 		if (strcmp(filename, "timestamp") == 0) {
 			time_t t = time(NULL);
 			struct tm tm = *localtime(&t);
 			char timestamp[16];
 			strftime(timestamp, sizeof(timestamp), "%Y%m%d_%H%M%S", &tm);
-			char filename2[32];
 			snprintf(filename2, sizeof(filename2), "%u_%s.txt", node, timestamp);
 			filename = filename2;
 		}
@@ -103,12 +103,13 @@ static int resbuf_dump_slash(struct slash *slash) {
 	vmem_list_t vmem = resbuf_get_base(node, 1000);
 	if (vmem.size == 0 || vmem.vaddr == 0) {
 		printf("Could not find result buffer on node %u\n", node);
+    optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
 	char data[vmem.size];
 
-	vmem_download(node, 1000, vmem.vaddr, vmem.size, data, 2);
+	vmem_download(node, 1000, vmem.vaddr, vmem.size, data, 2, 1);
 
 	//csp_hex_dump("data", data, 200);
 
@@ -119,10 +120,16 @@ static int resbuf_dump_slash(struct slash *slash) {
 
 	printf("Got resbuf size %u in %u out %u\n", vmem.size, in, out);
 
-	if (in > vmem.size)
+	if (in > vmem.size){
+    optparse_del(parser);
 		return SLASH_EINVAL;
-	if (out > vmem.size)
+  }
+
+	if (out > vmem.size){
+    optparse_del(parser);
 		return SLASH_EINVAL;
+  }
+
 
 	while(1) {
 		fprintf(fpout, "%c", data[out++]);
@@ -134,6 +141,7 @@ static int resbuf_dump_slash(struct slash *slash) {
 		}
 	}
 
+  optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

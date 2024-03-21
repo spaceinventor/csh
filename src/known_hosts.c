@@ -150,12 +150,14 @@ static int cmd_hosts_add(struct slash *slash)
 	/* Check if name is present */
 	if (++argi >= slash->argc) {
 		printf("missing parameter name\n");
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
 	char * name = slash->argv[argi];
 
     known_hosts_add(node, name);
+    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 

@@ -1,8 +1,0 @@
-
-- name: "ZMQ"
-  driver: "zmq"
-  server: "localhost"
-  addr: 2
-  netmask: 8
-  default: true
-  promisc: false

@@ -25,7 +25,7 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
+      optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -64,12 +64,15 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 	}
 
 	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, 15, 0, CSP_O_CRC32);
-	if (conn == NULL)
-		return SLASH_ENOMEM;
+  if (conn == NULL) {
+    optparse_del(parser);
+    return SLASH_ENOMEM;
+  }
 
     csp_packet_t * packet = csp_buffer_get(1);
     if (packet == NULL) {
         csp_close(conn);
+        optparse_del(parser);
         return SLASH_ENOMEM;
     }
     packet->data[0] = 0xAA;
@@ -108,6 +111,7 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 
 	csp_close(conn);
 
+  optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

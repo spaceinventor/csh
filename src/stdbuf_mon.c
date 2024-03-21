@@ -115,6 +115,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	if (vmem.size == 0 || vmem.vaddr == 0) {
 		printf("Could not find stdbuffer on node %u\n", node);
+        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -137,7 +138,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	while(1) {
 
-		param_pull_queue(&pull_q, 0, node, 100);
+		param_pull_queue(&pull_q, CSP_PRIO_HIGH, 0, node, 100);
 		int in = param_get_uint16(stdbuf_in);
 		int out = param_get_uint16(stdbuf_out);
 
@@ -152,7 +153,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 		uint16_t out_push = out + got;
 		out_push %= vmem.size;
-	    param_push_single(stdbuf_out, 0, &out_push, 0, node, 100, version);
+	    param_push_single(stdbuf_out, 0, &out_push, 0, node, 100, version, false);
 
 	    if (got > 0) {
 	    	continue;
@@ -165,6 +166,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 	};
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

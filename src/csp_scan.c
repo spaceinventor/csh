@@ -47,6 +47,7 @@ static int csp_scan(struct slash *slash)
 			break;
     }
 	printf("\r");
+    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 

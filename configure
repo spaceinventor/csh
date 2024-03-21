@@ -1,3 +1,3 @@
 #!/bin/sh
 rm -r builddir
-meson . builddir -Dprefix=$HOME/.local
+meson setup . builddir -Dprefix=$HOME/.local

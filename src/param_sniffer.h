@@ -8,6 +8,10 @@
 #ifndef SRC_PARAM_SNIFFER_H_
 #define SRC_PARAM_SNIFFER_H_
 
-void param_sniffer_init(void);
+#include <csp/csp.h>
+
+int param_sniffer_crc(csp_packet_t * packet);
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp);
+void param_sniffer_init(int add_logfile);
 
 #endif /* SRC_PARAM_SNIFFER_H_ */

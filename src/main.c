@@ -12,11 +12,9 @@
 #include <csp/csp_yaml.h>
 #include <csp/csp_hooks.h>
 
+#include <curl/curl.h>
+
 #include <param/param.h>
-#include <param/param_list.h>
-#include <param/param_server.h>
-#include <param/param_collector.h>
-#include <param/param_queue.h>
 #ifdef PARAM_HAVE_COMMANDS
 #include <param/param_commands.h>
 #endif
@@ -24,13 +22,8 @@
 #include <param/param_scheduler.h>
 #endif
 
-#include <vmem/vmem_server.h>
 #include <vmem/vmem_file.h>
 
-#include <csp_ftp/ftp_server.h>
-
-#include "prometheus.h"
-#include "param_sniffer.h"
 #include "known_hosts.h"
 
 extern const char *version_string;
@@ -46,15 +39,6 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 #ifdef PARAM_HAVE_SCHEDULER
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
-VMEM_DEFINE_FILE(dummy, "dummy", "dummy.txt", 1000000);
-
-#define PARAMID_TELEM1					 302
-#define PARAMID_TELEM2					 303
-
-uint16_t _telem1 = 0;
-uint16_t _telem2 = 0;
-PARAM_DEFINE_STATIC_RAM(PARAMID_TELEM1,      telem1,        PARAM_TYPE_UINT16, -1, 0, PM_TELEM, NULL, "", &_telem1, NULL);
-PARAM_DEFINE_STATIC_RAM(PARAMID_TELEM2,      telem2,        PARAM_TYPE_UINT16, -1, 0, PM_TELEM, NULL, "", &_telem2, NULL);
 
 int slash_prompt(struct slash * slash) {
 
@@ -139,59 +123,39 @@ int slash_prompt(struct slash * slash) {
 
 }
 
-
 uint64_t clock_get_nsec(void) {
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_sec * 1E9 + ts.tv_nsec;
 }
 
-
 void usage(void) {
-	printf("usage: csh -f conf.yaml [command]\n");
+	printf("usage: csh -i init.csh [command]\n");
 	printf("\n");
-	printf("Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
+	printf("Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
 	printf("\n");
-	printf("Options:\n");
-	printf(" -f\t\tPath to config file\n");
-	printf(" -n NODE\tUse NODE as own CSP address on the default interface\n");
-	printf(" -v VERSION\tUse VERSION as CSP version (1 or 2)\n");
-	printf(" -p\t\tSetup prometheus node\n");
-	printf(" -r RTABLE\tOverride rtable with this string\n");
-	printf(" -h\t\tPrint this help and exit\n");
 }
 
-void kiss_discard(char c, void * taskwoken) {
-	putchar(c);
-}
-
-void * router_task(void * param) {
-	while(1) {
-		csp_route_work();
-	}
-}
-
-void * ftp_server_task(void * param) {
-	ftp_server_loop(param);
-	return NULL;
-}
-
-void * vmem_server_task(void * param) {
-	vmem_server_loop(param);
-	return NULL;
-}
-
+#ifdef PARAM_HAVE_SCHEDULER
 void * onehz_task(void * param) {
 	while(1) {
-#ifdef PARAM_HAVE_SCHEDULER
 		csp_timestamp_t scheduler_time = {};
-        csp_clock_get_time(&scheduler_time);
-        param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
-#endif
+		csp_clock_get_time(&scheduler_time);
+		param_schedule_server_update(scheduler_time.tv_sec * 1E9 + scheduler_time.tv_nsec);
 		sleep(1);
 	}
 	return NULL;
 }
+
+static int cmd_sch_update(struct slash *slash) {
+
+	static pthread_t onehz_handle;
+	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
+
+	return SLASH_SUCCESS;
+}
+slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server each second");
+#endif
 
 	
 int main(int argc, char **argv) {
@@ -199,35 +163,20 @@ int main(int argc, char **argv) {
 	static struct slash *slash;
 	int remain, index, i, c, p = 0;
 
-	int use_prometheus = 0;
-	int csp_version = 2;
-	char * rtable = NULL;
-	char * yamlname = "csh.yaml";
+	char * initfile = "init.csh";
 	char * dirname = getenv("HOME");
-	unsigned int dfl_addr = 0;
-	
-	while ((c = getopt(argc, argv, "+hpn:v:r:f:")) != -1) {
+
+	while ((c = getopt(argc, argv, ":+hi:")) != -1) {
 		switch (c) {
 		case 'h':
 			usage();
 			exit(EXIT_SUCCESS);
-		case 'p':
-			use_prometheus = 1;
-			break;
-		case 'r':
-			rtable = optarg;
-			break;
-		case 'v':
-			csp_version = atoi(optarg);
-			break;
-		case 'n':
-			dfl_addr = atoi(optarg);
-			break;
-		case 'f':
+		case 'i':
 			dirname = "";
-			yamlname = optarg;
+			initfile = optarg;
 			break;
 		default:
+			printf("Argument -%c not recognized\n", c);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -242,7 +191,7 @@ int main(int argc, char **argv) {
 		printf("  ***********************\n\n");
 
 		printf("\033[32m");
-		printf("  Copyright (c) 2016-2022 Space Inventor ApS <info@space-inventor.com>\n");
+		printf("  Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
 		printf("  Compiled: %s git: %s\n\n", __DATE__, version_string);
 
 		printf("\033[0m");
@@ -254,57 +203,14 @@ int main(int argc, char **argv) {
 		
 	}
 	srand(time(NULL));
-	
+
+ /** curl_global_init() should be invoked exactly once for each application that
+ * uses libcurl and before any call of other libcurl functions.
+ * This function is not thread-safe! */
+    curl_global_init(CURL_GLOBAL_ALL);
+
 	void serial_init(void);
 	serial_init();
-
-	static char hostname[100];
-	gethostname(hostname, 100);
-
-	static char domainname[100];
-	int res = getdomainname(domainname, 100);
-	(void) res;
-
-	struct utsname info;
-	uname(&info);
-
-	csp_conf.hostname = info.nodename;
-	csp_conf.model = info.version;
-	csp_conf.revision = info.release;
-	csp_conf.version = csp_version;
-	csp_conf.dedup = CSP_DEDUP_OFF;
-	csp_init();
-
-	//csp_debug_set_level(4, 1);
-	//csp_debug_set_level(5, 1);
-
-	if (strlen(dirname)) {
-		char buildpath[100];
-		snprintf(buildpath, 100, "%s/%s", dirname, yamlname);
-		csp_yaml_init(buildpath, &dfl_addr);
-	} else {
-		csp_yaml_init(yamlname, &dfl_addr);
-
-	}
-
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
-	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
-	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
-	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
-
-#if (CSP_HAVE_STDIO)
-	if (rtable && csp_rtable_check(rtable)) {
-		int error = csp_rtable_load(rtable);
-		if (error < 1) {
-			printf("csp_rtable_load(%s) failed, error: %d\n", rtable, error);
-		}
-	}
-#endif
-	(void) rtable;
-
-	csp_bind_callback(csp_service_handler, CSP_ANY);
-	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
 
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
@@ -320,39 +226,32 @@ int main(int argc, char **argv) {
 	param_schedule_server_init();
 #endif
 
-	vmem_file_init(&vmem_dummy);
-
-	static pthread_t router_handle;
-	pthread_create(&router_handle, NULL, &router_task, NULL);
-
-	static pthread_t ftp_server_handle;
-	pthread_create(&ftp_server_handle, NULL, &ftp_server_task, NULL);
-
-	static pthread_t vmem_server_handle;
-	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
-
-	static pthread_t onehz_handle;
-	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
-
-	if (use_prometheus) {
-		prometheus_init();
-		param_sniffer_init();
-	}
-
 	/** Persist hosts file */
 	char * homedir = getenv("HOME");
-    char path[100];
+	char path[100];
 
-	if (strlen(homedir)) {
-        snprintf(path, 100, "%s/csh_hosts", homedir);
-    } else {
-        snprintf(path, 100, "csh_hosts");
-    }
-
+	if (homedir && strlen(homedir)) {
+		snprintf(path, 100, "%s/csh_hosts", homedir);
+	} else {
+		snprintf(path, 100, "csh_hosts");
+	}
 	slash_run(slash, path, 0);
 
+
+
+
+	/* Init file */
+	char buildpath[100];
+	if (dirname && strlen(dirname)) {
+		snprintf(buildpath, 100, "%s/%s", dirname, initfile);
+	} else {
+		snprintf(buildpath, 100, "%s", initfile);
+	}
+	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
+	int ret = slash_run(slash, buildpath, 0);
+
 	/* Interactive or one-shot mode */
-	if (remain > 0) {
+	if (ret != SLASH_EXIT && remain > 0) {
 		char ex[LINE_SIZE] = {};
 
 		/* Build command string */
@@ -368,25 +267,24 @@ int main(int argc, char **argv) {
 		slash->length = strlen(slash->buffer);
 		slash_refresh(slash, 1);
 		printf("\n");
-		slash_execute(slash, ex);
-	} else {
+
+		ret = slash_execute(slash, ex);
+	} else if (ret != SLASH_EXIT) {
 		printf("\n\n");
 
-		slash_loop(slash);
+		ret = slash_loop(slash);
+
+		if(ret == -ENOTTY){
+			printf("No TTY detected running as non-interactive\n");
+			while(1){
+				sleep(10);
+			}
+		}
 	}
 
 	printf("\n");
 	slash_destroy(slash);
+    curl_global_cleanup();
 
-	pthread_cancel(router_handle);
-	pthread_cancel(vmem_server_handle);
-	pthread_cancel(ftp_server_handle);
-	pthread_cancel(onehz_handle);
-
-	pthread_join(router_handle, NULL);
-	pthread_join(vmem_server_handle, NULL);
-	pthread_join(ftp_server_handle, NULL);
-	pthread_join(onehz_handle, NULL);
-
-	return 0;
+	return ret;
 }

@@ -17,3 +17,4 @@ builddir
 *.csv
 *.vmem
 *.log
+.cache

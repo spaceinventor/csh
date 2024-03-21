@@ -32,4 +32,14 @@
 #define PARAMID_CRYPTO_FAUL_AUTH_COUNT      156
 #define PARAMID_CRYPTO_FAUL_NONCE_COUNT     157
 
+#define PARAMID_CORTEX_DEBUG                500
+#define PARAMID_CORTEX_FWD                  501
+#define PARAMID_CORTEX_PARSER_EN            502
+#define PARAMID_CORTEX_IP_UL_S              503
+#define PARAMID_CORTEX_IP_DL_S              504
+#define PARAMID_CORTEX_IP_DL_X              505
+#define PARAMID_CORTEX_PORT_UL_S            506
+#define PARAMID_CORTEX_PORT_DL_S            507
+#define PARAMID_CORTEX_PORT_DL_X            508
+
 #endif /* INCLUDE_PARAM_CONFIG_H_ */

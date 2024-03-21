@@ -12,9 +12,17 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+#include <slash/slash.h>
+#include <slash/optparse.h>
+
+#include <param/param.h>
+#include <param/param_queue.h>
+
 #include "prometheus.h"
+#include "param_sniffer.h"
 
 static pthread_t prometheus_tread;
+int prometheus_started = 0;
 
 static char prometheus_buf[10*1024*1024] = {0};
 static int prometheus_buf_len = 0;
@@ -55,7 +63,7 @@ retry_bind:
 		int conn_fd = accept(listen_fd, (struct sockaddr*)&client_addr, &client_addr_len);
 
 		char in[1024];
-		int bread = read(conn_fd, in, 1024);
+		int bread = recv(conn_fd, in, 1024, MSG_NOSIGNAL);
 		if (bread == 0) {
 			close(conn_fd);
 			continue;
@@ -66,10 +74,10 @@ retry_bind:
 			continue;
 		}
 
-		int written = write(conn_fd, header, strlen(header));
+		int written = send(conn_fd, header, strlen(header), MSG_NOSIGNAL);
 
 		/* Dump queued data */
-		written += write(conn_fd, prometheus_buf, prometheus_buf_len);
+		written += send(conn_fd, prometheus_buf, prometheus_buf_len, MSG_NOSIGNAL);
 		//printf("Prometheus sent %d bytes\n", written);
 
 		prometheus_clear();
@@ -89,7 +97,7 @@ void prometheus_add(char * str) {
 		strcpy(prometheus_buf + prometheus_buf_len, str);
 		prometheus_buf_len += strlen(str);
 	}
-	//printf("prometheus add %s, buflen %d\n", str, prometheus_buf_len);
+	printf("prometheus add %s", str);
 }
 
 void prometheus_clear(void) {
@@ -105,3 +113,28 @@ void prometheus_close(void) {
 }
 
 
+static int prometheus_start_cmd(struct slash *slash) {
+
+    if(prometheus_started) return SLASH_SUCCESS;
+
+    int logfile = 0;
+
+    optparse_t * parser = optparse_new("prometheus start", "");
+    optparse_add_help(parser);
+    optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+        return SLASH_EINVAL;
+        optparse_del(parser);
+    }
+
+    prometheus_init();
+    param_sniffer_init(logfile);
+    prometheus_started = 1;
+    optparse_del(parser);
+	return SLASH_SUCCESS;
+}
+
+slash_command_sub(prometheus, start, prometheus_start_cmd, NULL, "Start prometheus webserver");

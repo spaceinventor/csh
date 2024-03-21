@@ -1,15 +1,23 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "meson",
-			"mode": "build",
-			"problemMatcher": {
-				"base" : "$gcc",
-				"fileLocation": ["relative", "${workspaceFolder}/builddir/"],
-			},
-			"group": "build",
-			"label": "Meson: Build all targets"
-		}
-	]
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build debug meson",
+            "type": "shell",
+            "command": "meson builddir --buildtype=debug && cd builddir && ninja"
+        },
+        {
+            "type": "meson",
+            "mode": "build",
+            "problemMatcher": {
+                "base": "$gcc",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}/builddir/"
+                ]
+            },
+            "group": "build",
+            "label": "Meson: Build all targets"
+        }
+    ]
 }
