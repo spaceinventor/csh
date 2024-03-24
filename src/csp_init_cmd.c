@@ -22,6 +22,8 @@
 #include <csp/csp_rtable.h>
 #include <ifaddrs.h>
 
+#define CURVE_KEYLEN 41
+
 void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
@@ -120,7 +122,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     int mask = 8;
     int dfl = 0;
     char * key_file = NULL;
-    char sec_key[41] = {0};
+    char * sec_key = NULL;
     unsigned int subport = 0;
     unsigned int pubport = 0;
 
@@ -181,8 +183,17 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
             return SLASH_EINVAL;
         }
 
-        if (fgets(sec_key, sizeof(sec_key), file) == NULL) {
+        sec_key = malloc(CURVE_KEYLEN * sizeof(char));
+        if (sec_key == NULL) {
+            printf("Failed to allocate memory for secret key.\n");
+            fclose(file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+        if (fgets(sec_key, CURVE_KEYLEN, file) == NULL) {
             printf("Failed to read secret key from file.\n");
+            free(sec_key);
             fclose(file);
             optparse_del(parser);
             return SLASH_EINVAL;
@@ -196,6 +207,9 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    if (sec_key != NULL) {
+        free(sec_key);
+    }
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
