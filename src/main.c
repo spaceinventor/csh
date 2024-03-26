@@ -43,6 +43,13 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
 
+/* VMEM definitions for new scheduler "sc" module */
+VMEM_DEFINE_FILE(sc_cmd_hash, "sc_ch", "sc_cmd.cnf", sizeof(param_hash_t)*SC_CMD_NUM_ELEMENTS);
+VMEM_DEFINE_FILE(sc_cmd_store, "sc_cs", "sc_cmd_store.cnf", SC_CMD_NUM_ELEMENTS/sizeof(param_hash_t)*SC_CMD_BLOCK_SIZE);
+VMEM_DEFINE_FILE(sc_sch_hash, "sc_sh", "sc_sch.cnf", sizeof(param_hash_t)*SC_SCH_NUM_ELEMENTS);
+VMEM_DEFINE_FILE(sc_sch_store, "sc_ss", "sc_sch_store.cnf", SC_SCH_NUM_ELEMENTS/sizeof(param_hash_t)*SC_SCH_BLOCK_SIZE);
+
+
 int slash_prompt(struct slash * slash) {
 
 	int len = 0;
