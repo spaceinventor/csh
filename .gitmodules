@@ -5,11 +5,11 @@
 [submodule "lib/libparam"]
   path = lib/param
   url = https://github.com/spaceinventor/libparam
-  branch = addin
+  branch = master
 [submodule "lib/slash"]
   path = lib/slash
   url = https://github.com/spaceinventor/slash
-  branch = addin
+  branch = master
 [submodule "lib/yaml"]
 	path = lib/yaml
 	url = https://github.com/yaml/libyaml.git
