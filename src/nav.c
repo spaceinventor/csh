@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <slash/slash.h>
+#include <slash/completer.h>
 
 static int slash_ls(struct slash *slash) {
     
@@ -28,7 +29,7 @@ static int slash_ls(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(ls, slash_ls, "[path]", "list files");
+slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list files");
 
 
 static int slash_cd(struct slash *slash) {
@@ -43,7 +44,7 @@ static int slash_cd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(cd, slash_cd, "", "change dir");
+slash_command_completer(cd, slash_cd, slash_path_completer, "", "change dir");
 
 static int slash_cat(struct slash *slash) {
 
@@ -70,4 +71,4 @@ static int slash_cat(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(cat, slash_cat, "[file]", "cat out file, no concat");
+slash_command_completer(cat, slash_cat, slash_path_completer, "[file]", "cat out file, no concat");
