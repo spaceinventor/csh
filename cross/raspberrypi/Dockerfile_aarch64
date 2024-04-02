@@ -1,0 +1,19 @@
+# To build this image on a Intel based computer, you need to install the "qemu-user-static" package (sudo apt install qemu-user-static)
+# then:
+# docker build --platform linux/aarch64 -t sysroot-build -f Dockerfile_aarch64 .
+# Run it:
+# docker run -v /full/path/to/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/aarch64 -it sysroot-build
+
+FROM openresty/openresty:bookworm-aarch64
+
+ENV LIST_OF_PACKAGES=libxm2-dev
+
+WORKDIR /root
+RUN mkdir /download
+RUN mkdir -p /sysroot
+
+COPY make_sysroot.sh .
+RUN chmod +x make_sysroot.sh
+RUN apt update
+
+CMD ["./make_sysroot.sh"]

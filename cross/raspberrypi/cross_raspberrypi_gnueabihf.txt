@@ -1,0 +1,28 @@
+[binaries]
+c = 'arm-linux-gnueabihf-gcc-12'
+ar = 'arm-linux-gnueabihf-ar'
+strip = 'arm-linux-gnueabihf-strip'
+
+pkg-config = 'pkg-config'
+
+[host_machine]
+system = 'linux'
+cpu_family = 'arm'
+cpu = ''
+endian = 'little'
+
+[constants]
+sys_root = '@GLOBAL_SOURCE_ROOT@' / 'sysroot'
+
+[properties]
+sys_root = sys_root
+pkg_config_libdir = sys_root + '/usr/lib/arm-linux-gnueabihf/pkgconfig'
+
+[built-in options]
+c_args = ['--sysroot=' + sys_root]
+c_link_args = [
+    '--sysroot=' + sys_root,
+    '-L' + sys_root + '/lib/arm-linux-gnueabihf',
+    '-Wl,-rpath-link=' + sys_root + '/lib/arm-linux-gnueabihf',
+    '-L' + sys_root + '/usr/lib/arm-linux-gnueabihf',
+    '-Wl,-rpath-link=' + sys_root + '/usr/lib/arm-linux-gnueabihf']
