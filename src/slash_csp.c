@@ -255,7 +255,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 		if (msg.code == CSP_CMP_IDENT) {
 			printf("\nIDENT %hu\n", packet->id.src);
 			printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
-			known_hosts_add(packet->id.src, msg.ident.hostname);
+			known_hosts_add(packet->id.src, msg.ident.hostname, false);
 		}
 		csp_buffer_free(packet);
 	}

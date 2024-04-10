@@ -2,58 +2,69 @@
  * Naive, slow and simple storage of nodeid and hostname
  */
 
+#include "known_hosts.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include <slash/dflopt.h>
 
-#define MAX_HOSTS 100
-#define MAX_NAMELEN 50
 
-struct host_s {
-    int node;
-    char name[MAX_NAMELEN];
-} known_hosts[100];
+/*Both of these may be modified by APMs  */
+__attribute__((used, retain)) unsigned int known_host_storage_size = sizeof(host_t);
+#ifdef PARAM_HAVE_SYS_QUEUE
+SLIST_HEAD(known_host_s, host_s) known_hosts = {};
+#endif
+
 
 void known_hosts_del(int host) {
 
-    for (int i = 0; i < MAX_HOSTS; i++) {
-
-        if (known_hosts[i].node == host) {
-            known_hosts[i].node = 0;
+    // SLIST_FOREACH(host_t host, &known_hosts, next) {
+    for (host_t* element = SLIST_FIRST(&known_hosts); element != NULL; element = SLIST_NEXT(element, next)) {
+        if (element->node == host) {
+            SLIST_REMOVE(&known_hosts, element, host_s, next);  // Probably not the best time-complexity here, O(n)*2 perhaps?
         }
-
     }
-
 }
 
-void known_hosts_add(int addr, char * new_name) {
+host_t * known_hosts_add(int addr, char * new_name, bool override_existing) {
 
-    known_hosts_del(addr);
-
-    /* Search for empty slot */
-    for (int i = 0; i < MAX_HOSTS; i++) {
-        if (known_hosts[i].node == 0) {
-            known_hosts[i].node = addr;
-            strncpy(known_hosts[i].name, new_name, MAX_NAMELEN);
-            break;
+    if (override_existing) {
+        known_hosts_del(addr);  // Ensure 'addr' is not in the list
+    } else {
+        
+        for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+            if (host->node == addr) {
+                return host;  // This node is already in the linked list, and we are not allowed to override it.
+            }
         }
+        // This node was not found in the list. Let's add it now.
     }
 
+    // TODO Kevin: Do we want to break the API, and let the caller supply "host"?
+    host_t * host = calloc(1, known_host_storage_size);
+    if (host == NULL) {
+        return NULL;  // No more memory
+    }
+    host->node = addr;
+    strncpy(host->name, new_name, HOSTNAME_MAXLEN);
+
+    SLIST_INSERT_HEAD(&known_hosts, host, next);
+
+    return host;
 }
 
 int known_hosts_get_name(int find_host, char * name, int buflen) {
 
-    for (int i = 0; i < MAX_HOSTS; i++) {
-
-        if (known_hosts[i].node == find_host) {
-            strncpy(name, known_hosts[i].name, buflen);
+    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+        if (host->node == find_host) {
+            strncpy(name, host->name, buflen);
             return 1;
         }
-
     }
 
     return 0;
@@ -66,12 +77,10 @@ int known_hosts_get_node(char * find_name) {
     if (find_name == NULL)
         return 0;
 
-    for (int i = 0; i < MAX_HOSTS; i++) {
-
-        if (strncmp(find_name, known_hosts[i].name, MAX_NAMELEN) == 0) {
-            return known_hosts[i].node;
+    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+        if (strncmp(find_name, host->name, HOSTNAME_MAXLEN) == 0) {
+            return host->node;
         }
-
     }
 
     return 0;
@@ -99,11 +108,11 @@ static int cmd_node_save(struct slash *slash)
         out = fd;
     }
 
-    /* Search for empty slot */
-    for (int i = 0; i < MAX_HOSTS; i++) {
-        if (known_hosts[i].node != 0) {
-            fprintf(out, "node add -n %d %s\n", known_hosts[i].node, known_hosts[i].name);
-            printf("node add -n %d %s\n", known_hosts[i].node, known_hosts[i].name);
+    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+        assert(host->node != 0);  // Holdout from array-based known_hosts
+        if (host->node != 0) {
+            fprintf(out, "node add -n %d %s\n", host->node, host->name);
+            printf("node add -n %d %s\n", host->node, host->name);
         }
     }
 
@@ -120,10 +129,10 @@ slash_command_sub(node, save, cmd_node_save, NULL, NULL);
 
 static int cmd_nodes(struct slash *slash)
 {
-    /* Search for empty slot */
-    for (int i = 0; i < MAX_HOSTS; i++) {
-        if (known_hosts[i].node != 0) {
-            printf("node add -n %d %s\n", known_hosts[i].node, known_hosts[i].name);
+    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+        assert(host->node != 0);  // Holdout from array-based known_hosts
+        if (host->node != 0) {
+            printf("node add -n %d %s\n", host->node, host->name);
         }
     }
 
@@ -156,7 +165,11 @@ static int cmd_hosts_add(struct slash *slash)
 
 	char * name = slash->argv[argi];
 
-    known_hosts_add(node, name);
+    if (known_hosts_add(node, name, true) == NULL) {
+        fprintf(stderr, "No more memory, failed to add host");
+        optparse_del(parser);
+        return SLASH_ENOMEM;
+    }
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
