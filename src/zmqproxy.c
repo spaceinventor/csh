@@ -56,7 +56,7 @@ int delay_ms = 0;
 int seed = 0;
 char * shortopts = "hagv:d:s:p:f:L:C:D:T:S:N:U:O:";
 #else
-char * shortopts = "hagv:d:s:p:f:";
+char * shortopts = "hgv:a:d:s:p:f:";
 #endif
 
 int debug = 0;
@@ -67,8 +67,8 @@ void *frontend = NULL;
 void *backend = NULL;
 char * logfile_name = NULL;
 FILE * logfile;
-/* Auth flag set if -a arg set */
-int auth = 0;
+/* Private key file to enable encryption and auth */
+char * keyfile_name = NULL;
 /* Buffer to hold the secret key. 41 is the length of a z85-encoded CURVE key plus 1 for the null terminator. */
 char sec_key[CURVE_KEYLEN] = {0};
 
@@ -147,6 +147,7 @@ void handle_event(int event, int value, char *address){
         case ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL:
             /*  Unspecified system errors during handshake. Event value is an errno.      */
             printf("Unspecified system errors during handshake %s errno: %d\n", address, value);
+            printf("Error: %s\n", strerror(value));
             break;
         default:
             printf("event: 0x%x\n", event);
@@ -204,7 +205,7 @@ static void * task_capture(void *arg) {
 	printf("Capture/logging task listening on %s\n", sub_str);
     /* Subscriber (RX) */
     void *subscriber = zmq_socket(ctx, ZMQ_SUB);
-    if(auth){
+    if(keyfile_name){
         char pub_key[CURVE_KEYLEN] = {0};
         zmq_curve_public(pub_key, sec_key);
         zmq_setsockopt(subscriber, ZMQ_CURVE_SERVERKEY, pub_key, CURVE_KEYLEN);
@@ -294,7 +295,7 @@ int main(int argc, char ** argv) {
             	logfile_name = optarg;
             	break;
             case 'a':
-                auth = 1;
+                keyfile_name = optarg;
                 break;
             case 'g':{
                 char public_key[CURVE_KEYLEN], secret_key[CURVE_KEYLEN];
@@ -339,8 +340,8 @@ int main(int argc, char ** argv) {
                 	   " -s SUB_STR\tsubscriber port: (default = tcp://0.0.0.0:6000)\n"
                 	   " -p PUB_STR\tpublisher  port: (default = tcp://0.0.0.0:7000)\n"
                 	   " -f LOGFILE\tLog to this file\n"
-                	   " -a AUTH\tEnable authentication and encryption\n"
-                	   " -g GEN \tGenerate keypair\n"
+                	   " -a AUTH\tPath to private key file to enable auth and encryption\n"
+                	   " -g GEN \tGenerate private key\n"
 #ifdef ZMQ_PROXY_LOSSY
                 	   " -L LOSS \tProxy with a packet loss probability ex. 0.1 == 10%%\n"
                 	   " -C CORR \tProxy with a packet corruption probability ex. 0.1 == 10%%\n"
@@ -365,22 +366,22 @@ int main(int argc, char ** argv) {
     backend = zmq_socket(ctx, ZMQ_XPUB);
     assert(backend);
 
-    if(auth){
+    if(keyfile_name){
 
-        const char *home_dir = getenv("HOME");
-        char *file_name = "/zmqauth.cfg";
-        char file_path[128] = {0};
-        if (home_dir == NULL) {
-            printf("HOME environment variable is not set.\n");
-            return 1;
-        }
-        strcpy(file_path, home_dir);
-        strcat(file_path, file_name);
+        FILE * file = fopen(keyfile_name, "r");
 
         /* Get server secret key from config file */
-        FILE *file = fopen(file_path, "r");
         if(file == NULL){
-            printf("Could not open config %s\n", file_path);
+            printf("Could not open config\n");
+            return 1;
+        }
+
+        fseek(file, 0, SEEK_END);
+        long file_size = ftell(file);
+        fseek(file, 0, SEEK_SET);
+        if(file_size != CURVE_KEYLEN){
+            printf("File length %lu, expected %u\n", file_size, CURVE_KEYLEN);
+            fclose(file);
             return 1;
         }
 
