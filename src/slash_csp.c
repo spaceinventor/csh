@@ -207,14 +207,15 @@ slash_command(uptime, slash_csp_uptime, "[node]", "");
 static int slash_csp_cmp_ident(struct slash *slash)
 {
 	
-	
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
+    int override = false;
 
     optparse_t * parser = optparse_new("ident", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+	optparse_add_set(parser, 'o', "override", true, &override, "Allow overriding hostname for a known node");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -255,7 +256,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 		if (msg.code == CSP_CMP_IDENT) {
 			printf("\nIDENT %hu\n", packet->id.src);
 			printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
-			known_hosts_add(packet->id.src, msg.ident.hostname, false);
+			known_hosts_add(packet->id.src, msg.ident.hostname, override);
 		}
 		csp_buffer_free(packet);
 	}
