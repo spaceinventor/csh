@@ -114,7 +114,7 @@ void initialize_apm(apm_entry_t * e, struct slash *slash) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
-        fprintf(stderr, "APM init function version mismatch, refusing to load %s\n", e->file);
+        fprintf(stderr, "APM init function version mismatch, csh version: %d apm version: %d\nRefusing to load %s\n", apm_init_version, *apm_init_version_in_apm_ptr, e->file);
         return;
     }
 
