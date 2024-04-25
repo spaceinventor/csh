@@ -52,7 +52,7 @@ int si_lock_give(void* lock) {
 	return 0;
 }
 
-#define NUM_LOCKS 2
+#define NUM_LOCKS 3
 
 static uint8_t lock_taken[NUM_LOCKS] = {0};
 static sem_t locks[NUM_LOCKS] = {0};
