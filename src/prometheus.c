@@ -113,7 +113,7 @@ void prometheus_close(void) {
 }
 
 
-static int prometheus_start_cmd(struct slash *slash) {
+static int prometheus_start_cmd(slash_t *slash) {
 
     if(prometheus_started) return SLASH_SUCCESS;
 

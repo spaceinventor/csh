@@ -79,7 +79,7 @@ int known_hosts_get_node(const char * find_name) {
 }
 
 
-static int cmd_node_save(struct slash *slash)
+static int cmd_node_save(slash_t *slash)
 {
     
     FILE * out = stdout;
@@ -118,7 +118,7 @@ static int cmd_node_save(struct slash *slash)
 slash_command_sub(node, save, cmd_node_save, NULL, NULL);
 
 
-static int cmd_nodes(struct slash *slash)
+static int cmd_nodes(slash_t *slash)
 {
     /* Search for empty slot */
     for (int i = 0; i < MAX_HOSTS; i++) {
@@ -132,7 +132,7 @@ static int cmd_nodes(struct slash *slash)
 
 slash_command_sub(node, list, cmd_nodes, NULL, NULL);
 
-static int cmd_hosts_add(struct slash *slash)
+static int cmd_hosts_add(slash_t *slash)
 {
 
     int node = slash_dfl_node;

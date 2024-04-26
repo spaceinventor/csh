@@ -76,7 +76,7 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 	ping(node);
 }
 
-static int slash_csp_switch(struct slash * slash) {
+static int slash_csp_switch(slash_t * slash) {
 
 
 	unsigned int node = slash_dfl_node;
@@ -282,7 +282,7 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 	return SLASH_SUCCESS;
 }
 
-static int slash_csp_program(struct slash * slash) {
+static int slash_csp_program(slash_t * slash) {
 
 	unsigned int node = slash_dfl_node;
 	char * filename = NULL;
@@ -446,7 +446,7 @@ static int slash_csp_program(struct slash * slash) {
 slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program");
 
 
-static int slash_sps(struct slash * slash) {
+static int slash_sps(slash_t * slash) {
 
 	unsigned int node = slash_dfl_node;
 	unsigned int reboot_delay = 1000;

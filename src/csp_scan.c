@@ -5,7 +5,7 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 
-static int csp_scan(struct slash *slash)
+static int csp_scan(slash_t *slash)
 {
     unsigned int begin = 0;
     unsigned int end = 0x3FFE;

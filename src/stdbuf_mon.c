@@ -82,7 +82,7 @@ static int stdbuf_get(uint16_t node, uint32_t base, int from, int to, int timeou
 
 }
 
-static int stdbuf_mon_slash(struct slash *slash) {
+static int stdbuf_mon_slash(slash_t *slash) {
 
 
     unsigned int node = slash_dfl_node;

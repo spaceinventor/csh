@@ -69,7 +69,7 @@ void vts_add(double arr[4], uint16_t id, int count, uint64_t time_ms){
     }
 }
 
-static int vts_init(struct slash * slash) {
+static int vts_init(slash_t * slash) {
     char * server_ip = NULL;
     int port_num = 8888;
 

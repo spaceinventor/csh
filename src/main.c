@@ -50,7 +50,7 @@ VMEM_DEFINE_FILE(cmd_store, "cmd_store", "cmd_store.vmem", 0x200*CMD_NUM_ELEMENT
 VMEM_DEFINE_FILE(sch_hash, "sch_hash", "sch_hash.vmem", 4*SCH_NUM_ELEMENTS);
 VMEM_DEFINE_FILE(sch_store, "sch_store", "sch_store.vmem", 0x100*SCH_NUM_ELEMENTS);
 
-int slash_prompt(struct slash * slash) {
+int slash_prompt(slash_t * slash) {
 
 	int len = 0;
 	int fore = 255;
@@ -158,7 +158,7 @@ void * onehz_task(void * param) {
 	return NULL;
 }
 
-static int cmd_sch_update(struct slash *slash) {
+static int cmd_sch_update(slash_t *slash) {
 
 	static pthread_t onehz_handle;
 	pthread_create(&onehz_handle, NULL, &onehz_task, NULL);
@@ -170,7 +170,7 @@ slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server 
 
 /* Calling this variable "slash" somehow conflicts with __attribute__((section("slash"))) from "#define __slash_command()",
 	causing the linker error: symbol `slash' is already defined */
-static struct slash *slash2;
+static slash_t *slash2;
 #define slash slash2
 static void sigint_handler(int signum) {
 
