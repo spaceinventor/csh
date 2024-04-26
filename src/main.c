@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <sys/utsname.h>
 #include <time.h>
+#include <signal.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
@@ -167,7 +168,6 @@ static int cmd_sch_update(struct slash *slash) {
 slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server each second");
 #endif
 
-	
 int main(int argc, char **argv) {
 
 	static struct slash *slash;
@@ -248,8 +248,6 @@ int main(int argc, char **argv) {
 	slash_run(slash, path, 0);
 
 
-
-
 	/* Init file */
 	char buildpath[100];
 	if (dirname && strlen(dirname)) {
@@ -259,6 +257,28 @@ int main(int argc, char **argv) {
 	}
 	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
 	int ret = slash_run(slash, buildpath, 0);
+
+	{	/* Setting up signal handlers */
+
+		void sigint_handler(int signum) {
+
+			printf("\n");
+			slash_destroy(slash);  // Restores terminal
+			curl_global_cleanup();
+
+			exit(signum); // Exit the program with the signal number as the exit code
+		}
+
+		if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
+		}
+
+		if (signal(SIGTERM, sigint_handler) == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	/* Interactive or one-shot mode */
 	if (ret != SLASH_EXIT && remain > 0) {
