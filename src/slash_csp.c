@@ -35,7 +35,7 @@
 
 slash_command_group(csp, "Cubesat Space Protocol");
 
-static int slash_csp_info(struct slash *slash)
+static int slash_csp_info(slash_t *slash)
 {
 #if (CSP_HAVE_STDIO)
 #if (CSP_USE_RTABLE)
@@ -49,7 +49,7 @@ static int slash_csp_info(struct slash *slash)
 
 slash_command(info, slash_csp_info, NULL, "Show CSP info");
 
-static int slash_csp_ping(struct slash *slash)
+static int slash_csp_ping(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -88,7 +88,7 @@ static int slash_csp_ping(struct slash *slash)
 
 slash_command(ping, slash_csp_ping, "[node]", "Ping a system");
 
-static int slash_csp_reboot(struct slash *slash)
+static int slash_csp_reboot(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -116,7 +116,7 @@ static int slash_csp_reboot(struct slash *slash)
 
 slash_command(reboot, slash_csp_reboot, "[node]", "Reboot a node");
 
-static int slash_csp_shutdown(struct slash *slash)
+static int slash_csp_shutdown(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -144,7 +144,7 @@ static int slash_csp_shutdown(struct slash *slash)
 
 slash_command(shutdown, slash_csp_shutdown, "[node]", "Shutdown a node");
 
-static int slash_csp_buffree(struct slash *slash)
+static int slash_csp_buffree(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -174,7 +174,7 @@ static int slash_csp_buffree(struct slash *slash)
 
 slash_command(buffree, slash_csp_buffree, "[node]", "");
 
-static int slash_csp_uptime(struct slash *slash)
+static int slash_csp_uptime(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -204,7 +204,7 @@ static int slash_csp_uptime(struct slash *slash)
 
 slash_command(uptime, slash_csp_uptime, "[node]", "");
 
-static int slash_csp_cmp_ident(struct slash *slash)
+static int slash_csp_cmp_ident(slash_t *slash)
 {
 	
 	
@@ -269,7 +269,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 slash_command(ident, slash_csp_cmp_ident, "[node]", "Ident");
 
 
-static int slash_csp_cmp_ifstat(struct slash *slash)
+static int slash_csp_cmp_ifstat(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -337,7 +337,7 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 
 slash_command(ifstat, slash_csp_cmp_ifstat, "<node> <interface> [timeout]", "Ident");
 
-static int slash_csp_cmp_peek(struct slash *slash)
+static int slash_csp_cmp_peek(slash_t *slash)
 {
 
 	unsigned int node = slash_dfl_node;
@@ -404,7 +404,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
 
 slash_command(peek, slash_csp_cmp_peek, "<address> <len>", "Peek");
 
-static int slash_csp_cmp_poke(struct slash *slash)
+static int slash_csp_cmp_poke(slash_t *slash)
 {
 	
 	unsigned int node = slash_dfl_node;
@@ -469,7 +469,7 @@ static int slash_csp_cmp_poke(struct slash *slash)
 
 slash_command(poke, slash_csp_cmp_poke, "<address> <data>", "Poke");
 
-static int slash_csp_cmp_time(struct slash *slash)
+static int slash_csp_cmp_time(slash_t *slash)
 {
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;

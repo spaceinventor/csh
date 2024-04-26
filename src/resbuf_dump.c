@@ -64,7 +64,7 @@ static vmem_list_t resbuf_get_base(int node, int timeout) {
 	return ret;
 }
 
-static int resbuf_dump_slash(struct slash *slash) {
+static int resbuf_dump_slash(slash_t *slash) {
 
     unsigned int node = slash_dfl_node;
 	char * filename = NULL;

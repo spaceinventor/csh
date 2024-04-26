@@ -110,7 +110,7 @@ apm_entry_t * load_apm(const char * path) {
 
 }
 
-void initialize_apm(apm_entry_t * e, struct slash *slash) {
+void initialize_apm(apm_entry_t * e, slash_t *slash) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
@@ -243,7 +243,7 @@ void build_apm_list(lib_search_t* lib_search) {
  * Slash command
  */
 
-static int apm_load_cmd(struct slash *slash) {
+static int apm_load_cmd(slash_t *slash) {
 
     char path[WALKDIR_MAX_PATH_SIZE];    
     int search_bin_path = 0;
@@ -334,7 +334,7 @@ static int apm_load_cmd(struct slash *slash) {
 
 slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM");
 
-static int apm_info_cmd(struct slash *slash) {
+static int apm_info_cmd(slash_t *slash) {
 
 	char * search_str = 0;
 

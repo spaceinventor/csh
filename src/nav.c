@@ -4,7 +4,7 @@
 #include <slash/slash.h>
 #include <slash/completer.h>
 
-static int slash_ls(struct slash *slash) {
+static int slash_ls(slash_t *slash) {
     
     char cwd[100];
     char *ignore = getcwd(cwd, 100);
@@ -32,7 +32,7 @@ static int slash_ls(struct slash *slash) {
 slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list files");
 
 
-static int slash_cd(struct slash *slash) {
+static int slash_cd(slash_t *slash) {
 
     if (slash->argc != 2) {
         return SLASH_EUSAGE;
@@ -46,7 +46,7 @@ static int slash_cd(struct slash *slash) {
 
 slash_command_completer(cd, slash_cd, slash_path_completer, "", "change dir");
 
-static int slash_cat(struct slash *slash) {
+static int slash_cat(slash_t *slash) {
 
     if (slash->argc != 2) {
         return SLASH_EUSAGE;

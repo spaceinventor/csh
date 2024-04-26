@@ -35,7 +35,7 @@ void * vmem_server_task(void * param) {
 	return NULL;
 }
 
-static int csp_init_cmd(struct slash *slash) {
+static int csp_init_cmd(slash_t *slash) {
 
     char * hostname = NULL;
     char * model = NULL;
@@ -111,7 +111,7 @@ static int csp_init_cmd(struct slash *slash) {
 slash_command_sub(csp, init, csp_init_cmd, NULL, "Initialize CSP");
 
 
-static int csp_ifadd_zmq_cmd(struct slash *slash) {
+static int csp_ifadd_zmq_cmd(slash_t *slash) {
 
     static int ifidx = 0;
 
@@ -216,7 +216,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, zmq, csp_ifadd_zmq_cmd, NULL, "Add a new ZMQ interface");
 
-static int csp_ifadd_kiss_cmd(struct slash *slash) {
+static int csp_ifadd_kiss_cmd(slash_t *slash) {
 
     static int ifidx = 0;
 
@@ -280,7 +280,7 @@ slash_command_subsub(csp, add, kiss, csp_ifadd_kiss_cmd, NULL, "Add a new KISS/U
 
 #if (CSP_HAVE_LIBSOCKETCAN)
 
-static int csp_ifadd_can_cmd(struct slash *slash) {
+static int csp_ifadd_can_cmd(slash_t *slash) {
 
     static int ifidx = 0;
 
@@ -365,7 +365,7 @@ static void eth_select_interface(const char ** device) {
     *device = selected;
 }
 
-static int csp_ifadd_eth_cmd(struct slash *slash) {
+static int csp_ifadd_eth_cmd(slash_t *slash) {
 
     static int ifidx = 0;
     char name[CSP_IFLIST_NAME_MAX + 1];
@@ -420,7 +420,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, eth, csp_ifadd_eth_cmd, NULL, "Add a new Ethernet interface");
 
-static int csp_ifadd_udp_cmd(struct slash *slash) {
+static int csp_ifadd_udp_cmd(slash_t *slash) {
 
     static int ifidx = 0;
 
@@ -482,7 +482,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, udp, csp_ifadd_udp_cmd, NULL, "Add a new UDP interface");
 
-static int csp_ifadd_tun_cmd(struct slash *slash) {
+static int csp_ifadd_tun_cmd(slash_t *slash) {
 
     static int ifidx = 0;
 
@@ -546,7 +546,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
 
 #if CSP_USE_RTABLE
-static int csp_routeadd_cmd(struct slash *slash) {
+static int csp_routeadd_cmd(slash_t *slash) {
 
     char route[50];
 

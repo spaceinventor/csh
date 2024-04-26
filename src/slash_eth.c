@@ -45,7 +45,7 @@ slash_command_group(eth, "Ethernet");
 
 extern bool eth_debug;
 
-static int eth_debug_toggle(struct slash *slash)
+static int eth_debug_toggle(slash_t *slash)
 {
     eth_debug = !eth_debug;
     printf("Ethernet debugginbg %s\n", eth_debug ? "ON" : "OFF");
@@ -200,7 +200,7 @@ static void eth_list_interfaces()
     freeifaddrs(addresses);
 }
 
-static int eth_info(struct slash *slash)
+static int eth_info(slash_t *slash)
 {
     eth_list_interfaces();
     return SLASH_SUCCESS;

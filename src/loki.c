@@ -240,7 +240,7 @@ void slash_on_execute_hook(const char *line) {
 }
 
 
-static int loki_start_cmd(struct slash * slash) {
+static int loki_start_cmd(slash_t * slash) {
 
     if (loki_running) return SLASH_SUCCESS;
 

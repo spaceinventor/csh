@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <slash/slash.h>
 
-static int cmd_sleep(struct slash *slash) {
+static int cmd_sleep(slash_t *slash) {
 
 	if (slash->argc != 2) {
         return SLASH_EUSAGE;

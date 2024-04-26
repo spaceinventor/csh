@@ -203,7 +203,7 @@ void vm_add_param(param_t * param) {
     }
 }
 
-static int vm_start_cmd(struct slash * slash) {
+static int vm_start_cmd(slash_t * slash) {
 
     if (vm_running) return SLASH_SUCCESS;
 
@@ -263,7 +263,7 @@ static int vm_start_cmd(struct slash * slash) {
 }
 slash_command_sub(vm, start, vm_start_cmd, "", "Start Victoria Metrics push thread");
 
-static int vm_stop_cmd(struct slash * slash) {
+static int vm_stop_cmd(slash_t * slash) {
 
     if (!vm_running) return SLASH_SUCCESS;
 

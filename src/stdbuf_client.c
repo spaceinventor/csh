@@ -11,7 +11,7 @@
 static FILE * log_f = 0;
 static char log_name[100] = {0};
 
-static int stdbuf2_mon_slash(struct slash *slash) {
+static int stdbuf2_mon_slash(slash_t *slash) {
 
     unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
