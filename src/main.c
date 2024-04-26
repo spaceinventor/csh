@@ -11,7 +11,6 @@
 #include <slash/dflopt.h>
 
 #include <csp/csp.h>
-#include <csp/csp_yaml.h>
 #include <csp/csp_hooks.h>
 
 #include <curl/curl.h>

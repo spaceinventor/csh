@@ -10,6 +10,3 @@
   path = lib/slash
   url = https://github.com/spaceinventor/slash
   branch = master
-[submodule "lib/yaml"]
-	path = lib/yaml
-	url = https://github.com/yaml/libyaml.git
