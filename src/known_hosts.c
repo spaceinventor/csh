@@ -30,7 +30,7 @@ void known_hosts_del(int host) {
 
 }
 
-void known_hosts_add(int addr, char * new_name) {
+void known_hosts_add(int addr, const char * new_name) {
 
     known_hosts_del(addr);
 
@@ -61,7 +61,7 @@ int known_hosts_get_name(int find_host, char * name, int buflen) {
 }
 
 
-int known_hosts_get_node(char * find_name) {
+int known_hosts_get_node(const char * find_name) {
 
     if (find_name == NULL)
         return 0;
