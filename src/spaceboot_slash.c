@@ -333,7 +333,7 @@ static int slash_csp_program(struct slash * slash) {
 	}
 
 	if (filename) {
-		strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE);
+		strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
 		bin_info.count = 0;
 	}
 	else {

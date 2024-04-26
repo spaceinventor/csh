@@ -64,7 +64,7 @@ static int csp_init_cmd(struct slash *slash) {
     if (hostname == NULL){
         hostname = info.nodename;
     }else{
-        strncpy(info.nodename, hostname, 65);
+        strncpy(info.nodename, hostname, 65-1);  // -1 to fit NULL byte
         hostname = info.nodename;
     }
 
@@ -352,7 +352,7 @@ static void eth_select_interface(const char ** device) {
         for( ; address && (selected[0] == 0); address = address->ifa_next) {
             if (address->ifa_addr && strcmp("lo", address->ifa_name) != 0) {
                 if (strncmp(*device, address->ifa_name, strlen(*device)) == 0) {
-                    strncpy(selected, address->ifa_name, sizeof(selected));
+                    strncpy(selected, address->ifa_name, sizeof(selected)-1);  // -1 to fit NULL byte
                 }
             }
         }

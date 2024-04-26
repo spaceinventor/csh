@@ -157,7 +157,7 @@ void init_info(lib_info_t * info, const char * path) {
         return;
     }
 
-    strncpy(info->path, path, WALKDIR_MAX_PATH_SIZE);
+    strncpy(info->path, path, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
 
     struct stat attrib;
     stat(path, &attrib);
@@ -304,7 +304,7 @@ static int apm_load_cmd(struct slash *slash) {
 
         if (count != -1){
             char *dir = dirname(result);
-            strncpy(path, dir, WALKDIR_MAX_PATH_SIZE);
+            strncpy(path, dir, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
         }else{
             perror("readlink");
             return SLASH_EUSAGE;
