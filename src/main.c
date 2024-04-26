@@ -168,9 +168,21 @@ static int cmd_sch_update(struct slash *slash) {
 slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server each second");
 #endif
 
+/* Calling this variable "slash" somehow conflicts with __attribute__((section("slash"))) from "#define __slash_command()",
+	causing the linker error: symbol `slash' is already defined */
+static struct slash *slash2;
+#define slash slash2
+static void sigint_handler(int signum) {
+
+	printf("\n");
+	slash_destroy(slash);  // Restores terminal
+	curl_global_cleanup();
+
+	exit(signum); // Exit the program with the signal number as the exit code
+}
+
 int main(int argc, char **argv) {
 
-	static struct slash *slash;
 	int remain, index, i, c, p = 0;
 
 	char * initfile = "init.csh";
@@ -259,15 +271,6 @@ int main(int argc, char **argv) {
 	int ret = slash_run(slash, buildpath, 0);
 
 	{	/* Setting up signal handlers */
-
-		void sigint_handler(int signum) {
-
-			printf("\n");
-			slash_destroy(slash);  // Restores terminal
-			curl_global_cleanup();
-
-			exit(signum); // Exit the program with the signal number as the exit code
-		}
 
 		if (signal(SIGINT, sigint_handler) == SIG_ERR) {
 			perror("signal");
