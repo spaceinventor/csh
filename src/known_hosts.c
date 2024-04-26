@@ -52,7 +52,7 @@ host_t * known_hosts_add(int addr, const char * new_name, bool override_existing
         return NULL;  // No more memory
     }
     host->node = addr;
-    strncpy(host->name, new_name, HOSTNAME_MAXLEN);
+    strncpy(host->name, new_name, HOSTNAME_MAXLEN-1);  // -1 to fit NULL byte
 
     SLIST_INSERT_HEAD(&known_hosts, host, next);
 
