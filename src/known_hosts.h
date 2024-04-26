@@ -24,6 +24,6 @@ typedef struct host_s {
 #endif
 } host_t;
 
-host_t * known_hosts_add(int addr, char * new_name, bool override_existing);
+host_t * known_hosts_add(int addr, const char * new_name, bool override_existing);
 int known_hosts_get_name(int find_host, char * name, int buflen);
-int known_hosts_get_node(char * find_name);
+int known_hosts_get_node(const char * find_name);

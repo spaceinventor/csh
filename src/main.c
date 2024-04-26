@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/utsname.h>
@@ -40,6 +41,14 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
 
+#define CMD_NUM_ELEMENTS 0x200
+#define SCH_NUM_ELEMENTS 0x200
+
+VMEM_DEFINE_FILE(cmd_hash, "cmd_hash", "cmd_hash.vmem", 4*CMD_NUM_ELEMENTS);
+VMEM_DEFINE_FILE(cmd_store, "cmd_store", "cmd_store.vmem", 0x200*CMD_NUM_ELEMENTS);
+VMEM_DEFINE_FILE(sch_hash, "sch_hash", "sch_hash.vmem", 4*SCH_NUM_ELEMENTS);
+VMEM_DEFINE_FILE(sch_store, "sch_store", "sch_store.vmem", 0x100*SCH_NUM_ELEMENTS);
+
 int slash_prompt(struct slash * slash) {
 
 	int len = 0;
@@ -79,6 +88,7 @@ int slash_prompt(struct slash * slash) {
 
 	}
 
+#ifdef PARAM_HAVE_COMMANDS
 	extern param_queue_t param_queue;
 	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
 
@@ -108,7 +118,7 @@ int slash_prompt(struct slash * slash) {
 		len += 2 + strlen(param_queue.name);
 
 	}
-
+#endif
 	/* End of breadcrumb */
 	fore = back;
 	printf(" \e[0m\e[0;38;5;%um \e[0m", fore);
