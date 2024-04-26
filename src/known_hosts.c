@@ -16,10 +16,7 @@
 
 /*Both of these may be modified by APMs  */
 __attribute__((used, retain)) unsigned int known_host_storage_size = sizeof(host_t);
-#ifdef PARAM_HAVE_SYS_QUEUE
 SLIST_HEAD(known_host_s, host_s) known_hosts = {};
-#endif
-
 
 void known_hosts_del(int host) {
 
