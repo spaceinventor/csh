@@ -69,14 +69,13 @@ static int resbuf_dump_slash(struct slash *slash) {
     unsigned int node = slash_dfl_node;
 	char * filename = NULL;
 
-    optparse_t * parser = optparse_new("resbuf", "");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("resbuf", "");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 	optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file, or 'timestamp' for timestamped file in cwd");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-      optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -103,7 +102,6 @@ static int resbuf_dump_slash(struct slash *slash) {
 	vmem_list_t vmem = resbuf_get_base(node, 1000);
 	if (vmem.size == 0 || vmem.vaddr == 0) {
 		printf("Could not find result buffer on node %u\n", node);
-    optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -121,12 +119,10 @@ static int resbuf_dump_slash(struct slash *slash) {
 	printf("Got resbuf size %u in %u out %u\n", vmem.size, in, out);
 
 	if (in > vmem.size){
-    optparse_del(parser);
 		return SLASH_EINVAL;
   }
 
 	if (out > vmem.size){
-    optparse_del(parser);
 		return SLASH_EINVAL;
   }
 
@@ -141,7 +137,6 @@ static int resbuf_dump_slash(struct slash *slash) {
 		}
 	}
 
-  optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

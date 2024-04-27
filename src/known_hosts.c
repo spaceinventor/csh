@@ -137,27 +137,24 @@ static int cmd_hosts_add(struct slash *slash)
 
     int node = slash_dfl_node;
 
-    optparse_t * parser = optparse_new("hosts add", "<name>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("hosts add", "<name>");
     optparse_add_help(parser);
     optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	/* Check if name is present */
 	if (++argi >= slash->argc) {
 		printf("missing parameter name\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
 	char * name = slash->argv[argi];
 
     known_hosts_add(node, name);
-    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 

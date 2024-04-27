@@ -51,12 +51,11 @@ void hk_set_epoch(time_t epoch, uint16_t node) {
 static int hk_timeoffset(struct slash *slash) {
 
 	unsigned int node = slash_dfl_node;
-    optparse_t * parser = optparse_new("hk timeoffset [epoch]", "Satellite epoch time in seconds relative to Jan 1th 1970");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("hk timeoffset [epoch]", "Satellite epoch time in seconds relative to Jan 1th 1970");
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -77,7 +76,6 @@ static int hk_timeoffset(struct slash *slash) {
 		}
 	}
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

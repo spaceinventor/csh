@@ -56,7 +56,7 @@ static int slash_csp_ping(struct slash *slash)
     unsigned int timeout = slash_dfl_timeout;
     unsigned int size = 0;
 
-    optparse_t * parser = optparse_new("ping", "[node]");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("ping", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
@@ -64,7 +64,6 @@ static int slash_csp_ping(struct slash *slash)
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -82,7 +81,6 @@ static int slash_csp_ping(struct slash *slash)
 		slash_printf(slash, "No reply\n");
 	}
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -93,13 +91,12 @@ static int slash_csp_reboot(struct slash *slash)
 
 	unsigned int node = slash_dfl_node;
 
-    optparse_t * parser = optparse_new("reboot", "[node]");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("reboot", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -110,7 +107,6 @@ static int slash_csp_reboot(struct slash *slash)
 
 	csp_reboot(node);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -121,13 +117,12 @@ static int slash_csp_shutdown(struct slash *slash)
 
 	unsigned int node = slash_dfl_node;
 
-    optparse_t * parser = optparse_new("shutdown", "[node]");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("shutdown", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -138,7 +133,6 @@ static int slash_csp_shutdown(struct slash *slash)
 
 	csp_shutdown(node);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -150,14 +144,13 @@ static int slash_csp_buffree(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("buffree", "[node]");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("buffree", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -168,7 +161,6 @@ static int slash_csp_buffree(struct slash *slash)
 
 	csp_buf_free(node, timeout);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -180,14 +172,13 @@ static int slash_csp_uptime(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("uptime", "[node]");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("uptime", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -198,7 +189,6 @@ static int slash_csp_uptime(struct slash *slash)
 
 	csp_uptime(node, timeout);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -211,14 +201,13 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("ident", "[node]");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("ident", "[node]");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -233,14 +222,12 @@ static int slash_csp_cmp_ident(struct slash *slash)
 
 	csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, CSP_CMP, timeout, CSP_O_CRC32);
 	if (conn == NULL) {
-        optparse_del(parser);
 		return 0;
 	}
 
 	csp_packet_t * packet = csp_buffer_get(size);
 	if (packet == NULL) {
 		csp_close(conn);
-        optparse_del(parser);
 		return 0;
 	}
 
@@ -262,7 +249,6 @@ static int slash_csp_cmp_ident(struct slash *slash)
 
 	csp_close(conn);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -275,21 +261,19 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("ifstat", "<ifname>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("ifstat", "<ifname>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	/* Expect ifname */
 	if (++argi >= slash->argc) {
 		printf("missing interface name\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -301,7 +285,6 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 
 	if (csp_cmp_if_stats(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -331,7 +314,6 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 		message.if_stats.txbytes,
 		message.if_stats.rxbytes);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -343,21 +325,19 @@ static int slash_csp_cmp_peek(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("peek", "<addr> <len>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("peek", "<addr> <len>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	/* Expect address */
 	if (++argi >= slash->argc) {
 		printf("missing address\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -365,7 +345,6 @@ static int slash_csp_cmp_peek(struct slash *slash)
 	uint32_t address = strtoul(slash->argv[argi], &endptr, 16);
 	if (*endptr != '\0') {
 		printf("Failed to parse address\n");
-        optparse_del(parser);
 		return SLASH_EUSAGE;
 	}
 
@@ -373,14 +352,12 @@ static int slash_csp_cmp_peek(struct slash *slash)
 	/* Expect length */
 	if (++argi >= slash->argc) {
 		printf("missing length\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
 	unsigned int length = strtoul(slash->argv[argi], &endptr, 10);
 	if (*endptr != '\0') {
 		printf("Failed to parse length\n");
-        optparse_del(parser);
 		return SLASH_EUSAGE;
 	}
 
@@ -391,14 +368,12 @@ static int slash_csp_cmp_peek(struct slash *slash)
 
 	if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
 	printf("Peek at address %p len %u\n", (void *) (intptr_t) address, length);
 	csp_hex_dump(NULL, message.peek.data, length);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -410,21 +385,19 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("poke", "<addr> <data base16>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("poke", "<addr> <data base16>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	/* Expect address */
 	if (++argi >= slash->argc) {
 		printf("missing address\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -432,14 +405,12 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	uint32_t address = strtoul(slash->argv[argi], &endptr, 16);
 	if (*endptr != '\0') {
 		printf("Failed to parse address\n");
-        optparse_del(parser);
 		return SLASH_EUSAGE;
 	}
 
 	/* Expect data */
 	if (++argi >= slash->argc) {
 		printf("missing data\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -457,13 +428,11 @@ static int slash_csp_cmp_poke(struct slash *slash)
 
 	if (csp_cmp_poke(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
 	printf("Poke ok\n");
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -476,7 +445,7 @@ static int slash_csp_cmp_time(struct slash *slash)
 	unsigned int timestamp = 0;
 	int sync = 0;
 
-    optparse_t * parser = optparse_new("time", "");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("time", "");
     optparse_add_help(parser);
 	optparse_add_set(parser, 's', "sync", 1, &sync, "sync time with CSH");
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
@@ -485,13 +454,11 @@ static int slash_csp_cmp_time(struct slash *slash)
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
     if (sync != 0 && timestamp != 0) {
 		printf("You cannot sync with both a specific timestamp and the local time\n");
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -510,7 +477,6 @@ static int slash_csp_cmp_time(struct slash *slash)
 
 	if (csp_cmp_clock(node, timeout, &message) != CSP_ERR_NONE) {
 		printf("No response\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -522,7 +488,6 @@ static int slash_csp_cmp_time(struct slash *slash)
 
 	printf("Remote time is %"PRIu32".%09"PRIu32" (diff %"PRIi64" ms)\n", message.clock.tv_sec, message.clock.tv_nsec, (remote_time_ns - local_time_ns) / 1000000);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

@@ -17,7 +17,7 @@ static int stdbuf2_mon_slash(struct slash *slash) {
     unsigned int timeout = slash_dfl_timeout;
 	char * log_name_tmp = 0;
 
-    optparse_t * parser = optparse_new("stdbuf2", "");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("stdbuf2", "");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
@@ -25,7 +25,6 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-      optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -65,14 +64,12 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 
 	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, 15, 0, CSP_O_CRC32);
   if (conn == NULL) {
-    optparse_del(parser);
     return SLASH_ENOMEM;
   }
 
     csp_packet_t * packet = csp_buffer_get(1);
     if (packet == NULL) {
         csp_close(conn);
-        optparse_del(parser);
         return SLASH_ENOMEM;
     }
     packet->data[0] = 0xAA;
@@ -111,7 +108,6 @@ static int stdbuf2_mon_slash(struct slash *slash) {
 
 	csp_close(conn);
 
-  optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

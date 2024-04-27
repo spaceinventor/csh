@@ -252,14 +252,13 @@ static int apm_load_cmd(struct slash *slash) {
     lib_search.path = NULL;
     lib_search.search_str = NULL;
 
-    optparse_t * parser = optparse_new("apm load", "-f <filename> -p <pathname>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("apm load", "-f <filename> -p <pathname>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'p', "path", "PATHNAME", &lib_search.path, "Search paths separated by ';'");
     optparse_add_string(parser, 'f', "file", "FILENAME", &lib_search.search_str, "Search string on APM file name");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -269,7 +268,6 @@ static int apm_load_cmd(struct slash *slash) {
         if (p == NULL) {
             p = getpwuid(getuid())->pw_dir;
             if(p == NULL){
-                optparse_del(parser);
                 printf("No home folder found\n");
                 return SLASH_EINVAL;  
             }
@@ -338,13 +336,12 @@ static int apm_info_cmd(struct slash *slash) {
 
 	char * search_str = 0;
 
-    optparse_t * parser = optparse_new("apm info", "<search>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("apm info", "<search>");
     optparse_add_help(parser);
     optparse_add_string(parser, 's', "search", "SEARCHSTR", &search_str, "Search string on APM file name");
  
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 

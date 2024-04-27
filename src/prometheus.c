@@ -119,7 +119,7 @@ static int prometheus_start_cmd(struct slash *slash) {
 
     int logfile = 0;
 
-    optparse_t * parser = optparse_new("prometheus start", "");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("prometheus start", "");
     optparse_add_help(parser);
     optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
 
@@ -127,13 +127,11 @@ static int prometheus_start_cmd(struct slash *slash) {
 
     if (argi < 0) {
         return SLASH_EINVAL;
-        optparse_del(parser);
     }
 
     prometheus_init();
     param_sniffer_init(logfile);
     prometheus_started = 1;
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 

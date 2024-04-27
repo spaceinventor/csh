@@ -247,7 +247,7 @@ static int loki_start_cmd(struct slash * slash) {
     char * tmp_username = NULL;
     char * tmp_password = NULL;
 
-    optparse_t * parser = optparse_new("loki start", "<server>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("loki start", "<server>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for vmauth");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
@@ -259,20 +259,17 @@ static int loki_start_cmd(struct slash * slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
 
     if (argi < 0) {
-        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
     if (++argi >= slash->argc) {
         printf("Missing server ip/domain\n");
-        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
     if (tmp_username) {
         if (!tmp_password) {
             printf("Provide password with -p\n");
-            optparse_del(parser);
             return SLASH_EINVAL;
         }
         args.username = strdup(tmp_username);
@@ -346,7 +343,6 @@ static int loki_start_cmd(struct slash * slash) {
     loki_running = 1;
     printf("Loki logging started\n");
 
-    optparse_del(parser);
 
     return SLASH_SUCCESS;
 }
