@@ -290,7 +290,7 @@ static int apm_load_cmd(struct slash *slash) {
         apm_entry_t * e = load_apm(lib_search.libs[i].path);
 
         if (!e) {
-            printf("\033[31mError loading %s\033[0m\n", e->path);
+            printf("\033[31mError loading %s\033[0m\n", lib_search.libs[i].path);
             return SLASH_EUSAGE;
         }
 
