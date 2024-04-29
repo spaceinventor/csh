@@ -78,8 +78,8 @@ apm_entry_t * load_apm(const char * path) {
     void * handle = dlopen(path, RTLD_NOW);
     if (!handle)
     {
-        printf("Could no load library '%s' %s\n", path, dlerror());
-        return 0;
+        printf("Could not load library '%s' %s\n", path, dlerror());
+        return NULL;
     }
 
     apm_entry_t * e = malloc(sizeof(apm_entry_t));
@@ -87,7 +87,7 @@ apm_entry_t * load_apm(const char * path) {
     if (!e) {
         printf("Memory allocation error.\n");
         dlclose(handle);
-        return 0;
+        return NULL;
     }
 
     strncpy(e->path, path, WALKDIR_MAX_PATH_SIZE - 1);
@@ -320,7 +320,7 @@ static int apm_load_cmd(struct slash *slash) {
             apm_entry_t *e = load_apm(lib_search.libs[i].path);
 
             if (!e){
-                printf("\033[31mError loading %s\033[0m\n", e->path);
+                printf("\033[31mError loading %s\033[0m\n", lib_search.libs[i].path);
                 return SLASH_EUSAGE;
             }
 
