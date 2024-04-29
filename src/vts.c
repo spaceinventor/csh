@@ -73,7 +73,7 @@ static int vts_init(struct slash * slash) {
     char * server_ip = NULL;
     int port_num = 8888;
 
-    optparse_t * parser = optparse_new("vts init", "");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("vts init", "");
     optparse_add_help(parser);
     optparse_add_string(parser, 's', "server-ip", "STRING", &server_ip, "Overwrite default ip 127.0.0.1");
     optparse_add_int(parser, 'p', "server-port", "NUM", 0, &port_num, "Overwrite default port 8888");
@@ -82,7 +82,6 @@ static int vts_init(struct slash * slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
 
     if (argi < 0) {
-        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
@@ -93,7 +92,6 @@ static int vts_init(struct slash * slash) {
 	sockfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (sockfd < 0) {
 		printf("Failed to get socket for VTS\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -104,14 +102,12 @@ static int vts_init(struct slash * slash) {
     if(inet_pton(AF_INET, server_ip, &server_addr.sin_addr)<=0) {
         printf("Invalid address/ Address not supported\n");
 		close(sockfd);
-        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 
     if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
         printf("Connection failed\n");
 		close(sockfd);
-        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 
@@ -119,7 +115,6 @@ static int vts_init(struct slash * slash) {
 	if (send(sockfd, init_cmd, strlen(init_cmd), MSG_NOSIGNAL) == -1) {
 		printf("Failed to send init\n");
 		close(sockfd);
-        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 
@@ -127,7 +122,6 @@ static int vts_init(struct slash * slash) {
     printf("Streaming data to VTS at %s:%d\n", server_ip,port_num);
     vts_running = 1;
 
-    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 slash_command_sub(vts, init, vts_init, "", "Push data to VTS");

@@ -43,6 +43,8 @@ static int csp_init_cmd(struct slash *slash) {
 	int version = 2;
 	int dedup = 3;
 
+    // optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp init", "");
+    /* No __attribute__((cleanup(optparse_del))), as the arg string pointers might be used */
     optparse_t * parser = optparse_new("csp init", "");
     optparse_add_help(parser);
     optparse_add_string(parser, 'n', "host", "HOSTNAME", &hostname, "Hostname (default = linux hostname)");
@@ -126,7 +128,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     unsigned int subport = 0;
     unsigned int pubport = 0;
 
-    optparse_t * parser = optparse_new("csp add zmq", "<addr> <server>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add zmq", "<addr> <server>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
@@ -138,13 +140,11 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * endptr;
@@ -152,7 +152,6 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter server\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * server = slash->argv[argi];
@@ -179,7 +178,6 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
         FILE *file = fopen(key_file_local, "r");
         if(file == NULL){
             printf("Could not open config %s\n", key_file_local);
-            optparse_del(parser);
             return SLASH_EINVAL;
         }
 
@@ -187,7 +185,6 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
         if (sec_key == NULL) {
             printf("Failed to allocate memory for secret key.\n");
             fclose(file);
-            optparse_del(parser);
             return SLASH_EINVAL;
         }
 
@@ -195,7 +192,6 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
             printf("Failed to read secret key from file.\n");
             free(sec_key);
             fclose(file);
-            optparse_del(parser);
             return SLASH_EINVAL;
         }
         fclose(file);
@@ -210,7 +206,6 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     if (sec_key != NULL) {
         free(sec_key);
     }
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -229,7 +224,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int baud = 1000000;
     char * device = "/dev/ttyUSB0";
 
-    optparse_t * parser = optparse_new("csp add kiss", "<addr>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add kiss", "<addr>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
@@ -245,7 +240,6 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * endptr;
@@ -265,7 +259,6 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int error = csp_usart_open_and_add_kiss_interface(&conf, name, &iface);
     if (error != CSP_ERR_NONE) {
         printf("Failed to add kiss interface\n");
-        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
@@ -293,7 +286,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     int baud = 1000000;
     char * device = "can0";
 
-    optparse_t * parser = optparse_new("csp add can", "<addr>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add can", "<addr>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
@@ -304,13 +297,11 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * endptr;
@@ -321,7 +312,6 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     int error = csp_can_socketcan_open_and_add_interface(device, name, addr, baud, promisc, &iface);
     if (error != CSP_ERR_NONE) {
         csp_print("failed to add CAN interface [%s], error: %d", device, error);
-        optparse_del(parser);
         return SLASH_EINVAL;
     }
 
@@ -377,7 +367,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     int dfl = 0;
     int mtu = 1200;
 
-    optparse_t * parser = optparse_new("csp add eth", "<addr>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add eth", "<addr>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'e', "device", "STR", (char **)&device, "Ethernet device name or name prefix (defaults to enp)");
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
@@ -393,7 +383,6 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * endptr;
@@ -401,7 +390,6 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
 
     eth_select_interface(&device);
     if (strlen(device) == 0) {
-        optparse_del(parser);
 		return SLASH_EINVAL;
     }
 
@@ -414,7 +402,6 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
-    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 
@@ -433,7 +420,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
     int listen_port = 9220;
     int remote_port = 9220;
 
-    optparse_t * parser = optparse_new("csp add udp", "<addr> <server>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add udp", "<addr> <server>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
@@ -444,13 +431,11 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * endptr;
@@ -458,7 +443,6 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter server\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * server = slash->argv[argi];
@@ -476,7 +460,6 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -493,7 +476,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
     int mask = 8;
     int dfl = 0;
 
-    optparse_t * parser = optparse_new("csp add tun", "<ifaddr> <tun src> <tun dst>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add tun", "<ifaddr> <tun src> <tun dst>");
     optparse_add_help(parser);
     optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
@@ -507,7 +490,6 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     char * endptr;
@@ -515,14 +497,12 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
     if (++argi >= slash->argc) {
 		printf("missing parameter tun src\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     unsigned int tun_src = strtoul(slash->argv[argi], &endptr, 10);
 
     if (++argi >= slash->argc) {
 		printf("missing parameter tun dst\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     unsigned int tun_dst = strtoul(slash->argv[argi], &endptr, 10);
@@ -539,7 +519,6 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -550,7 +529,7 @@ static int csp_routeadd_cmd(struct slash *slash) {
 
     char route[50];
 
-    optparse_t * parser = optparse_new("csp add route", "<addr>/<mask> <ifname>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp add route", "<addr>/<mask> <ifname>");
     optparse_add_help(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -562,7 +541,6 @@ static int csp_routeadd_cmd(struct slash *slash) {
     /* Build string from the two slash input arguments */
 	if (++argi >= slash->argc) {
 		printf("missing parameter addr/mask\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     strcpy(route, slash->argv[argi]);
@@ -571,7 +549,6 @@ static int csp_routeadd_cmd(struct slash *slash) {
 
     if (++argi >= slash->argc) {
 		printf("missing parameter ifname\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -579,11 +556,9 @@ static int csp_routeadd_cmd(struct slash *slash) {
 
     if (csp_rtable_load(route) == 1) { /* function returns number of routes added */
         printf("Added route %s\n", route);
-        optparse_del(parser);
     	return SLASH_SUCCESS;
     } else {
         printf("Error during route add\n");
-        optparse_del(parser);
         return SLASH_EINVAL;
     }
 }

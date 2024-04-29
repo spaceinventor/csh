@@ -83,7 +83,7 @@ static int slash_csp_switch(struct slash * slash) {
 	unsigned int times = 1;
 	unsigned int reboot_delay = 1000;
 
-    optparse_t * parser = optparse_new("switch", "<slot>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("switch", "<slot>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 'c', "count", "NUM", 0, &times, "number of times to boot into this slow (deafult = 1)");
@@ -91,14 +91,12 @@ static int slash_csp_switch(struct slash * slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
 	/* Expect slot */
 	if (++argi >= slash->argc) {
 		printf("missing slot number\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -106,7 +104,6 @@ static int slash_csp_switch(struct slash * slash) {
 
 	reset_to_flash(node, slot, times, reboot_delay);
 
-    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -289,7 +286,7 @@ static int slash_csp_program(struct slash * slash) {
 	int force = 0;
 	int do_crc32 = 0;
 
-    optparse_t * parser = optparse_new("program", "<slot>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("program", "<slot>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO)");
@@ -300,7 +297,6 @@ static int slash_csp_program(struct slash * slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -309,7 +305,6 @@ static int slash_csp_program(struct slash * slash) {
 	/* Expect slot */
 	if (++argi >= slash->argc) {
 		printf("missing slot number\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -324,7 +319,6 @@ static int slash_csp_program(struct slash * slash) {
 	vmem_client_find(node, slash_dfl_timeout, (void*)&vmem, 1, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	} else {
 		printf("  Found vmem\n");
@@ -357,7 +351,6 @@ static int slash_csp_program(struct slash * slash) {
 			printf("  Found no valid binary for the selected slot.\n");
 			printf("\033[0m\n");
 
-            optparse_del(parser);
 			return SLASH_EINVAL;
 		}
 	}
@@ -368,7 +361,6 @@ static int slash_csp_program(struct slash * slash) {
 		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
-            optparse_del(parser);
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
@@ -380,7 +372,6 @@ static int slash_csp_program(struct slash * slash) {
     printf("ABOUT TO PROGRAM: %s\n", path);
     printf("\033[0m\n");
     if (ping(node) == 0) {
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -391,7 +382,6 @@ static int slash_csp_program(struct slash * slash) {
 
 		if (strcmp(c, "yes") != 0) {
 			printf("Abort\n");
-			optparse_del(parser);
 			return SLASH_EUSAGE;
 		}
 	}
@@ -399,11 +389,9 @@ static int slash_csp_program(struct slash * slash) {
 	char * data;
 	int len;
 	if (image_get(path, &data, &len) < 0) {
-        optparse_del(parser);
 		return SLASH_EIO;
 	}
 
-    optparse_del(parser);
 
 	int result = SLASH_SUCCESS;
 
@@ -452,7 +440,7 @@ static int slash_sps(struct slash * slash) {
 	unsigned int reboot_delay = 1000;
 	int do_crc32 = 0;
 
-    optparse_t * parser = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
@@ -462,7 +450,6 @@ static int slash_sps(struct slash * slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -471,7 +458,6 @@ static int slash_sps(struct slash * slash) {
 	/* Expect from slot */
 	if (++argi >= slash->argc) {
 		printf("missing from number\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -480,7 +466,6 @@ static int slash_sps(struct slash * slash) {
 	/* Expect to slot */
 	if (++argi >= slash->argc) {
 		printf("missing to number\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -496,7 +481,6 @@ static int slash_sps(struct slash * slash) {
 	vmem_client_find(node, slash_dfl_timeout, (void*)&vmem, 1, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	} else {
 		printf("  Found vmem\n");
@@ -523,7 +507,6 @@ static int slash_sps(struct slash * slash) {
 		printf("\033[31m\n");
 		printf("  Found no valid binary for the selected slot.\n");
 		printf("\033[0m\n");
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
@@ -533,7 +516,6 @@ static int slash_sps(struct slash * slash) {
 		char * c = slash_readline(slash);
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
-            optparse_del(parser);
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
@@ -545,7 +527,6 @@ static int slash_sps(struct slash * slash) {
     printf("ABOUT TO PROGRAM: %s\n", path);
     printf("\033[0m\n");
     if (ping(node) == 0) {
-        optparse_del(parser);
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -553,11 +534,9 @@ static int slash_sps(struct slash * slash) {
 	char * data;
 	int len;
 	if (image_get(path, &data, &len) < 0) {
-        optparse_del(parser);
 		return SLASH_EIO;
 	}
 	
-    optparse_del(parser);
 
 	int result = SLASH_SUCCESS;
 

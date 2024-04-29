@@ -11,14 +11,13 @@ static int csp_scan(struct slash *slash)
     unsigned int end = 0x3FFE;
 	char * search_str = 0;
 
-    optparse_t * parser = optparse_new("csp scan", NULL);
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("csp scan", NULL);
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'b', "begin", "NUM", 0, &begin, "begin at node");
     optparse_add_unsigned(parser, 'e', "end", "NUM", 0, &end, "end at node");
     optparse_add_string(parser, 's', "search", "STR", &search_str, "host name search sub-string");
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
-        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -47,7 +46,6 @@ static int csp_scan(struct slash *slash)
 			break;
     }
 	printf("\r");
-    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 

@@ -212,7 +212,7 @@ static int vm_start_cmd(struct slash * slash) {
     char * tmp_password = NULL;
     vm_args * args = calloc(1, sizeof(vm_args));
 
-    optparse_t * parser = optparse_new("vm start", "<server>");
+    optparse_t * parser __attribute__((cleanup(optparse_del))) = optparse_new("vm start", "<server>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for vmauth");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
@@ -225,14 +225,12 @@ static int vm_start_cmd(struct slash * slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
 
     if (argi < 0) {
-        optparse_del(parser);
         free(args);
         return SLASH_EINVAL;
     }
 
     if (++argi >= slash->argc) {
         printf("Missing server ip/domain\n");
-        optparse_del(parser);
         free(args);
         return SLASH_EINVAL;
     }
@@ -240,7 +238,6 @@ static int vm_start_cmd(struct slash * slash) {
     if (tmp_username) {
         if (!tmp_password) {
             printf("Provide password with -p\n");
-            optparse_del(parser);
             free(args);
             return SLASH_EINVAL;
         }
@@ -257,7 +254,6 @@ static int vm_start_cmd(struct slash * slash) {
     param_sniffer_init(logfile);
     pthread_create(&vm_push_thread, NULL, &vm_push, args);
     vm_running = 1;
-    optparse_del(parser);
 
     return SLASH_SUCCESS;
 }
