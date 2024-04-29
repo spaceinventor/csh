@@ -216,7 +216,7 @@ static void * task_capture(void *arg) {
     assert(zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, "", 0) == 0);
 
     /* Allocated 'raw' CSP packet */
-    csp_packet_t * packet = malloc(CSP_ZMQ_MTU + 16);
+    csp_packet_t * packet = malloc(sizeof(*packet));
     assert(packet != NULL);
 
     if (logfile_name) {
@@ -483,7 +483,7 @@ void zmq_proxy_lossy() {
     pthread_t delayworker;
     pthread_create(&delayworker, NULL, task_delay_send, NULL);
 
-    csp_packet_t * packet = malloc(CSP_ZMQ_MTU + 16);
+    csp_packet_t * packet = malloc(sizeof(*packet));
     assert(packet != NULL);
 
     while (1) {
