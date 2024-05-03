@@ -5,17 +5,23 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 
+#include "known_hosts.h"
+
+
 static int csp_scan(struct slash *slash)
 {
     unsigned int begin = 0;
     unsigned int end = 0x3FFE;
 	char * search_str = 0;
+    int override = false;
 
     optparse_t * parser = optparse_new("csp scan", NULL);
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'b', "begin", "NUM", 0, &begin, "begin at node");
     optparse_add_unsigned(parser, 'e', "end", "NUM", 0, &end, "end at node");
     optparse_add_string(parser, 's', "search", "STR", &search_str, "host name search sub-string");
+    optparse_add_set(parser, 'o', "override", true, &override, "Allow overriding hostname for a known node");
+
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
         optparse_del(parser);
@@ -38,6 +44,7 @@ static int csp_scan(struct slash *slash)
 			if (csp_cmp_ident(i, 100, &message) == CSP_ERR_NONE) {
 				if ((!search) || (strstr(message.ident.hostname, search_str) != NULL)) {
 					printf("%s\n%s\n%s\n%s %s\n\n", message.ident.hostname, message.ident.model, message.ident.revision, message.ident.date, message.ident.time);
+                    known_hosts_add(i, message.ident.hostname, override);
 				}
 			}
         }
