@@ -110,7 +110,7 @@ apm_entry_t * load_apm(const char * path) {
 
 }
 
-void initialize_apm(apm_entry_t * e, struct slash *slash) {
+void initialize_apm(apm_entry_t * e) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
@@ -125,10 +125,8 @@ void initialize_apm(apm_entry_t * e, struct slash *slash) {
 
     if (res) {
         fprintf(stderr, "Failed to add APM \"%s\", self destruction initiated!\n", e->file);
-#ifdef SLASH_HAVE_TERMIOS_H
-	tcsetattr(slash->fd_read, TCSANOW, &slash->original);
-#endif
-    exit(1);
+        /* main.c atexit() should restore the terminal. */
+        exit(1);
     }
 }
 
@@ -238,15 +236,85 @@ void build_apm_list(lib_search_t* lib_search) {
 
 }
 
+int apm_load_search(lib_search_t *lib_search) {
+
+    char path[WALKDIR_MAX_PATH_SIZE];    
+    int search_bin_path = 0;
+
+    if (lib_search->path == NULL) {
+        char * p = getenv("HOME");
+        search_bin_path = 1;
+        if (p == NULL) {
+            p = getpwuid(getuid())->pw_dir;
+            if(p == NULL){
+                printf("No home folder found\n");
+                return SLASH_EINVAL;  
+            }
+        }
+        strcpy(path, p);
+        strcat(path, "/.local/lib/csh");
+        lib_search->path = path;
+    }
+    
+
+    build_apm_list(lib_search);
+
+    if (lib_search->lib_count == 0) {
+        printf("\033[31mNo APMs found in %s\033[0m\n", lib_search->path);
+    }
+
+    for (int i = 0; i < lib_search->lib_count; i++) {
+        apm_entry_t * e = load_apm(lib_search->libs[i].path);
+
+        if (!e) {
+            printf("\033[31mError loading %s\033[0m\n", lib_search->libs[i].path);
+            return SLASH_EUSAGE;
+        }
+
+        printf("\033[32mLoaded: %s\033[0m\n", e->path);
+
+        initialize_apm(e);
+    }
+    if (search_bin_path){
+        char result[PATH_MAX];
+        int count = readlink("/proc/self/exe", result, PATH_MAX);
+
+        if (count != -1){
+            char *dir = dirname(result);
+            strncpy(path, dir, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
+        }else{
+            perror("readlink");
+            return SLASH_EUSAGE;
+        }
+        build_apm_list(lib_search);
+
+        if (lib_search->lib_count == 0) {
+            printf("\033[31mNo APMs found in %s\033[0m\n", lib_search->path);
+            return SLASH_EUSAGE;
+        }
+
+        for (int i = 0; i < lib_search->lib_count; i++){
+            apm_entry_t *e = load_apm(lib_search->libs[i].path);
+
+            if (!e){
+                printf("\033[31mError loading %s\033[0m\n", lib_search->libs[i].path);
+                return SLASH_EUSAGE;
+            }
+
+            printf("\033[32mLoaded: %s\033[0m\n", e->path);
+
+            initialize_apm(e);
+        }
+    }
+
+    return SLASH_SUCCESS;
+}
 
 /**
  * Slash command
  */
 
 static int apm_load_cmd(struct slash *slash) {
-
-    char path[WALKDIR_MAX_PATH_SIZE];    
-    int search_bin_path = 0;
 
     lib_search_t lib_search;
     lib_search.path = NULL;
@@ -263,73 +331,9 @@ static int apm_load_cmd(struct slash *slash) {
 	    return SLASH_EINVAL;
     }
 
-    if (lib_search.path == NULL) {
-        char * p = getenv("HOME");
-        search_bin_path = 1;
-        if (p == NULL) {
-            p = getpwuid(getuid())->pw_dir;
-            if(p == NULL){
-                optparse_del(parser);
-                printf("No home folder found\n");
-                return SLASH_EINVAL;  
-            }
-        }
-        strcpy(path, p);
-        strcat(path, "/.local/lib/csh");
-        lib_search.path = path;
-    }
-    
-
-    build_apm_list(&lib_search);
-
-    if (lib_search.lib_count == 0) {
-        printf("\033[31mNo APMs found in %s\033[0m\n", lib_search.path);
-    }
-
-    for (int i = 0; i < lib_search.lib_count; i++) {
-        apm_entry_t * e = load_apm(lib_search.libs[i].path);
-
-        if (!e) {
-            printf("\033[31mError loading %s\033[0m\n", lib_search.libs[i].path);
-            return SLASH_EUSAGE;
-        }
-
-        printf("\033[32mLoaded: %s\033[0m\n", e->path);
-
-        initialize_apm(e, slash);
-    }
-    if (search_bin_path){
-        char result[PATH_MAX];
-        int count = readlink("/proc/self/exe", result, PATH_MAX);
-
-        if (count != -1){
-            char *dir = dirname(result);
-            strncpy(path, dir, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
-        }else{
-            perror("readlink");
-            return SLASH_EUSAGE;
-        }
-        build_apm_list(&lib_search);
-
-        if (lib_search.lib_count == 0) {
-            printf("\033[31mNo APMs found in %s\033[0m\n", lib_search.path);
-            return SLASH_EUSAGE;
-        }
-
-        for (int i = 0; i < lib_search.lib_count; i++){
-            apm_entry_t *e = load_apm(lib_search.libs[i].path);
-
-            if (!e){
-                printf("\033[31mError loading %s\033[0m\n", lib_search.libs[i].path);
-                return SLASH_EUSAGE;
-            }
-
-            printf("\033[32mLoaded: %s\033[0m\n", e->path);
-
-            initialize_apm(e, slash);
-        }
-    }
-    return SLASH_SUCCESS;
+    int res = apm_load_search(&lib_search);
+    optparse_del(parser);
+    return res;
 }
 
 slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM");
@@ -366,5 +370,4 @@ static int apm_info_cmd(struct slash *slash) {
     return SLASH_SUCCESS;
 
 }
-
 slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
