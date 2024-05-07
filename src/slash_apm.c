@@ -206,6 +206,23 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
         }
     }
 
+    /* Verify that we have not already found this APM.
+        This can happen when the same path is found multiple times, separated by ';' */
+    for (int i = 0; i < search->lib_count; i++) {
+        const char * filename = search->libs[i].path;
+        const char * const dir = strrchr(search->libs[i].path, '/');
+
+        // search->libs[i].path is not in root, and we only want the filename
+        if (dir != NULL) {
+            // dir+1 to skip preceding '/' character
+            filename = dir+1;
+        }
+
+        if (strcmp(filename, last_entry) == 0) {
+            return;
+        }
+    }
+
     /* Add info struct to search list */
 	search->lib_count++;
 
@@ -217,7 +234,7 @@ void build_apm_list(lib_search_t* lib_search) {
 	lib_search->lib_count = 0;
 
     char * path = lib_search->path;
-    char wpath[WALKDIR_MAX_PATH_SIZE];
+    char wpath[WALKDIR_MAX_PATH_SIZE] = {0};  // Initialization matters here
 
     /* Split path on ';' and process each path */
     while(path[0] != '\0') {
@@ -255,7 +272,22 @@ int apm_load_search(lib_search_t *lib_search) {
         strcat(path, "/.local/lib/csh");
         lib_search->path = path;
     }
-    
+
+    if (search_bin_path) {
+
+        char result[WALKDIR_MAX_PATH_SIZE];
+        int count = readlink("/proc/self/exe", result, WALKDIR_MAX_PATH_SIZE);
+
+        if (count == -1) {
+            perror("readlink");
+            return SLASH_EUSAGE;
+        }
+
+        const char *dir = dirname(result);
+
+        strncat(path, ";", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+        strncat(path, dir, WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+    }
 
     build_apm_list(lib_search);
 
@@ -267,44 +299,13 @@ int apm_load_search(lib_search_t *lib_search) {
         apm_entry_t * e = load_apm(lib_search->libs[i].path);
 
         if (!e) {
-            printf("\033[31mError loading %s\033[0m\n", lib_search->libs[i].path);
+            fprintf(stderr, "\033[31mError loading %s\033[0m\n", lib_search->libs[i].path);
             return SLASH_EUSAGE;
         }
 
         printf("\033[32mLoaded: %s\033[0m\n", e->path);
 
         initialize_apm(e);
-    }
-    if (search_bin_path){
-        char result[PATH_MAX];
-        int count = readlink("/proc/self/exe", result, PATH_MAX);
-
-        if (count != -1){
-            char *dir = dirname(result);
-            strncpy(path, dir, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
-        }else{
-            perror("readlink");
-            return SLASH_EUSAGE;
-        }
-        build_apm_list(lib_search);
-
-        if (lib_search->lib_count == 0) {
-            printf("\033[31mNo APMs found in %s\033[0m\n", lib_search->path);
-            return SLASH_EUSAGE;
-        }
-
-        for (int i = 0; i < lib_search->lib_count; i++){
-            apm_entry_t *e = load_apm(lib_search->libs[i].path);
-
-            if (!e){
-                printf("\033[31mError loading %s\033[0m\n", lib_search->libs[i].path);
-                return SLASH_EUSAGE;
-            }
-
-            printf("\033[32mLoaded: %s\033[0m\n", e->path);
-
-            initialize_apm(e);
-        }
     }
 
     return SLASH_SUCCESS;
