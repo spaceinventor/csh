@@ -171,12 +171,14 @@ slash_command_sub(param_server, start, cmd_sch_update, "", "Update param server 
 	causing the linker error: symbol `slash' is already defined */
 static struct slash *slash2;
 #define slash slash2
-static void sigint_handler(int signum) {
 
-	printf("\n");
+static void csh_cleanup(void) {
 	slash_destroy(slash);  // Restores terminal
 	curl_global_cleanup();
+}
 
+static void sigint_handler(int signum) {
+	/* Calls atexit() to handle cleanup */
 	exit(signum); // Exit the program with the signal number as the exit code
 }
 
@@ -271,6 +273,8 @@ int main(int argc, char **argv) {
 
 	{	/* Setting up signal handlers */
 
+		atexit(csh_cleanup);
+
 		if (signal(SIGINT, sigint_handler) == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
@@ -314,9 +318,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
-	printf("\n");
-	slash_destroy(slash);
-    curl_global_cleanup();
-
+	/* Cleanup handled by atexit() */
 	return ret;
 }
