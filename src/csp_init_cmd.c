@@ -240,6 +240,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -273,6 +274,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -329,6 +331,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -388,6 +391,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -502,6 +506,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -556,6 +561,7 @@ static int csp_routeadd_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
