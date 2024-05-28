@@ -154,9 +154,9 @@ void * vm_push(void * arg) {
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
             printf("Failed push: %s\n", curl_easy_strerror(res));
+        } else {
+            buffer_size = 0;
         }
-        buffer_size = 0;
-
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
