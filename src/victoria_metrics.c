@@ -187,7 +187,6 @@ void * vm_push(void * arg) {
         free(args->api_root);
         args->api_root = NULL;
     }
-    free(args);
     return NULL;
 }
 
