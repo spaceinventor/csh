@@ -14,5 +14,5 @@ jobs:
       - uses: BSFishy/meson-build@v1.0.3
         with:
           action: test
-          directory: build
+          directory: builddir
           meson-version: 0.63.1
