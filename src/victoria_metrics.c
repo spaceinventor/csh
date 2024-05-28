@@ -20,6 +20,7 @@
 #include <param/param_queue.h>
 #include <param/param_string.h>
 #include "param_sniffer.h"
+#include "url_utils.h"
 
 static pthread_t vm_push_thread;
 int vm_running = 0;
@@ -37,6 +38,7 @@ typedef struct {
     int port;
     int skip_verify;
     int verbose;
+    char * api_root;
     char * username;
     char * password;
     char * server_ip;
@@ -81,7 +83,16 @@ void * vm_push(void * arg) {
         }
 
         // Test connection
-        snprintf(url, sizeof(url), "%s://%s:%d/prometheus/api/v1/query", protocol, args->server_ip, args->port);
+        if(args->api_root) {
+            if(args->api_root[strlen(args->api_root) - 1] == '/') {
+                snprintf(url, sizeof(url), "%sprometheus/api/v1/query", args->api_root);
+            } else {
+                snprintf(url, sizeof(url), "%s/prometheus/api/v1/query", args->api_root);
+            }
+        } else {
+            snprintf(url, sizeof(url), "%s://%s:%d/prometheus/api/v1/query", protocol, args->server_ip, args->port);
+        }
+
         curl_easy_setopt(curl, CURLOPT_URL, url);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, "query=test42");
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, 12);
@@ -98,7 +109,15 @@ void * vm_push(void * arg) {
         }
 
         // Resume building of header for push
-        snprintf(url, sizeof(url), "%s://%s:%d/api/v1/import/prometheus?extra_label=instance=%s", protocol, args->server_ip, args->port, hostname);
+        if(args->api_root) {
+            if(args->api_root[strlen(args->api_root) - 1] == '/') {
+                snprintf(url, sizeof(url), "%sapi/v1/import/prometheus?extra_label=instance=%s", args->api_root, hostname);
+            } else {
+                snprintf(url, sizeof(url), "%s/api/v1/import/prometheus?extra_label=instance=%s", args->api_root, hostname);
+            }
+        } else {
+            snprintf(url, sizeof(url), "%s://%s:%d/api/v1/import/prometheus?extra_label=instance=%s", protocol, args->server_ip, args->port, hostname);
+        }
         curl_easy_setopt(curl, CURLOPT_URL, url);
         headers = curl_slist_append(headers, "Content-Type: text/plain");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -113,7 +132,11 @@ void * vm_push(void * arg) {
     }
 
     if (vm_running) {
-        printf("Connection established to %s://%s:%d\n", protocol, args->server_ip, args->port);
+        if(args->api_root) {
+            printf("Connection established to %s", args->api_root);
+        } else {
+            printf("Connection established to %s://%s:%d\n", protocol, args->server_ip, args->port);
+        }
     }
 
     while (vm_running) {
@@ -127,13 +150,13 @@ void * vm_push(void * arg) {
 
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, buffer_size);
         curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
             printf("Failed push: %s\n", curl_easy_strerror(res));
         } else {
             buffer_size = 0;
         }
-
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
 
@@ -160,7 +183,10 @@ void * vm_push(void * arg) {
         free(args->server_ip);
         args->server_ip = NULL;
     }
-    free(args);
+    if (args->api_root) {
+        free(args->api_root);
+        args->api_root = NULL;
+    }
     return NULL;
 }
 
@@ -203,6 +229,8 @@ void vm_add_param(param_t * param) {
     }
 }
 
+static vm_args victoria_metrics_args = { 0 };
+
 static int vm_start_cmd(struct slash * slash) {
 
     if (vm_running) return SLASH_SUCCESS;
@@ -210,9 +238,10 @@ static int vm_start_cmd(struct slash * slash) {
     int logfile = 0;
     char * tmp_username = NULL;
     char * tmp_password = NULL;
-    vm_args * args = calloc(1, sizeof(vm_args));
+    char * api_root = NULL;
+    vm_args * args = &victoria_metrics_args;
 
-    optparse_t * parser = optparse_new("vm start", "<server>");
+    optparse_t * parser = optparse_new("vm start", "<server or full HTTP(s) API root for the targetted Victoria Metrics instance>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for vmauth");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
@@ -226,22 +255,29 @@ static int vm_start_cmd(struct slash * slash) {
 
     if (argi < 0) {
         optparse_del(parser);
-        free(args);
         return SLASH_EINVAL;
     }
 
-    if (++argi >= slash->argc) {
-        printf("Missing server ip/domain\n");
-        optparse_del(parser);
-        free(args);
-        return SLASH_EINVAL;
+    if(!api_root) {
+        if (++argi >= slash->argc) {
+            printf("Missing server ip/domain\n");
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+    }
+
+    if(false == is_http_url(slash->argv[argi])) {
+        args->server_ip = strdup(slash->argv[argi]);
+        args->api_root = NULL;
+    } else {
+        args->api_root = strdup(slash->argv[argi]);
+        args->server_ip = NULL;
     }
 
     if (tmp_username) {
         if (!tmp_password) {
             printf("Provide password with -p\n");
             optparse_del(parser);
-            free(args);
             return SLASH_EINVAL;
         }
         args->username = strdup(tmp_username);
@@ -252,7 +288,6 @@ static int vm_start_cmd(struct slash * slash) {
     } else if (!args->port) {
         args->port = SERVER_PORT;
     }
-    args->server_ip = strdup(slash->argv[argi]);
 
     param_sniffer_init(logfile);
     pthread_create(&vm_push_thread, NULL, &vm_push, args);
@@ -265,7 +300,25 @@ slash_command_sub(vm, start, vm_start_cmd, "", "Start Victoria Metrics push thre
 
 static int vm_stop_cmd(struct slash * slash) {
 
+    vm_args * args = &victoria_metrics_args;
     if (!vm_running) return SLASH_SUCCESS;
+
+    if(args->username) {
+        free(args->username);
+        args->username = NULL;
+    }
+    if(args->password) {
+         free(args->password);
+         args->password = NULL;
+    }
+    if(args->api_root) {
+         free(args->api_root);
+         args->api_root = NULL;
+    }
+    if(args->server_ip) {
+         free(args->server_ip);
+         args->server_ip = NULL;
+    }
 
     vm_running = 0;
 

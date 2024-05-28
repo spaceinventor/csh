@@ -12,6 +12,8 @@
 
 #include <csp/csp.h>
 
+#include "url_utils.h"
+
 // TODO maybe a thread that empties a buffer
 // static pthread_t loki_thread;
 static int loki_running = 0;
@@ -37,6 +39,7 @@ typedef struct {
     char * username;
     char * password;
     char * server_ip;
+    char * api_root;
 } loki_args;
 
 static loki_args args = {0};
@@ -239,7 +242,6 @@ void slash_on_execute_hook(const char *line) {
 	}
 }
 
-
 static int loki_start_cmd(struct slash * slash) {
 
     if (loki_running) return SLASH_SUCCESS;
@@ -247,10 +249,10 @@ static int loki_start_cmd(struct slash * slash) {
     char * tmp_username = NULL;
     char * tmp_password = NULL;
 
-    optparse_t * parser = optparse_new("loki start", "<server>");
+    optparse_t * parser = optparse_new("loki start", "<server or full HTTP(s) API root for the targetted Loki instance>");
     optparse_add_help(parser);
-    optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for vmauth");
-    optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
+    optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for Loki logging");
+    optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for Loki logging");
     optparse_add_set(parser, 's', "ssl", 1, &(args.use_ssl), "Use SSL/TLS");
     optparse_add_int(parser, 'P', "server-port", "NUM", 0, &(args.port), "Overwrite default port");
     optparse_add_set(parser, 'S', "skip-verify", 1, &(args.skip_verify), "Skip verification of the server's cert and hostname");
@@ -264,9 +266,17 @@ static int loki_start_cmd(struct slash * slash) {
     }
 
     if (++argi >= slash->argc) {
-        printf("Missing server ip/domain\n");
+        printf("Missing server/API root\n");
         optparse_del(parser);
         return SLASH_EINVAL;
+    }
+
+    if(false == is_http_url(slash->argv[argi])) {
+        args.server_ip = strdup(slash->argv[argi]);
+        args.api_root = NULL;
+    } else {
+        args.api_root = strdup(slash->argv[argi]);
+        args.server_ip = NULL;
     }
 
     if (tmp_username) {
@@ -283,8 +293,6 @@ static int loki_start_cmd(struct slash * slash) {
     } else if (!args.port) {
         args.port = SERVER_PORT;
     }
-
-    args.server_ip = strdup(slash->argv[argi]);
 
     curl = curl_easy_init();
 
@@ -308,8 +316,16 @@ static int loki_start_cmd(struct slash * slash) {
             curl_easy_setopt(curl, CURLOPT_PASSWORD, args.password);
             curl_easy_setopt(curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
         }
+        if(args.api_root != NULL) {
+            if(args.api_root[strlen(args.api_root) - 1] == '/') {
+                snprintf(url, sizeof(url), "%sloki/api/v1/push", args.api_root);
+            } else {
+                snprintf(url, sizeof(url), "%s/loki/api/v1/push", args.api_root);
+            }
+        } else {
+            snprintf(url, sizeof(url), "%s://%s:%d/loki/api/v1/push", protocol, args.server_ip, args.port);
+        }
 
-        snprintf(url, sizeof(url), "%s://%s:%d/loki/api/v1/push", protocol, args.server_ip, args.port);
         curl_easy_setopt(curl, CURLOPT_URL, url);
         headers = curl_slist_append(headers, "Content-Type: application/json");
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
