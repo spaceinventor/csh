@@ -71,9 +71,15 @@ csh_sources = [
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
+utils_lib_src = ['src/url_utils.c']
+utils_lib_inc = include_directories('src')
+utils_lib = static_library('csh_utils', utils_lib_src, include_directories: utils_lib_inc)
+utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with : utils_lib)
+
+subdir('tests')
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, curl_dep],
+	dependencies : [slash_dep, csp_dep, param_dep, curl_dep, utils_lib_dep],
 	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
 )

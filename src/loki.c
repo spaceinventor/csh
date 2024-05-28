@@ -12,6 +12,8 @@
 
 #include <csp/csp.h>
 
+#include "url_utils.h"
+
 // TODO maybe a thread that empties a buffer
 // static pthread_t loki_thread;
 static int loki_running = 0;
@@ -240,20 +242,17 @@ void slash_on_execute_hook(const char *line) {
 	}
 }
 
-
 static int loki_start_cmd(struct slash * slash) {
 
     if (loki_running) return SLASH_SUCCESS;
 
     char * tmp_username = NULL;
     char * tmp_password = NULL;
-    char * api_root = NULL;
 
-    optparse_t * parser = optparse_new("loki start", "<server>");
+    optparse_t * parser = optparse_new("loki start", "<server or full HTTP(s) API root for the targetted Loki instance>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for Loki logging");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for Loki logging");
-    optparse_add_string(parser, 0, "api-root", "STRING", &api_root, "Loki API root, <server> is ignored when using using this option");
     optparse_add_set(parser, 's', "ssl", 1, &(args.use_ssl), "Use SSL/TLS");
     optparse_add_int(parser, 'P', "server-port", "NUM", 0, &(args.port), "Overwrite default port");
     optparse_add_set(parser, 'S', "skip-verify", 1, &(args.skip_verify), "Skip verification of the server's cert and hostname");
@@ -266,13 +265,18 @@ static int loki_start_cmd(struct slash * slash) {
         return SLASH_EINVAL;
     }
 
-    if(!api_root) {
-        if (++argi >= slash->argc) {
-            printf("Missing server ip/domain\n");
-            optparse_del(parser);
-            return SLASH_EINVAL;
-        }
+    if (++argi >= slash->argc) {
+        printf("Missing server/API root\n");
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
+
+    if(false == is_http_url(slash->argv[argi])) {
         args.server_ip = strdup(slash->argv[argi]);
+        args.api_root = NULL;
+    } else {
+        args.api_root = strdup(slash->argv[argi]);
+        args.server_ip = NULL;
     }
 
     if (tmp_username) {
@@ -289,11 +293,6 @@ static int loki_start_cmd(struct slash * slash) {
     } else if (!args.port) {
         args.port = SERVER_PORT;
     }
-
-    if(api_root) {
-        args.api_root = strdup(api_root);
-    }
-
 
     curl = curl_easy_init();
 

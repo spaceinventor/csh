@@ -20,6 +20,7 @@
 #include <param/param_queue.h>
 #include <param/param_string.h>
 #include "param_sniffer.h"
+#include "url_utils.h"
 
 static pthread_t vm_push_thread;
 int vm_running = 0;
@@ -182,6 +183,10 @@ void * vm_push(void * arg) {
         free(args->server_ip);
         args->server_ip = NULL;
     }
+    if (args->api_root) {
+        free(args->api_root);
+        args->api_root = NULL;
+    }
     free(args);
     return NULL;
 }
@@ -243,7 +248,6 @@ static int vm_start_cmd(struct slash * slash) {
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
     optparse_add_set(parser, 's', "ssl", 1, &(args->use_ssl), "Use SSL/TLS");
     optparse_add_int(parser, 'P', "server-port", "NUM", 0, &(args->port), "Overwrite default port");
-    optparse_add_string(parser, 0, "api-root", "STRING", &api_root, "Victoria Metrics API root, <server> is ignored when using this");
     optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
     optparse_add_set(parser, 'S', "skip-verify", 1, &(args->skip_verify), "Skip verification of the server's cert and hostname");
     optparse_add_set(parser, 'v', "verbose", 1, &(args->verbose), "Verbose connect");
@@ -261,7 +265,14 @@ static int vm_start_cmd(struct slash * slash) {
             optparse_del(parser);
             return SLASH_EINVAL;
         }
+    }
+
+    if(false == is_http_url(slash->argv[argi])) {
         args->server_ip = strdup(slash->argv[argi]);
+        args->api_root = NULL;
+    } else {
+        args->api_root = strdup(slash->argv[argi]);
+        args->server_ip = NULL;
     }
 
     if (tmp_username) {
@@ -278,10 +289,6 @@ static int vm_start_cmd(struct slash * slash) {
     } else if (!args->port) {
         args->port = SERVER_PORT;
     }
-    if(api_root) {
-        args->api_root = strdup(api_root);
-    }
-
 
     param_sniffer_init(logfile);
     pthread_create(&vm_push_thread, NULL, &vm_push, args);
