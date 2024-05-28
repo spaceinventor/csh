@@ -241,7 +241,7 @@ static int vm_start_cmd(struct slash * slash) {
     char * api_root = NULL;
     vm_args * args = &victoria_metrics_args;
 
-    optparse_t * parser = optparse_new("vm start", "<server>");
+    optparse_t * parser = optparse_new("vm start", "<server or full HTTP(s) API root for the targetted Victoria Metrics instance>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for vmauth");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
