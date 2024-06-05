@@ -3,7 +3,6 @@ project('csh', 'c', subproject_dir: 'lib', default_options: [
 	'c_std=gnu11', 
 	'b_lto=false',
 	'default_library=static',
-	'slash:builtins=true',
 	'csp:packet_padding_bytes=42', 
 	'csp:buffer_count=1000',
 	'csp:buffer_size=2048',
@@ -37,9 +36,15 @@ endif
 # .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
 # Specifically; functions/symbols that are unused during static linking,
 # but that may be called after dynamic linking by APMs.
-csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
-slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
-param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+if get_option('default_library') == 'static'
+	csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
+	slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
+	param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+else
+	csp_dep = dependency('csp', fallback: ['csp', 'csp_shared_dep'], required: true)
+	slash_dep = dependency('slash', fallback: ['slash', 'slash_shared_dep'], required: true)
+	param_dep = dependency('param', fallback: ['param', 'param_shared_dep'], required: true)
+endif
 
 csh_sources = [
 	'src/main.c',
@@ -80,6 +85,7 @@ subdir('tests')
 
 csh = executable('csh', csh_sources,
 	dependencies : [slash_dep, csp_dep, param_dep, curl_dep, utils_lib_dep],
+	c_args: ['-DSLASH_SECTION="csh_cmds"'],
 	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
 )

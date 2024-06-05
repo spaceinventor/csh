@@ -236,6 +236,7 @@ int main(int argc, char **argv) {
 	serial_init();
 
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
+	SLASH_LOAD_CMDS(csh_cmds);
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
