@@ -83,12 +83,13 @@ utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with
 
 subdir('tests')
 
-rpath = '-Wl,-rpath=' + get_option('prefix') + '/' + get_option('libdir')
+rpath = get_option('prefix') + '/' + get_option('libdir')
 
 csh = executable('csh', csh_sources,
 	dependencies : [slash_dep, csp_dep, param_dep, curl_dep, utils_lib_dep],
 	c_args: ['-DSLASH_SECTION="csh_cmds"'],
-	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', rpath, '-ldl'],  # -ldl is needed on ARM/raspbarian
+	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
+	install_rpath: rpath,
 	install : true,
 )
 
