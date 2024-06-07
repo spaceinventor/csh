@@ -237,6 +237,8 @@ int main(int argc, char **argv) {
 
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	SLASH_LOAD_CMDS(csh_cmds);
+	SLASH_LOAD_CMDS(param_cmds);
+	
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);

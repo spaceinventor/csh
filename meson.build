@@ -86,8 +86,8 @@ subdir('tests')
 rpath = get_option('prefix') + '/' + get_option('libdir')
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, curl_dep, utils_lib_dep],
-	c_args: ['-DSLASH_SECTION="csh_cmds"'],
+	dependencies : [param_dep, slash_dep, csp_dep, curl_dep, utils_lib_dep],
+	c_args: ['-DSLASH_SECTION="csh_cmds"', '-fPIC'],
 	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install_rpath: rpath,
 	install : true,
