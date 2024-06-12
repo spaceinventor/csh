@@ -36,15 +36,9 @@ endif
 # .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
 # Specifically; functions/symbols that are unused during static linking,
 # but that may be called after dynamic linking by APMs.
-if get_option('default_library') == 'static'
-	csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
-	slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
-	param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
-else
-	csp_dep = dependency('csp', fallback: ['csp', 'csp_shared_dep'], required: true)
-	slash_dep = dependency('slash', fallback: ['slash', 'slash_shared_dep'], required: true)
-	param_dep = dependency('param', fallback: ['param', 'param_shared_dep'], required: true)
-endif
+csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)#.as_link_whole()
+slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true)#.as_link_whole()
+param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true)#.as_link_whole()
 
 csh_sources = [
 	'src/main.c',
