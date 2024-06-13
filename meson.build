@@ -33,12 +33,19 @@ if not zmq_dep.found()
   error('libzmq not found! Please install libzmq3-dev or the appropriate package for your system.')
 endif
 
-# .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
-# Specifically; functions/symbols that are unused during static linking,
-# but that may be called after dynamic linking by APMs.
-csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)#.as_link_whole()
-slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true)#.as_link_whole()
-param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true)#.as_link_whole()
+if get_option('default_library') == 'static'
+	# .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
+	# Specifically; functions/symbols that are unused during static linking,
+	# but that may be called after dynamic linking by APMs.
+	csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
+	slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
+	param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+else
+	# when using shared libraries, all non-static symbols will be exported
+	csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true)
+	slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true)
+	param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true)
+endif
 
 csh_sources = [
 	'src/main.c',
