@@ -6,6 +6,8 @@
 #include <sys/utsname.h>
 #include <time.h>
 #include <signal.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
@@ -240,7 +242,21 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
+	{
+		/* Configure CSH history from ~/.csh_history */
+		char   buffer[512];
+		struct passwd* p_info = NULL;
+		getlogin_r(buffer, sizeof(buffer) - 1);
 
+		if(buffer[0]) {
+			p_info = getpwnam(buffer);
+			if(NULL != p_info) {
+				if(snprintf(buffer, sizeof(buffer) - 1, "%s/.csh_history", p_info->pw_dir)) {
+					slash_init_history_from_file(slash, buffer);
+				}
+			}
+		}
+	}
 #ifdef PARAM_HAVE_COMMANDS
 	vmem_file_init(&vmem_commands);
 	param_command_server_init();
