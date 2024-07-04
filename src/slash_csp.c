@@ -349,7 +349,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
-    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
+    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version, 1=32-bit <addr>, 2=64-bit <addr> (default = 1)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -387,8 +387,8 @@ static int slash_csp_cmp_peek(struct slash *slash)
 		return SLASH_EUSAGE;
 	}
 
-	if (version < 1 && version > 2) {
-		printf("Unsupported version: %d, only supports 1 and 2\n", version);
+	if (version < 1 || version > 2) {
+		printf("Unsupported version: %d, only supports 1 (32-bit) and 2 (64-bit)\n", version);
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
@@ -451,7 +451,7 @@ static int slash_csp_cmp_poke(struct slash *slash)
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
-    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
+    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version, 1=32-bit <addr>>, 2=64-bit <addr> (default = 1)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -481,8 +481,8 @@ static int slash_csp_cmp_poke(struct slash *slash)
 		return SLASH_EINVAL;
 	}
 
-	if (version < 1 && version > 2) {
-		printf("Unsupported version: %d, only supports 1 and 2\n", version);
+	if (version < 1 || version > 2) {
+		printf("Unsupported version: %d, only supports 1 (32-bit) and 2 (64-bit)\n", version);
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
