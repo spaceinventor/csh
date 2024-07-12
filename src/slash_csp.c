@@ -429,7 +429,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
 			}
 
 			printf("Peek at address 0x%"PRIx64" len %u\n", address, length);
-			csp_hex_dump(NULL, message.peek.data, length);
+			csp_hex_dump(NULL, message.peek_v2.data, length);
 		}
 		break;
 	}
