@@ -65,7 +65,7 @@ int slash_prompt(struct slash * slash) {
 	uname(&info);
 	printf("%s", info.nodename);
 	len += strlen(info.nodename);
-		
+
 	if (slash_dfl_node != 0) {
 
 		fore = back;
@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
 		printf("  CSP shell batch: ");
 		printf("\033[0m");
 		printf("\n");
-		
+
 	}
 	srand(time(NULL));
 
@@ -245,15 +245,11 @@ int main(int argc, char **argv) {
 	{
 		/* Configure CSH history from ~/.csh_history */
 		char   buffer[512];
-		struct passwd* p_info = NULL;
-		getlogin_r(buffer, sizeof(buffer) - 1);
+		struct passwd* p_info = getpwuid(getuid());
 
-		if(buffer[0]) {
-			p_info = getpwnam(buffer);
-			if(NULL != p_info) {
-				if(snprintf(buffer, sizeof(buffer) - 1, "%s/.csh_history", p_info->pw_dir)) {
-					slash_init_history_from_file(slash, buffer);
-				}
+		if(p_info) {
+			if(snprintf(buffer, sizeof(buffer) - 1, "%s/.csh_history", p_info->pw_dir)) {
+				slash_init_history_from_file(slash, buffer);
 			}
 		}
 	}
