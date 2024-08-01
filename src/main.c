@@ -73,15 +73,21 @@ int slash_prompt(struct slash * slash) {
 		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
 		len += 3;
 
-		char nodebuf[20];
-		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)) == 0) {
+		char nodebuf[20] = {0};
+		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)-1) == 0) {
 			/* Failed to find hostname, only print node */
 			snprintf(nodebuf, 20, "%d", slash_dfl_node);
 		} else {
 			/* Found hostname, now append node */
-			char nodenumbuf[7];
+			char nodenumbuf[7] = {0};
 			snprintf(nodenumbuf, 7, "@%d", slash_dfl_node);
-			strncat(nodebuf, nodenumbuf, 20-strnlen(nodebuf, 20));
+
+			int node_idx = strnlen(nodebuf, 20) - strnlen(nodenumbuf, 7);
+			if (node_idx < 0) {
+				node_idx = 0;
+			}
+			nodebuf[node_idx] = '\0';
+			strncat(nodebuf, nodenumbuf, 20-strnlen(nodebuf, 19)-1);
 		}
 		printf("%s", nodebuf);
 		len += strlen(nodebuf);
