@@ -73,21 +73,25 @@ int slash_prompt(struct slash * slash) {
 		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
 		len += 3;
 
-		char nodebuf[20] = {0};
+		char nodebuf[CSP_HOSTNAME_LEN] = {0};
 		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)-1) == 0) {
 			/* Failed to find hostname, only print node */
-			snprintf(nodebuf, 20, "%d", slash_dfl_node);
+			snprintf(nodebuf, CSP_HOSTNAME_LEN, "%d", slash_dfl_node);
 		} else {
 			/* Found hostname, now append node */
-			char nodenumbuf[7] = {0};
+			char nodenumbuf[7] = {0};  // Longest string is "@16383\0"
 			snprintf(nodenumbuf, 7, "@%d", slash_dfl_node);
 
-			int node_idx = strnlen(nodebuf, 20) - strnlen(nodenumbuf, 7);
+			int node_idx = strnlen(nodebuf, CSP_HOSTNAME_LEN);
+			const int overflow = (node_idx + strnlen(nodenumbuf, 7)) - CSP_HOSTNAME_LEN;
+			if (overflow > 0) {
+				node_idx -= overflow+1;
+			}
 			if (node_idx < 0) {
 				node_idx = 0;
 			}
 			nodebuf[node_idx] = '\0';
-			strncat(nodebuf, nodenumbuf, 20-strnlen(nodebuf, 19)-1);
+			strncat(nodebuf, nodenumbuf, CSP_HOSTNAME_LEN-strnlen(nodebuf, CSP_HOSTNAME_LEN-1)-1);
 		}
 		printf("%s", nodebuf);
 		len += strlen(nodebuf);
