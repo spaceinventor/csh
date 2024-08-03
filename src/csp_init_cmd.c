@@ -202,7 +202,12 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     }
 
     csp_iface_t * iface;
-    csp_zmqhub_init_filter2((const char *) name, server, addr, mask, promisc, &iface, sec_key, subport, pubport);
+    int error = csp_zmqhub_init_filter2((const char *) name, server, addr, mask, promisc, &iface, sec_key, subport, pubport);
+    if (error != CSP_ERR_NONE) {
+        csp_print("Failed to add zmq interface [%s], error: %d\n", server, error);
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
     iface->is_default = dfl;
     iface->addr = addr;
 	iface->netmask = mask;
@@ -265,7 +270,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     
     int error = csp_usart_open_and_add_kiss_interface(&conf, name, &iface);
     if (error != CSP_ERR_NONE) {
-        printf("Failed to add kiss interface\n");
+        csp_print("Failed to add kiss interface [%s], error: %d\n", device, error);
         optparse_del(parser);
         return SLASH_EINVAL;
     }
@@ -322,7 +327,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     
     int error = csp_can_socketcan_open_and_add_interface(device, name, addr, baud, promisc, &iface);
     if (error != CSP_ERR_NONE) {
-        csp_print("failed to add CAN interface [%s], error: %d", device, error);
+        csp_print("failed to add CAN interface [%s], error: %d\n", device, error);
         optparse_del(parser);
         return SLASH_EINVAL;
     }
@@ -412,7 +417,12 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     csp_iface_t * iface = NULL;
 
     // const char * device, const char * ifname, int mtu, unsigned int node_id, csp_iface_t ** iface, bool promisc
-    csp_eth_init(device, name, mtu, addr, promisc == 1, &iface);
+    int error = csp_eth_init(device, name, mtu, addr, promisc == 1, &iface);
+    if (error != CSP_ERR_NONE) {
+        csp_print("Failed to add ethernet interface [%s], error: %d\n", device, error);
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
 
     iface->is_default = dfl;
     iface->addr = addr;
