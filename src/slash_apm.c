@@ -255,7 +255,7 @@ void build_apm_list(lib_search_t* lib_search) {
 
 int apm_load_search(lib_search_t *lib_search) {
 
-    char path[WALKDIR_MAX_PATH_SIZE];    
+    char path[WALKDIR_MAX_PATH_SIZE] = {0};
     int search_bin_path = 0;
 
     if (lib_search->path == NULL) {
@@ -268,14 +268,14 @@ int apm_load_search(lib_search_t *lib_search) {
                 return SLASH_EINVAL;  
             }
         }
-        strcpy(path, p);
-        strcat(path, "/.local/lib/csh");
+        strncpy(path, p, WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE-1)-1);
+        strncat(path, "/.local/lib/csh", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE-1));
         lib_search->path = path;
     }
 
     if (search_bin_path) {
 
-        char result[WALKDIR_MAX_PATH_SIZE];
+        char result[WALKDIR_MAX_PATH_SIZE] = {0};
         int count = readlink("/proc/self/exe", result, WALKDIR_MAX_PATH_SIZE);
 
         if (count == -1) {
