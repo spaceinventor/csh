@@ -40,7 +40,7 @@ Register new CAN interface in CSH.
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>> csp add can1
+      .. csh-prompt:: host>> csp add can 1
          | INIT CAN0: device:[can0],bitrate: 1000000, 
          | ...promisc:1
     
@@ -54,7 +54,7 @@ Initialise a new ZMQ interface.
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>> csp add zmq1 localhost
+      .. csh-prompt:: host>> csp add zmq 1 localhost
          | ZMQ init ZMQ0: addr: 1, pub(tx): 
          | ...[tcp://localhost:6000],sub(rx):
          | ...[tcp://localhost:7000]
@@ -103,7 +103,7 @@ Scan all nodes for devices.
 
 **prometheus start**
 
-Start the prometheus node exporter to forward all parameter request to Promotheus.
+Start the prometheus node exporter to start a webserver compatible with Prometheus scraper.
 
 Use the hk timeoffset command to set the node of hk server for the housekeeping sniffer, to forward historical data requested from house keeping service on a satellite.
 
@@ -411,7 +411,7 @@ Request a small (<200 bytes) piece of memory.
 
 **ifstat**
 
-Remotely request interface statistics. For a combined overview of all interfaces, use the parameter csp_print_cnf that is available on most modules.
+Remotely request interface statistics. For a combined overview of all interfaces, use the parameter csp_print_cnf that is available on all Space Inventor modules.
 
 
 .. class:: table
@@ -717,7 +717,7 @@ Server ip and port can be changed from defaults with -s and -p.
 
 **apm load**
 
-Load a csh apm (addin, plugin, module). Will automatically search in $HOME/.local/lib/csh folder for installed APMs.
+Load a csh apm for extended functionality. Will automatically search in $HOME/.local/lib/csh folder for installed APMs.
 
 .. class:: table
 
