@@ -1,5 +1,5 @@
 
-CSH runs a simple command line interface (slash). After starting CSH you will see a prompt. For example to ping a node:
+CSH runs a simple command line interface. After starting CSH you will see a prompt. Assuming an init file is already created, the following is required to ping a node:
 
 .. class:: table
 
