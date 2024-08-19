@@ -21,7 +21,7 @@ jobs:
           setup-options: -Db_coverage=true
           directory: builddir
           meson-version: 0.63.1
-          ninja-version: 1.10.1
+          ninja-version: 1.11.1.1
           gcovr-version: 5.0
       - name: run gcovr
         run: ninja -C builddir coverage-txt
