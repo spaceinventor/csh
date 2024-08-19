@@ -135,31 +135,3 @@ char *csh_expand_vars(const char *input) {
     res[res_idx] = 0;
     return res;
 }
-
-#if 0
-int main(int argc, char *argv[]) {
-    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
-    printf("csh_setenv(\"%s\", \"%s\")= %d\n", "JB", "SPACEINVENTOR", csh_putvar("JB", "SPACEINVENTOR"));
-    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
-    char *expanded = csh_expand_vars("$(JB) test $(JB) -v 1 $(JB)");
-    printf("csh_expand_vars(\"$(JB) test $(JB) -v 1 $(JB)\")=%s\n", expanded);
-    free(expanded);
-    
-    expanded = csh_expand_vars("$(JB) test $(JB) -v 1 $(JB");
-    printf("csh_expand_vars(\"$(JB) test $(JB) -v 1 $(JB\")=%s\n", expanded);
-    free(expanded);
-    
-    printf("csh_delvar(\"%s\")= %d\n", "JB", csh_delvar("JB"));
-    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
-    expanded = csh_expand_vars("$(JB) test $(JB) -v 1 $(JB");
-    printf("csh_expand_vars(\"$(JB) test $(JB) -v 1 $(JB)\")=%s\n", expanded);
-    free(expanded);
-
-    printf("csh_setenv(\"%s\", \"%s\")= %d\n", "JB", "SPACEINVENTOR", csh_putvar("JB", "SPACEINVENTOR"));
-    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
-    printf("csh_clearenv()\n");
-    csh_clearenv();
-    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
-    return 0;
-}
-#endif

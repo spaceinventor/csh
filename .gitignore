@@ -20,3 +20,5 @@ builddir
 .cache
 .codechecker
 sysroot
+lib/googletest-1.14.0
+lib/packagecache
