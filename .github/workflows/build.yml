@@ -14,6 +14,8 @@ jobs:
         with:
           packages: libcurl4-openssl-dev libzmq3-dev
       - uses: actions/setup-python@v1
+      - name: Install gcovr
+        run: pip3 install gcovr==5.0      
       - uses: BSFishy/meson-build@v1.0.3
         with:
           action: test
@@ -23,5 +25,5 @@ jobs:
           meson-version: 1.5.1
           ninja-version: 1.11.1.1
           gcovr-version: 5.0
-      - name: run gcovr
-        run: pip3 install gcovr==5.0 && ninja -C builddir coverage-text
+      - name: Run gcovr
+        run: ninja -C builddir coverage-text
