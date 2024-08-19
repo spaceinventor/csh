@@ -24,4 +24,4 @@ jobs:
           ninja-version: 1.11.1.1
           gcovr-version: 5.0
       - name: run gcovr
-        run: ninja -C builddir coverage-text
+        run: pip3 install gcovr==5.0 && ninja -C builddir coverage-text
