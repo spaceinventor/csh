@@ -18,7 +18,7 @@ jobs:
         run: pip3 install gcovr==5.0      
       - uses: BSFishy/meson-build@v1.0.3
         with:
-          action: test
+          action: build
           options: --verbose
           setup-options: -Db_coverage=true
           directory: builddir
