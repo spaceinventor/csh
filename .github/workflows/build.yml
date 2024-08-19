@@ -22,3 +22,12 @@ jobs:
           directory: builddir
           meson-version: 0.63.1
           gcovr-version: 4.2
+        - uses: BSFishy/meson-build@v1.0.3
+        with:
+          action: coverage
+          options: --verbose
+          setup-options: -Db_coverage=true
+          directory: builddir
+          meson-version: 0.63.1
+          gcovr-version: 4.2
+  
