@@ -22,7 +22,7 @@ static struct csh_env_entry *csh_get_env_entry(const char *name) {
     return NULL;
 }
 
- __attribute__ ((malloc)) static char *csh_copy_char_and_grow(char *dest, size_t at, size_t *dest_len, char c) {
+static char *csh_copy_char_and_grow(char *dest, size_t at, size_t *dest_len, char c) {
     if (at == *dest_len) {
         *dest_len += 16;
         dest = realloc(dest, *dest_len);
@@ -134,3 +134,36 @@ char *csh_expand_vars(const char *input) {
     res[res_idx] = 0;
     return res;
 }
+
+#if 0
+/* 
+Small test code to try things out, for example:
+- compile: gcc -Wall -g -o environment_test environment.c 
+- valgrind --leak-check=full -s ./environment_test
+*/
+int main(int argc, char *argv[]) {
+    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
+    printf("csh_setenv(\"%s\", \"%s\")= %d\n", "JB", "SPACEINVENTOR", csh_putvar("JB", "SPACEINVENTOR"));
+    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
+    char *expanded = csh_expand_vars("$(JB) test $(JB) -v 1 $(JB)");
+    printf("csh_expand_vars(\"$(JB) test $(JB) -v 1 $(JB)\")=%s\n", expanded);
+    free(expanded);
+    
+    expanded = csh_expand_vars("$(JB) test $(JB) -v 1 $(JB");
+    printf("csh_expand_vars(\"$(JB) test $(JB) -v 1 $(JB\")=%s\n", expanded);
+    free(expanded);
+    
+    printf("csh_delvar(\"%s\")= %d\n", "JB", csh_delvar("JB"));
+    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
+    expanded = csh_expand_vars("$(JB) test $(JB) -v 1 $(JB");
+    printf("csh_expand_vars(\"$(JB) test $(JB) -v 1 $(JB)\")=%s\n", expanded);
+    free(expanded);
+
+    printf("csh_setenv(\"%s\", \"%s\")= %d\n", "JB", "SPACEINVENTOR", csh_putvar("JB", "SPACEINVENTOR"));
+    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
+    printf("csh_clearenv()\n");
+    csh_clearenv();
+    printf("csh_getenv(\"%s\")= %s\n", "JB", csh_getvar("JB"));
+    return 0;
+}
+#endif
