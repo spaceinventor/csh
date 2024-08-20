@@ -72,7 +72,7 @@ static int slash_var_unset(struct slash *slash)
         return SLASH_EUSAGE;
     }
     if ((slash->argc - argi) != 2) {
-        printf("Must give NAME and aonly NAME parameter\n");
+        printf("Must give NAME, and only NAME parameter\n");
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
@@ -112,7 +112,7 @@ static int slash_var_get(struct slash *slash)
         return SLASH_EUSAGE;
     }
     if ((slash->argc - argi) != 2) {
-        printf("Must give NAME and aonly NAME parameter\n");
+        printf("Must give NAME, and only NAME parameter\n");
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
