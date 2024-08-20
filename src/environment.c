@@ -77,8 +77,7 @@ int csh_delvar(const char *name) {
 
 void csh_clearenv() {
     struct csh_env_entry *var;
-    while (!SLIST_EMPTY(&csh_env))
-    {
+    while (!SLIST_EMPTY(&csh_env)) {
         var = SLIST_FIRST(&csh_env);
         free(var->name);
         free(var->value);
