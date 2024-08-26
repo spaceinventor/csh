@@ -321,6 +321,10 @@ static int vm_start_cmd(struct slash * slash) {
         }
         args->username = strdup(tmp_username);
         args->password = strdup(sec_key ? sec_key : tmp_password);
+        char * const newline = strchr(args->password, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
         if (!args->port) {
             args->port = SERVER_PORT_AUTH;
         }
