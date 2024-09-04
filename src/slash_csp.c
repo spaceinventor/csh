@@ -343,11 +343,13 @@ static int slash_csp_cmp_peek(struct slash *slash)
 
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
+	unsigned int version = 1;
 
     optparse_t * parser = optparse_new("peek", "<addr> <len>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version, 1=32-bit <addr>, 2=64-bit <addr> (default = 1)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -363,7 +365,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
 	}
 
 	char * endptr;
-	uint32_t address = strtoul(slash->argv[argi], &endptr, 16);
+	uint64_t address = strtoull(slash->argv[argi], &endptr, 16);
 	if (*endptr != '\0') {
 		printf("Failed to parse address\n");
         optparse_del(parser);
@@ -385,19 +387,52 @@ static int slash_csp_cmp_peek(struct slash *slash)
 		return SLASH_EUSAGE;
 	}
 
-	struct csp_cmp_message message;
-
-	message.peek.addr = htobe32(address);
-	message.peek.len = length;
-
-	if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {
-		printf("No response\n");
-        optparse_del(parser);
+	if (version < 1 || version > 2) {
+		printf("Unsupported version: %d, only supports 1 (32-bit) and 2 (64-bit)\n", version);
+		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
 
-	printf("Peek at address %p len %u\n", (void *) (intptr_t) address, length);
-	csp_hex_dump(NULL, message.peek.data, length);
+	struct csp_cmp_message message;
+
+	switch (version) {
+		case 1:
+		{
+			if (address > 0x00000000FFFFFFFFULL) {
+				printf("Peek address out of 32-bit addressing range for version 1, try version 2.\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
+
+			message.peek.addr = htobe32(address);
+			message.peek.len = length;
+
+			if (csp_cmp_peek(node, timeout, &message) != CSP_ERR_NONE) {
+				printf("No response\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
+
+			printf("Peek at address 0x%"PRIx32" len %u\n", (uint32_t) address, length);
+			csp_hex_dump(NULL, message.peek.data, length);
+		}
+		break;
+		case 2:
+		{
+			message.peek_v2.vaddr = htobe64(address);
+			message.peek_v2.len = length;
+
+			if (csp_cmp_peek_v2(node, timeout, &message) != CSP_ERR_NONE) {
+				printf("No response\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
+
+			printf("Peek at address 0x%"PRIx64" len %u\n", address, length);
+			csp_hex_dump(NULL, message.peek_v2.data, length);
+		}
+		break;
+	}
 
     optparse_del(parser);
 	return SLASH_SUCCESS;
@@ -410,11 +445,13 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
+	unsigned int version = 1;
 
     optparse_t * parser = optparse_new("poke", "<addr> <data base16>");
     optparse_add_help(parser);
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+    optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version, 1=32-bit <addr>>, 2=64-bit <addr> (default = 1)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -430,7 +467,7 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	}
 
 	char * endptr;
-	uint32_t address = strtoul(slash->argv[argi], &endptr, 16);
+	uint64_t address = strtoull(slash->argv[argi], &endptr, 16);
 	if (*endptr != '\0') {
 		printf("Failed to parse address\n");
         optparse_del(parser);
@@ -444,22 +481,51 @@ static int slash_csp_cmp_poke(struct slash *slash)
 		return SLASH_EINVAL;
 	}
 
+	if (version < 1 || version > 2) {
+		printf("Unsupported version: %d, only supports 1 (32-bit) and 2 (64-bit)\n", version);
+		optparse_del(parser);
+		return SLASH_EINVAL;
+	}
 
 	struct csp_cmp_message message;
 
-	message.poke.addr = htobe32(address);
+	switch (version) {
+		case 1:
+		{
+			if (address > 0x00000000FFFFFFFFULL) {
+				printf("Poke address out of 32-bit addressing range for version 1, try version 2.\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
 
-	int outlen = base16_decode(slash->argv[argi], (uint8_t *) message.poke.data);
+			message.poke.addr = htobe32((address & 0x00000000FFFFFFFFULL));
+			int outlen = base16_decode(slash->argv[argi], (uint8_t *) message.poke.data);
+			message.poke.len = outlen;
+			printf("Poke at address 0x%"PRIx32"\n", (uint32_t) (address & 0x00000000FFFFFFFFULL));
+			csp_hex_dump(NULL, message.poke.data, outlen);
 
-	message.poke.len = outlen;
+			if (csp_cmp_poke(node, timeout, &message) != CSP_ERR_NONE) {
+				printf("No response\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
+		}
+		break;
+		case 2:
+		{
+			message.poke_v2.vaddr = htobe64(address);
+			int outlen = base16_decode(slash->argv[argi], (uint8_t *) message.poke_v2.data);
+			message.poke_v2.len = outlen;
+			printf("Poke at address 0x%"PRIx64"\n", address);
+			csp_hex_dump(NULL, message.poke_v2.data, outlen);
 
-	printf("Poke at address %p\n", (void *) (intptr_t) address);
-	csp_hex_dump(NULL, message.poke.data, outlen);
-
-	if (csp_cmp_poke(node, timeout, &message) != CSP_ERR_NONE) {
-		printf("No response\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
+			if (csp_cmp_poke_v2(node, timeout, &message) != CSP_ERR_NONE) {
+				printf("No response\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
+		}
+		break;
 	}
 
 	printf("Poke ok\n");

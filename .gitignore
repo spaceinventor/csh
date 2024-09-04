@@ -10,8 +10,8 @@
 .lock*
 .waf-*
 *.swp
-build
 builddir
+build-doc
 *.cfg
 *.lzo
 *.csv

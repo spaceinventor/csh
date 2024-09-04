@@ -165,7 +165,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
         pubport = CSP_ZMQPROXY_PUBLISH_PORT + ((key_file == NULL) ? 0 : 1);
     }
 
-    if(key_file){
+    if(key_file) {
 
         char key_file_local[256];
         if (key_file[0] == '~') {
@@ -197,6 +197,12 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
             fclose(file);
             optparse_del(parser);
             return SLASH_EINVAL;
+        }
+        /* We are most often saved from newlines, by only reading out CURVE_KEYLEN.
+            But we still attempt to strip them, in case someone decides to use a short key. */
+        char * const newline = strchr(sec_key, '\n');
+        if (newline) {
+            *newline = '\0';
         }
         fclose(file);
     }
