@@ -108,7 +108,8 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 
 	time_t local_epoch = 0;
 	bool found = hk_get_epoch(&local_epoch, packet->id.src);
-	if(!found){
+	if (!found || local_epoch == 0) {
+		printf("EPOCH for node %u is not configured, logging is aborted", packet->id.src);
 		return false;
 	}
 
@@ -132,13 +133,11 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 		param_t * param = param_list_find_id(node, id);
 		if (param) {
 			*param->timestamp = timestamp;
-			if (*param->timestamp == 0 || local_epoch == 0) {
-				printf("EPOCH or param timestamp is missing for %u:%s, logging is aborted %u %lu\n", param->node, param->name, *param->timestamp, local_epoch);
+			if (*param->timestamp == 0) {
+				printf("Param timestamp is missing for %u:%s, logging is aborted\n", param->node, param->name);
 				break;
 			}
-			if (*param->timestamp != 0) {
-				*param->timestamp += local_epoch;
-			}
+			*param->timestamp += local_epoch;
 			param_sniffer_log(NULL, &queue, param, offset, &reader, *param->timestamp);
 		}
 	}
