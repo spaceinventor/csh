@@ -12,3 +12,34 @@ The environment variable related commands all start with the ``var_`` prefix and
 * ``var_expand``: perform variable expansion in a string
 
 See the `Built-in commands`_ section for a description of these commands.
+
+Environment variables examples
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- Defining a new variable:
+
+|
+
+.. csh-prompt:: host>6> var_set MY_VARIABLE 1
+
+|
+
+
+- Printing the value of a variable:
+
+|
+
+
+.. csh-prompt:: host>6> var_get MY_VARIABLE
+
+|
+
+
+- Using a variable in a command:
+
+|
+
+
+.. csh-prompt:: host>6> watch -n 5 "ping $(MY_VARIABLE)"
+
+
