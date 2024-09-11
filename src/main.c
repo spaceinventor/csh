@@ -26,6 +26,7 @@
 #include <vmem/vmem_file.h>
 
 #include "known_hosts.h"
+#include "environment.h"
 
 extern const char *version_string;
 
@@ -183,6 +184,8 @@ static struct slash *slash2;
 #define slash slash2
 
 static void csh_cleanup(void) {
+	/* Clear the environment, freeing up memory */
+	csh_clearenv();
 	slash_destroy(slash);  // Restores terminal
 	curl_global_cleanup();
 }
@@ -191,6 +194,13 @@ static void sigint_handler(int signum) {
 	/* Calls atexit() to handle cleanup */
 	exit(signum); // Exit the program with the signal number as the exit code
 }
+
+static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
+    char *expansion = csh_expand_vars(line);
+    /* NULL check is not performed on purpose here, SLASH is able to deal with this */
+    return expansion;
+}
+
 
 int main(int argc, char **argv) {
 
@@ -244,6 +254,12 @@ int main(int argc, char **argv) {
 
 	void serial_init(void);
 	serial_init();
+
+	/* 
+	 * Configure "slash_process_cmd_line_hook" with 
+	 * our function that expands environment variables
+	 */
+	slash_process_cmd_line_hook = csh_environ_slash_process_cmd_line_hook;
 
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
