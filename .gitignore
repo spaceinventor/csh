@@ -14,7 +14,6 @@ builddir
 build-doc
 *.cfg
 *.lzo
-*.csv
 *.vmem
 *.log
 .cache
