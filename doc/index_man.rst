@@ -74,9 +74,15 @@ Example module testing procedure using CSH
 List of commands
 -----------------------------
 
-Build-in commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. include:: MAN/Operating_Instructions/buildin_commands.rst
+Built-in commands (NEW)
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. partool -q --csv -s builddir/csh | (read -r; printf "%s\n" "$REPLY"; sort) > doc/MAN/Operating_Instructions/builtin_commands.csv
+
+.. csv-table:: Built-in commands
+    :file: MAN/Operating_Instructions/builtin_commands.csv
+    :widths: 20 20 70
+    :header-rows: 1
 
 Housekeeping APM (libcsh_hk.so) commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
