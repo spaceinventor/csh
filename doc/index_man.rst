@@ -74,8 +74,8 @@ Example module testing procedure using CSH
 List of commands
 -----------------------------
 
-Built-in commands (NEW)
-~~~~~~~~~~~~~~~~~~~~~~~
+Built-in commands
+~~~~~~~~~~~~~~~~~
 
 .. partool -q --csv -s builddir/csh | (read -r; printf "%s\n" "$REPLY"; sort) > doc/MAN/Operating_Instructions/builtin_commands.csv
 
@@ -111,6 +111,8 @@ Cortex CSH (APM)
 Scheduler & Named Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: MAN/Operating_Instructions/scheduler_examples.rst
+
+.. include:: MAN/Operating_Instructions/environment_variables.rst
 
 .. Appendices
 .. ===========================================================================
