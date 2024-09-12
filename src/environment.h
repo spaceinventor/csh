@@ -13,7 +13,7 @@ extern "C"
     /**
      * @brief callback prototype for function used in csh_foreach_var() function
      */
-    typedef void (*csh_foreach_var_cb)(const char *name);
+    typedef void (*csh_foreach_var_cb)(const char *name, void *ctx);
 
     /**
      * @brief Retrieve the value of an environment variable
@@ -68,8 +68,9 @@ extern "C"
     /**
      * @brief Call the given function for each defined variable in the environment
      * @param cb function to call
+     * @param ctx user context that will be passed on to the callback
      */
-    void csh_foreach_var(csh_foreach_var_cb cb);
+    void csh_foreach_var(csh_foreach_var_cb cb, void *ctx);
 
 #ifdef __cplusplus
 }

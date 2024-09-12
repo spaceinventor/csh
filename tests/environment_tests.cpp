@@ -24,15 +24,15 @@ TEST(environment, environment_tests) {
 
 
     static auto callback_count = 0;
-    auto cb = [](const char *name) {
+    auto cb = [](const char *name, void *ctx) {
         callback_count++;
     };
     ASSERT_EQ(0, csh_putvar("JB", "SPACEINVENTOR"));
-    csh_foreach_var(cb);
+    csh_foreach_var(cb, NULL);
     ASSERT_EQ(1, callback_count);
 
     callback_count = 0;
     csh_clearenv();
-    csh_foreach_var(cb);
+    csh_foreach_var(cb, NULL);
     ASSERT_EQ(0, callback_count);
 }

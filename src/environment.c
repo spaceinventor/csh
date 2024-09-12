@@ -31,10 +31,10 @@ static char *csh_copy_char_and_grow(char *dest, size_t at, size_t *dest_len, cha
     return dest;
 }
 
-void csh_foreach_var(csh_foreach_var_cb cb) {
+void csh_foreach_var(csh_foreach_var_cb cb, void *ctx) {
     struct csh_env_entry *cur;
     SLIST_FOREACH(cur, &csh_env, list) {
-        cb(cur->name);
+        cb(cur->name, ctx);
     }
 }
 

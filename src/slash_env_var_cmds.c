@@ -39,6 +39,120 @@
  * leaking sensitive info.
  */
 
+typedef struct {
+    const char *slash_buffer_start;
+    const char *previous_match;
+    char *to_match;
+    int matches;
+    int prev_match_length;
+    struct slash * slash;
+} env_var_completer_t;
+
+static void env_var_completer_csh_foreach_var_cb(const char *name, void *ctx) {
+    env_var_completer_t *my_ctx = (env_var_completer_t *)ctx;
+    if(strncmp(my_ctx->to_match, name, slash_min(strlen(name), strlen(my_ctx->to_match))) == 0) {
+        int cur_l = strlen(name);
+        my_ctx->matches++;
+        if(NULL != my_ctx->previous_match) {
+            if(cur_l <= my_ctx->prev_match_length && strlen(my_ctx->to_match) < my_ctx->prev_match_length) {
+                // my_ctx->previous_match = name;
+                my_ctx->prev_match_length = cur_l;
+            } else {
+                my_ctx->matches--;
+            }
+        } else {
+            my_ctx->previous_match = name;
+            my_ctx->prev_match_length = cur_l;
+        }
+        switch(my_ctx->matches) {
+            case 1:
+                break;
+            case 2:
+                slash_printf(my_ctx->slash, "\n%s\n", my_ctx->previous_match);
+            default:
+                slash_printf(my_ctx->slash, "%s\n", name);
+                break;
+        }
+    }
+}
+
+static void env_var_completer(struct slash * slash, char * token) {
+    int length = strlen(token);
+    char *var_start;
+    char *var_end;
+    bool has_completed = false;
+    for (int i = length - 1; i >= 0; i--) {
+        if(i >= 0) {
+            if(token[i] == ' ') {
+                var_start = var_end = &(token[i+1]);
+                while(*var_end != '\0' && *var_end != ' ') {
+                    var_end++;
+                }
+                env_var_completer_t ctx = { 
+                    .slash_buffer_start = var_start,
+                    .to_match = strndup(var_start, var_end - var_start + 1),
+                    .matches = 0,
+                    .prev_match_length = 0,
+                    .slash = slash
+                    };
+                csh_foreach_var(env_var_completer_csh_foreach_var_cb, &ctx);
+                free(ctx.to_match);
+                    switch(ctx.matches) {
+                        case 0:
+                            break;
+                        case 1: {
+                            strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+                        }
+                        break;
+                        default: {
+                            strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
+                        }
+                        break;
+                    }
+                if(ctx.matches > 0) {
+                    slash->length = strlen(slash->buffer);
+                    slash->cursor = slash->length;
+                }
+                has_completed = true;
+                break;
+            }
+        }
+    }
+    if(false == has_completed) {
+        var_start = var_end = token;
+        while(*var_end != '\0' && *var_end != ' ') {
+            var_end++;
+        }
+        env_var_completer_t ctx = { 
+            .slash_buffer_start = var_start,
+            .to_match = strndup(var_start, var_end - var_start + 1),
+            .matches = 0,
+            .prev_match_length = 0,
+            .slash = slash
+            };
+        csh_foreach_var(env_var_completer_csh_foreach_var_cb, &ctx);
+        free(ctx.to_match);
+        switch(ctx.matches) {
+            case 0:
+                break;
+            case 1: {
+                strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+            }
+            break;
+            default: {
+                strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
+                slash->buffer[(ctx.slash_buffer_start - slash->buffer) + ctx.prev_match_length] = '\0';
+            }
+            break;
+        }
+        if(ctx.matches > 0) {
+            slash->length = strlen(slash->buffer);
+            slash->cursor = slash->length;
+        }
+    }
+}
+
+
 slash_command_group(env, "CSH environment variables");
 
 const struct slash_command slash_cmd_var_set;
@@ -61,7 +175,7 @@ static int slash_var_set(struct slash *slash)
     optparse_del(parser);    
 	return SLASH_SUCCESS;
 }
-slash_command(var_set, slash_var_set, "NAME VALUE", "Create or update an environment variable in CSH");
+slash_command_completer(var_set, slash_var_set, env_var_completer, "NAME VALUE", "Create or update an environment variable in CSH");
 
 
 const struct slash_command slash_cmd_var_unset;
@@ -106,6 +220,59 @@ static int slash_var_clear(struct slash *slash)
 }
 slash_command(var_clear, slash_var_clear, NULL, "Clear all environment variables in CSH");
 
+static void env_var_ref_completer(struct slash * slash, char * token) {
+    int length = strlen(token);
+    char *var_start;
+    char *var_end;
+    bool closing_bracket = false;
+    for (int i = length - 1; i >= 0; i--) {
+        if(token[i] == ')') {
+            closing_bracket = true;
+            continue;
+        }
+        if(i >= 0) {
+            if(token[i] == '$' && token[i+1] == '(') {
+                if(closing_bracket == false) {
+                    var_start = var_end = &(token[i+2]);
+                    while(*var_end != '\0' && *var_end != ' ') {
+                        var_end++;
+                    }
+                    env_var_completer_t ctx = { 
+                        .slash_buffer_start = var_start,
+                        .to_match = strndup(var_start, var_end - var_start + 1),
+                        .matches = 0,
+                        .prev_match_length = 0,
+                        .slash = slash
+                     };
+                    csh_foreach_var(env_var_completer_csh_foreach_var_cb, &ctx);
+                    free(ctx.to_match);
+                    switch(ctx.matches) {
+                        case 0:
+                            break;
+                        case 1: {
+                            strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+                            strcat(slash->buffer, ")");
+                        }
+                        break;
+                        default: {
+                            strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
+                        }
+                        break;
+                    }
+                    if(ctx.matches > 0) {
+                        slash->length = strlen(slash->buffer);
+                        slash->cursor = slash->length;
+                    }
+                    break;
+                } else {
+                    /* We found an entire variable reference from the end of the string, break out of completion */
+                    break;
+                }
+            }
+        }
+    }
+}
+
 const struct slash_command slash_cmd_var_get;
 static int slash_var_get(struct slash *slash)
 {
@@ -128,9 +295,9 @@ static int slash_var_get(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command(var_get, slash_var_get, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined");
+slash_command_completer(var_get, slash_var_get, env_var_completer, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined");
 
-static void print_var(const char *name) {
+static void print_var(const char *name, void *ctx) {
     printf("%s=%s\n", name, csh_getvar(name));
 }
 
@@ -149,7 +316,7 @@ static int slash_var_show(struct slash *slash)
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
-    csh_foreach_var(print_var);
+    csh_foreach_var(print_var, NULL);
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
@@ -194,4 +361,4 @@ static int slash_var_expand(struct slash *slash)
     optparse_del(parser);
 	return result;
 }
-slash_command(var_expand, slash_var_expand, "[-e] [-q] INPUT", "Display the given INPUT string with references to defined variables expanded.");
+slash_command_completer(var_expand, slash_var_expand, env_var_ref_completer, "[-e] [-q] INPUT", "Display the given INPUT string with references to defined variables expanded.");
