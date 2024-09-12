@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "environment.h"
+#include "slash_env_var_completion.h"
 
 /**
  * Adds the following commands to CSH:
@@ -220,7 +221,7 @@ static int slash_var_clear(struct slash *slash)
 }
 slash_command(var_clear, slash_var_clear, NULL, "Clear all environment variables in CSH");
 
-static void env_var_ref_completer(struct slash * slash, char * token) {
+void env_var_ref_completer(struct slash * slash, char * token) {
     int length = strlen(token);
     char *var_start;
     char *var_end;

@@ -27,6 +27,7 @@
 
 #include "known_hosts.h"
 #include "environment.h"
+#include "slash_env_var_completion.h"
 
 extern const char *version_string;
 
@@ -260,7 +261,7 @@ int main(int argc, char **argv) {
 	 * our function that expands environment variables
 	 */
 	slash_process_cmd_line_hook = csh_environ_slash_process_cmd_line_hook;
-
+	slash_global_completer = env_var_ref_completer;
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
