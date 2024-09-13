@@ -164,7 +164,7 @@ static int slash_var_set(struct slash *slash)
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
         optparse_del(parser);
-        return SLASH_EUSAGE;
+        return SLASH_EINVAL;
     }
     if ((slash->argc - argi) != 3) {
         printf("Must give NAME and VALUE parameters\n");
@@ -187,7 +187,7 @@ static int slash_var_unset(struct slash *slash)
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
         optparse_del(parser);
-        return SLASH_EUSAGE;
+        return SLASH_EINVAL;
     }
     if ((slash->argc - argi) != 2) {
         printf("Must give NAME, and only NAME parameter\n");
@@ -208,7 +208,7 @@ static int slash_var_clear(struct slash *slash)
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
         optparse_del(parser);
-        return SLASH_EUSAGE;
+        return SLASH_EINVAL;
     }
     if ((slash->argc - argi) > 1) {
         printf("var_clear takes no parameters\n");
@@ -282,7 +282,7 @@ static int slash_var_get(struct slash *slash)
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
         optparse_del(parser);
-        return SLASH_EUSAGE;
+        return SLASH_EINVAL;
     }
     if ((slash->argc - argi) != 2) {
         printf("Must give NAME, and only NAME parameter\n");
@@ -310,7 +310,7 @@ static int slash_var_show(struct slash *slash)
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
         optparse_del(parser);
-        return SLASH_EUSAGE;
+        return SLASH_EINVAL;
     }
     if ((slash->argc - argi) > 1) {
         printf("var_show takes no parameters\n");
@@ -336,7 +336,7 @@ static int slash_var_expand(struct slash *slash)
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
         optparse_del(parser);
-        return SLASH_EUSAGE;
+        return SLASH_EINVAL;
     }
     if ((slash->argc - argi) != 2) {
         printf("Must give an INPUT parameter\n");
