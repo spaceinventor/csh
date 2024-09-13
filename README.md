@@ -14,6 +14,8 @@ But the software will be called `csh` (pronounced 'seashell') from now on.
 
 ## Build
 
+![build.yml status](https://github.com/spaceinventor/csh/actions/workflows/build.yml/badge.svg)
+
 Requirements: libcurl4-openssl-dev build-essential, libsocketcan-dev, can-utils, libzmq3-dev, libyaml-dev, meson, ninja, pkg-config, fonts-powerline, python3-pip, libelf-dev, libbsd-dev
 
 ```

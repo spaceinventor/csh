@@ -14,9 +14,10 @@ builddir
 build-doc
 *.cfg
 *.lzo
-*.csv
 *.vmem
 *.log
 .cache
 .codechecker
 sysroot
+lib/googletest-1.14.0
+lib/packagecache

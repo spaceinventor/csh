@@ -1,4 +1,4 @@
-project('csh', 'c', subproject_dir: 'lib', default_options: [
+project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'buildtype=debug', 
 	'c_std=gnu11', 
 	'b_lto=false',
@@ -66,12 +66,13 @@ csh_sources = [
 	'src/vts.c',
 	'src/walkdir.c',
     'src/victoria_metrics.c', 
-    'src/loki.c', 
+    'src/loki.c',
+    'src/slash_env_var_cmds.c', 
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
-utils_lib_src = ['src/url_utils.c']
+utils_lib_src = ['src/url_utils.c', 'src/environment.c']
 utils_lib_inc = include_directories('src')
 utils_lib = static_library('csh_utils', utils_lib_src, include_directories: utils_lib_inc)
 utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with : utils_lib)
