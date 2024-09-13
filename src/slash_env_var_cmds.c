@@ -357,7 +357,7 @@ static int slash_var_expand(struct slash *slash)
             slash_refresh(slash, 1);
             printf("\n");
         }
-		result = slash_execute(slash, slash->buffer);
+	    result = slash_execute(slash, slash->buffer);
     }
     optparse_del(parser);
 	return result;
