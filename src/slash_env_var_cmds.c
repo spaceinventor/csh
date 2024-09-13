@@ -226,48 +226,51 @@ void env_var_ref_completer(struct slash * slash, char * token) {
     char *var_start;
     char *var_end;
     bool closing_bracket = false;
-    for (int i = length - 1; i >= 0; i--) {
-        if(token[i] == ')') {
-            closing_bracket = true;
-            continue;
-        }
-        if(i >= 0) {
-            if(token[i] == '$' && token[i+1] == '(') {
-                if(closing_bracket == false) {
-                    var_start = var_end = &(token[i+2]);
-                    while(*var_end != '\0' && *var_end != ' ') {
-                        var_end++;
-                    }
-                    env_var_completer_t ctx = { 
-                        .slash_buffer_start = var_start,
-                        .to_match = strndup(var_start, var_end - var_start + 1),
-                        .matches = 0,
-                        .prev_match_length = 0,
-                        .slash = slash
-                     };
-                    csh_foreach_var(env_var_completer_csh_foreach_var_cb, &ctx);
-                    free(ctx.to_match);
-                    switch(ctx.matches) {
-                        case 0:
+    if(length > 1) {
+        /* All of this is only relevant if token is at least "$(", as there is nothing to complete otherwise */
+        for (int i = length - 1; i >= 0; i--) {
+            if(token[i] == ')') {
+                closing_bracket = true;
+                continue;
+            }
+            if(i >= 0) {
+                if(token[i] == '$' && token[i+1] == '(') {
+                    if(closing_bracket == false) {
+                        var_start = var_end = &(token[i+2]);
+                        while(*var_end != '\0' && *var_end != ' ') {
+                            var_end++;
+                        }
+                        env_var_completer_t ctx = { 
+                            .slash_buffer_start = var_start,
+                            .to_match = strndup(var_start, var_end - var_start + 1),
+                            .matches = 0,
+                            .prev_match_length = 0,
+                            .slash = slash
+                        };
+                        csh_foreach_var(env_var_completer_csh_foreach_var_cb, &ctx);
+                        free(ctx.to_match);
+                        switch(ctx.matches) {
+                            case 0:
+                                break;
+                            case 1: {
+                                strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+                                strcat(slash->buffer, ")");
+                            }
                             break;
-                        case 1: {
-                            strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
-                            strcat(slash->buffer, ")");
+                            default: {
+                                strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
+                            }
+                            break;
+                        }
+                        if(ctx.matches > 0) {
+                            slash->length = strlen(slash->buffer);
+                            slash->cursor = slash->length;
                         }
                         break;
-                        default: {
-                            strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
-                        }
+                    } else {
+                        /* We found an entire variable reference from the end of the string, break out of completion */
                         break;
                     }
-                    if(ctx.matches > 0) {
-                        slash->length = strlen(slash->buffer);
-                        slash->cursor = slash->length;
-                    }
-                    break;
-                } else {
-                    /* We found an entire variable reference from the end of the string, break out of completion */
-                    break;
                 }
             }
         }
