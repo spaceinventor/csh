@@ -244,15 +244,15 @@ void slash_on_execute_hook(const char *line) {
 
 static int loki_start_cmd(struct slash * slash) {
 
-    if (loki_running) return SLASH_SUCCESS;
-
     char * tmp_username = NULL;
     char * tmp_password = NULL;
+    char * key_file = NULL;
 
     optparse_t * parser = optparse_new("loki start", "<server or full HTTP(s) API root for the targetted Loki instance>");
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for Loki logging");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for Loki logging");
+    optparse_add_string(parser, 'a', "auth_file", "STR", &key_file, "File containing private key for Loki logging (default: None)");
     optparse_add_set(parser, 's', "ssl", 1, &(args.use_ssl), "Use SSL/TLS");
     optparse_add_int(parser, 'P', "server-port", "NUM", 0, &(args.port), "Overwrite default port");
     optparse_add_set(parser, 'S', "skip-verify", 1, &(args.skip_verify), "Skip verification of the server's cert and hostname");
@@ -263,6 +263,12 @@ static int loki_start_cmd(struct slash * slash) {
     if (argi < 0) {
         optparse_del(parser);
         return SLASH_EINVAL;
+    }
+
+    if (loki_running) {
+        printf("Loki logging is already configured\n");
+        optparse_del(parser);
+        return SLASH_SUCCESS;
     }
 
     if (++argi >= slash->argc) {
@@ -277,6 +283,42 @@ static int loki_start_cmd(struct slash * slash) {
     } else {
         args.api_root = strdup(slash->argv[argi]);
         args.server_ip = NULL;
+    }
+
+    if(key_file) {
+        char key_file_local[256];
+        if (key_file[0] == '~') {
+            strcpy(key_file_local, getenv("HOME"));
+            strcpy(&key_file_local[strlen(key_file_local)], &key_file[1]);
+        }
+        else {
+            strcpy(key_file_local, key_file);
+        }
+
+        FILE *file = fopen(key_file_local, "r");
+        if(file == NULL){
+            printf("Could not open config %s\n", key_file_local);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+        tmp_password = malloc(1024);
+        if (tmp_password == NULL) {
+            printf("Failed to allocate memory for secret key.\n");
+            fclose(file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+        if (fgets(tmp_password, 1024, file) == NULL) {
+            printf("Failed to read secret key from file.\n");
+            free(tmp_password);
+            fclose(file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+        tmp_password[strcspn(tmp_password, "\n")] = 0;
+        fclose(file);
     }
 
     if (tmp_username) {
