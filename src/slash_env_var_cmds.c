@@ -159,7 +159,7 @@ slash_command_group(env, "CSH environment variables");
 const struct slash_command slash_cmd_var_set;
 static int slash_var_set(struct slash *slash)
 {
-    optparse_t * parser = optparse_new_ex("var_set", "NAME VALUE", slash_cmd_var_set.help);
+    optparse_t * parser = optparse_new_ex(slash_cmd_var_set.name, slash_cmd_var_set.args, slash_cmd_var_set.help);
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
@@ -176,13 +176,13 @@ static int slash_var_set(struct slash *slash)
     optparse_del(parser);    
 	return SLASH_SUCCESS;
 }
-slash_command_completer(var_set, slash_var_set, env_var_completer, "NAME VALUE", "Create or update an environment variable in CSH");
+slash_command_sub_completer(var, set, slash_var_set, env_var_completer, "NAME VALUE", "Create or update an environment variable in CSH");
 
 
 const struct slash_command slash_cmd_var_unset;
 static int slash_var_unset(struct slash *slash)
 {
-    optparse_t * parser = optparse_new_ex("var_unset", "NAME", slash_cmd_var_unset.help);
+    optparse_t * parser = optparse_new_ex(slash_cmd_var_unset.name, slash_cmd_var_unset.args, slash_cmd_var_unset.help);
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
@@ -198,12 +198,12 @@ static int slash_var_unset(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command(var_unset, slash_var_unset, "NAME", "Remove an environment variable in CSH");
+slash_command_sub(var, unset, slash_var_unset, "NAME", "Remove an environment variable in CSH");
 
-const struct slash_command slash_cmd_var_clean;
+const struct slash_command slash_cmd_var_clear;
 static int slash_var_clear(struct slash *slash)
 {
-    optparse_t * parser = optparse_new_ex("var_clear", NULL, slash_cmd_var_clean.help);
+    optparse_t * parser = optparse_new_ex(slash_cmd_var_clear.name, slash_cmd_var_clear.args, slash_cmd_var_clear.help);
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
@@ -280,7 +280,7 @@ void env_var_ref_completer(struct slash * slash, char * token) {
 const struct slash_command slash_cmd_var_get;
 static int slash_var_get(struct slash *slash)
 {
-    optparse_t * parser = optparse_new_ex("var_get", "NAME", slash_cmd_var_get.help);
+    optparse_t * parser = optparse_new_ex(slash_cmd_var_get.name, slash_cmd_var_get.args, slash_cmd_var_get.help);
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
@@ -299,7 +299,7 @@ static int slash_var_get(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_completer(var_get, slash_var_get, env_var_completer, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined");
+slash_command_sub_completer(var, get, slash_var_get, env_var_completer, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined");
 
 static void print_var(const char *name, void *ctx) {
     printf("%s=%s\n", name, csh_getvar(name));
@@ -308,7 +308,7 @@ static void print_var(const char *name, void *ctx) {
 const struct slash_command slash_cmd_var_show;
 static int slash_var_show(struct slash *slash)
 {
-    optparse_t * parser = optparse_new_ex("var_show", NULL, slash_cmd_var_show.help);
+    optparse_t * parser = optparse_new_ex(slash_cmd_var_show.name, slash_cmd_var_show.args, slash_cmd_var_show.help);
     optparse_add_help(parser);
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi == -1) {
@@ -324,7 +324,7 @@ static int slash_var_show(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command(var_show, slash_var_show, NULL, "Print the defined variables and their values");
+slash_command_sub(var, show, slash_var_show, NULL, "Print the defined variables and their values");
 
 const struct slash_command slash_cmd_var_expand;
 static int slash_var_expand(struct slash *slash)
@@ -332,7 +332,7 @@ static int slash_var_expand(struct slash *slash)
     int result = SLASH_SUCCESS;
     int execute = 0;
     int quiet = 0;
-    optparse_t * parser = optparse_new_ex("var_expand", "[-e] [-q] INPUT", slash_cmd_var_expand.help);
+    optparse_t * parser = optparse_new_ex(slash_cmd_var_expand.name, slash_cmd_var_expand.args, slash_cmd_var_expand.help);
     optparse_add_help(parser);
     optparse_add_set(parser, 'e', "execute", true, &execute, "Attempt to run the result of the expanded string");
     optparse_add_set(parser, 'q', "quiet", true, &quiet, "Do not print the expanded string before executing it (useful if line contains sensitive info that you do not want logged)");
@@ -365,4 +365,4 @@ static int slash_var_expand(struct slash *slash)
     optparse_del(parser);
 	return result;
 }
-slash_command_completer(var_expand, slash_var_expand, env_var_ref_completer, "[-e] [-q] INPUT", "Display the given INPUT string with references to defined variables expanded.");
+slash_command_sub_completer(var, expand, slash_var_expand, env_var_ref_completer, "[-e] [-q] INPUT", "Display the given INPUT string with references to defined variables expanded.");
