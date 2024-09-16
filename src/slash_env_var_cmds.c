@@ -49,6 +49,20 @@ typedef struct {
     struct slash * slash;
 } env_var_completer_t;
 
+static int prefix_length(const char *s1, const char *s2)
+{
+	int len = 0;
+    if (s1 && s2) {
+        while (*s1 && *s2 && *s1 == *s2) {
+            len++;
+            s1++;
+            s2++;
+        }
+    }
+	return len;
+}
+
+
 static void env_var_completer_csh_foreach_var_cb(const char *name, void *ctx) {
     env_var_completer_t *my_ctx = (env_var_completer_t *)ctx;
     if(strncmp(my_ctx->to_match, name, slash_min(strlen(name), strlen(my_ctx->to_match))) == 0) {
@@ -56,10 +70,11 @@ static void env_var_completer_csh_foreach_var_cb(const char *name, void *ctx) {
         my_ctx->matches++;
         if(NULL != my_ctx->previous_match) {
             if(cur_l <= my_ctx->prev_match_length && strlen(my_ctx->to_match) < my_ctx->prev_match_length) {
-                // my_ctx->previous_match = name;
-                my_ctx->prev_match_length = cur_l;
+                my_ctx->prev_match_length = prefix_length(name, my_ctx->previous_match);
             } else {
-                my_ctx->matches--;
+                if(*my_ctx->to_match) {
+                    my_ctx->matches--;
+                }
             }
         } else {
             my_ctx->previous_match = name;
@@ -73,6 +88,10 @@ static void env_var_completer_csh_foreach_var_cb(const char *name, void *ctx) {
             default:
                 slash_printf(my_ctx->slash, "%s\n", name);
                 break;
+        }
+    } else {
+        if(my_ctx->matches == 2) {
+            my_ctx->matches++;
         }
     }
 }
@@ -103,6 +122,7 @@ static void env_var_completer(struct slash * slash, char * token) {
                             break;
                         case 1: {
                             strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+                            strcat(slash->buffer, " ");
                         }
                         break;
                         default: {
@@ -133,22 +153,25 @@ static void env_var_completer(struct slash * slash, char * token) {
             };
         csh_foreach_var(env_var_completer_csh_foreach_var_cb, &ctx);
         free(ctx.to_match);
-        switch(ctx.matches) {
-            case 0:
+        if(*token) {
+            switch(ctx.matches) {
+                case 0:
+                    break;
+                case 1: {
+                    strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+                    strcat(slash->buffer, " ");
+                }
                 break;
-            case 1: {
-                strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
+                default: {
+                    strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
+                    slash->buffer[(ctx.slash_buffer_start - slash->buffer) + ctx.prev_match_length] = '\0';
+                }
+                break;
             }
-            break;
-            default: {
-                strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
-                slash->buffer[(ctx.slash_buffer_start - slash->buffer) + ctx.prev_match_length] = '\0';
+            if(ctx.matches > 0) {
+                slash->length = strlen(slash->buffer);
+                slash->cursor = slash->length;
             }
-            break;
-        }
-        if(ctx.matches > 0) {
-            slash->length = strlen(slash->buffer);
-            slash->cursor = slash->length;
         }
     }
 }
@@ -198,7 +221,7 @@ static int slash_var_unset(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub(var, unset, slash_var_unset, "NAME", "Remove an environment variable in CSH");
+slash_command_sub_completer(var, unset, slash_var_unset, env_var_completer, "NAME", "Remove an environment variable in CSH");
 
 const struct slash_command slash_cmd_var_clear;
 static int slash_var_clear(struct slash *slash)
@@ -219,7 +242,7 @@ static int slash_var_clear(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command(var_clear, slash_var_clear, NULL, "Clear all environment variables in CSH");
+slash_command_sub(var, clear, slash_var_clear, NULL, "Clear all environment variables in CSH");
 
 void env_var_ref_completer(struct slash * slash, char * token) {
     int length = strlen(token);
@@ -254,11 +277,13 @@ void env_var_ref_completer(struct slash * slash, char * token) {
                                 break;
                             case 1: {
                                 strcpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match);
-                                strcat(slash->buffer, ")");
+                                strcat(slash->buffer, ") ");
                             }
                             break;
                             default: {
                                 strncpy(slash->buffer + (ctx.slash_buffer_start - slash->buffer), ctx.previous_match, ctx.prev_match_length);
+                                char *last_copied_char = slash->buffer + (ctx.slash_buffer_start - slash->buffer) + ctx.prev_match_length;
+                                *last_copied_char = '\0';
                             }
                             break;
                         }
