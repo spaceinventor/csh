@@ -113,7 +113,11 @@ apm_entry_t * load_apm(const char * path) {
 void initialize_apm(apm_entry_t * e) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
-    if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
+    if (apm_init_version_in_apm_ptr == NULL) {
+        fprintf(stderr, "APM is missing symbol \"apm_init_version\", refusing to load %s\n", e->file);
+        return;
+    }
+    if(apm_init_version != *apm_init_version_in_apm_ptr) {        
         fprintf(stderr, "APM init function version mismatch, csh version: %d apm version: %d\nRefusing to load %s\n", apm_init_version, *apm_init_version_in_apm_ptr, e->file);
         return;
     }
