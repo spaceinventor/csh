@@ -28,7 +28,7 @@ slash_command_group(apm, "apm");
     1 = void libmain(void)
     2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = 6;  // NOTE: Must be updated when APM init or library signature(s) change.
+__attribute__((used)) const int apm_init_version = 7;  // NOTE: Must be updated when APM init or library signature(s) change.
 typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
@@ -113,7 +113,11 @@ apm_entry_t * load_apm(const char * path) {
 void initialize_apm(apm_entry_t * e) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
-    if (apm_init_version_in_apm_ptr == NULL || apm_init_version != *apm_init_version_in_apm_ptr) {
+    if (apm_init_version_in_apm_ptr == NULL) {
+        fprintf(stderr, "APM is missing symbol \"apm_init_version\", refusing to load %s\n", e->file);
+        return;
+    }
+    if(apm_init_version != *apm_init_version_in_apm_ptr) {        
         fprintf(stderr, "APM init function version mismatch, csh version: %d apm version: %d\nRefusing to load %s\n", apm_init_version, *apm_init_version_in_apm_ptr, e->file);
         return;
     }
