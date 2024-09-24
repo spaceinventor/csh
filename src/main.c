@@ -24,6 +24,7 @@
 #endif
 
 #include <vmem/vmem_file.h>
+#include <vmem/vmem_client.h>
 
 #include "known_hosts.h"
 #include "environment.h"
@@ -192,8 +193,8 @@ static void csh_cleanup(void) {
 }
 
 static void sigint_handler(int signum) {
-	/* Calls atexit() to handle cleanup */
-	exit(signum); // Exit the program with the signal number as the exit code
+	slash_sigint(slash, signum);
+	vmem_client_abort();
 }
 
 static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
