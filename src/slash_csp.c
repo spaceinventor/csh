@@ -404,6 +404,12 @@ static int slash_csp_cmp_peek(struct slash *slash)
 				return SLASH_EINVAL;
 			}
 
+			if(length > CSP_CMP_PEEK_MAX_LEN){
+				printf("Max peek length %u\n", CSP_CMP_PEEK_MAX_LEN);
+				optparse_del(parser);
+				return SLASH_EUSAGE;
+			}
+
 			message.peek.addr = htobe32(address);
 			message.peek.len = length;
 
@@ -419,6 +425,12 @@ static int slash_csp_cmp_peek(struct slash *slash)
 		break;
 		case 2:
 		{
+			if(length > CSP_CMP_PEEK_V2_MAX_LEN){
+				printf("Max peek length %u\n", CSP_CMP_PEEK_V2_MAX_LEN);
+				optparse_del(parser);
+				return SLASH_EUSAGE;
+			}
+
 			message.peek_v2.vaddr = htobe64(address);
 			message.peek_v2.len = length;
 
@@ -488,6 +500,13 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	}
 
 	struct csp_cmp_message message;
+	unsigned int data_str_len = strlen(slash->argv[argi]);
+
+	if(data_str_len % 2 == 1){
+		printf("Invalid length, needs to be whole bytes in hex\n");
+		optparse_del(parser);
+		return SLASH_EUSAGE;
+	}
 
 	switch (version) {
 		case 1:
@@ -496,6 +515,12 @@ static int slash_csp_cmp_poke(struct slash *slash)
 				printf("Poke address out of 32-bit addressing range for version 1, try version 2.\n");
 				optparse_del(parser);
 				return SLASH_EINVAL;
+			}
+
+			if((data_str_len / 2) > CSP_CMP_POKE_MAX_LEN){
+				printf("Max poke length %u\n", CSP_CMP_PEEK_MAX_LEN);
+				optparse_del(parser);
+				return SLASH_EUSAGE;
 			}
 
 			message.poke.addr = htobe32((address & 0x00000000FFFFFFFFULL));
@@ -513,6 +538,11 @@ static int slash_csp_cmp_poke(struct slash *slash)
 		break;
 		case 2:
 		{
+			if((data_str_len / 2) > CSP_CMP_POKE_V2_MAX_LEN){
+				printf("Max poke length %u\n", CSP_CMP_POKE_V2_MAX_LEN);
+				optparse_del(parser);
+				return SLASH_EUSAGE;
+			}
 			message.poke_v2.vaddr = htobe64(address);
 			int outlen = base16_decode(slash->argv[argi], (uint8_t *) message.poke_v2.data);
 			message.poke_v2.len = outlen;
