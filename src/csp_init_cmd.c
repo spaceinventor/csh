@@ -268,13 +268,12 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
         .baudrate = baud,
         .databits = 8,
         .stopbits = 1,
-        .paritysetting = 0,
-        .checkparity = 0
+        .paritysetting = 0
     };
 
     csp_iface_t * iface;
     
-    int error = csp_usart_open_and_add_kiss_interface(&conf, name, &iface);
+    int error = csp_usart_open_and_add_kiss_interface(&conf, name, addr, &iface);
     if (error != CSP_ERR_NONE) {
         csp_print("Failed to add kiss interface [%s], error: %d\n", device, error);
         optparse_del(parser);
