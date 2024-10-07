@@ -12,7 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: libcurl4-openssl-dev libzmq3-dev
+          packages: libcurl4-openssl-dev libzmq3-dev libsocketcan-dev
       - uses: actions/setup-python@v1
       - name: Install gcovr
         run: pip3 install gcovr==5.0      
