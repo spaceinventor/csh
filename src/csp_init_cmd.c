@@ -61,18 +61,19 @@ static int csp_init_cmd(struct slash *slash) {
 	static struct utsname info;
 	uname(&info);
 
-    if (hostname == NULL){
-        hostname = info.nodename;
-    }else{
-        strncpy(info.nodename, hostname, 65-1);  // -1 to fit NULL byte
-        hostname = info.nodename;
+    if (hostname){
+        strncpy(info.nodename, hostname, _UTSNAME_NODENAME_LENGTH - 1);
+    }
+    if (model){
+        strncpy(info.version, model, _UTSNAME_VERSION_LENGTH - 1);
+    }
+    if (revision){
+        strncpy(info.release, revision, _UTSNAME_RELEASE_LENGTH - 1);
     }
 
-    if (model == NULL)
-        model = info.version;
-
-    if (revision == NULL)
-        revision = info.release;
+    hostname = info.nodename;
+    model = info.version;
+    revision = info.release;
 
     printf("  Version %d\n", version);
     printf("  Hostname: %s\n", hostname);
@@ -104,7 +105,7 @@ static int csp_init_cmd(struct slash *slash) {
 	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
 	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
 
-    /* no optparse_del() here as the arg string pointers might be used */
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
