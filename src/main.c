@@ -193,7 +193,9 @@ static void csh_cleanup(void) {
 }
 
 static void sigint_handler(int signum) {
-	slash_sigint(slash, signum);
+	if (!slash->busy) {
+		slash_sigint(slash, signum);
+	}
 	vmem_client_abort();
 }
 
