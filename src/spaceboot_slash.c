@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
+#include <signal.h>
 
 #include <slash/slash.h>
 #include <slash/dflopt.h>
@@ -265,7 +266,10 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 
 	unsigned int timeout = 10000;
 	printf("  Upload %u bytes to node %u addr 0x%x\n", len, node, address);
-	vmem_upload(node, timeout, address, data, len, 1);
+	int res = vmem_upload(node, timeout, address, data, len, 1);
+	if(res < 0){
+		return SLASH_EINVAL;
+	}
 
 	char * datain = malloc(len);
 	vmem_download(node, timeout, address, len, datain, 1, 1);
@@ -342,7 +346,11 @@ static int slash_csp_program(struct slash * slash) {
 		bin_info.addr_min = vmem.vaddr;
 		bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
 		bin_info.count = 0;
-		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
+		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info, &slash->signal);
+		if(slash->signal == SIGINT){
+            optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 		if (bin_info.count) {
  			for (unsigned i = 0; i < bin_info.count; i++) {
 				if (bin_info.idents[i].valid) {
@@ -509,7 +517,11 @@ static int slash_sps(struct slash * slash) {
 	bin_info.addr_min = vmem.vaddr;
 	bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
 	bin_info.count = 0;
-	walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info);
+	walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info, &slash->signal);
+	if(slash->signal == SIGINT){
+		optparse_del(parser);
+		return SLASH_EINVAL;
+	}
 	if (bin_info.count) {
 		for (unsigned i = 0; i < bin_info.count; i++) {
 			if (bin_info.idents[i].valid) {

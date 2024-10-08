@@ -248,7 +248,7 @@ void build_apm_list(lib_search_t* lib_search) {
         if (split != NULL) strncpy(wpath, path, split-path);
         else strcpy(wpath, path);
 
-        walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 1, dir_callback, file_callback, lib_search);
+        walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 1, dir_callback, file_callback, lib_search, NULL);
 
         if (split == NULL) break;
 
