@@ -38,12 +38,23 @@ static int ping(int node) {
 
 static void reset_to_flash(int node, int flash, int times, int ms) {
 
-	param_t * boot_img[4];
+#define NUM_SLOTS 4
+
+	param_t * boot_img[NUM_SLOTS];
+	bool boot_img_exist[NUM_SLOTS];
+	int param_id[NUM_SLOTS] = {21, 20, 22, 23};
+	char param_name[NUM_SLOTS][10];
 	/* Setup remote parameters */
-	boot_img[0] = param_list_create_remote(21, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img0", NULL, NULL, -1);
-	boot_img[1] = param_list_create_remote(20, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img1", NULL, NULL, -1);
-	boot_img[2] = param_list_create_remote(22, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img2", NULL, NULL, -1);
-	boot_img[3] = param_list_create_remote(23, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img3", NULL, NULL, -1);
+	for (int i = 0; i < NUM_SLOTS; i++) {
+		boot_img[i] = param_list_find_id(node, param_id[i]);
+		if (boot_img[i]) {
+			boot_img_exist[i] = 1;
+		} else {
+			snprintf(param_name[i], sizeof(param_name[i]), "boot_img%u", i);
+			boot_img[i] = param_list_create_remote(param_id[i], node, PARAM_TYPE_UINT8, PM_CONF, 0, param_name[i], NULL, NULL, -1);
+			boot_img_exist[i] = param_list_add(boot_img[i]);
+		}
+	}
 
 	printf("  Switching to flash %d\n", flash);
 	printf("  Will run this image %d times\n", times);
@@ -53,10 +64,9 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 	param_queue_init(&queue, queue_buf, 50, 0, PARAM_QUEUE_TYPE_SET, 2);
 
 	uint8_t zero = 0;
-	param_queue_add(&queue, boot_img[0], 0, &zero);
-	param_queue_add(&queue, boot_img[1], 0, &zero);
-	param_queue_add(&queue, boot_img[2], 0, &zero);
-	param_queue_add(&queue, boot_img[3], 0, &zero);
+	for (int i = 0; i < NUM_SLOTS; i++) {
+		param_queue_add(&queue, boot_img[i], 0, &zero);
+	}
 	param_queue_add(&queue, boot_img[flash], 0, &times);
 	param_push_queue(&queue, 1, node, 1000, 0, false);
 
@@ -71,8 +81,9 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 	}
 	printf("\n");
 
-	for (int i = 0; i < 4; i++)
-		param_list_destroy(boot_img[i]);
+	for (int i = 0; i < NUM_SLOTS; i++) {
+		if (!boot_img_exist[i]) param_list_remove_specific(boot_img[i], false, true);
+	}
 
 	ping(node);
 }
