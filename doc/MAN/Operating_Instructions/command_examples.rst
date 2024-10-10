@@ -420,8 +420,8 @@ Remotely request interface statistics. For a combined overview of all interfaces
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>6> ifstat CAN
-         | CAN 	  tx: 75840 rx: 81818 txe: 00000 rxe: 00000
+      .. csh-prompt:: host>6> ifstat CAN0
+         | CAN0   tx: 75840 rx: 81818 txe: 00000 rxe: 00000
          |        drop: 00000 autherr: 00000 frame: 06176
          |        txb: 3265270 rxb: 3321911  
     
