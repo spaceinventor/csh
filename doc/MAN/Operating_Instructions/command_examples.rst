@@ -47,6 +47,7 @@ Register new CAN interface in CSH.
 **csp add zmq**
 
 Initialise a new ZMQ interface.
+
 .. class:: table
 
 .. list-table::
@@ -71,10 +72,8 @@ Add new routes to the CSP routing table in CSH.
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>> csp route add 64/8 CAN0
-         | Added route 64/8 ZMQ0
-         | ...[tcp://localhost:6000],sub(rx):
-         | ...[tcp://localhost:7000]
+      .. csh-prompt:: host>> csp add route 64/8 CAN0
+         | Added route 64/8 CAN0
 
 **csp scan**
 
