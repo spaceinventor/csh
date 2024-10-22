@@ -7,36 +7,36 @@
 
 /**
  * Adds the following commands to CSH:
- * - var_set
- * - var_get
- * - var_unset
- * - var_show
- * - var_clear
- * - var_expand
+ * - var set
+ * - var get
+ * - var unset
+ * - var show
+ * - var clear
+ * - var expand
  * 
  * Examples:
  * 
- * var_set WATCH_TIME 2000
- * var_set CMD "list"
- * var_show
+ * var set WATCH_TIME 2000
+ * var set CMD "list"
+ * var show
  *
- * var_expand "watch -n $(WATCH_TIME) $(CMD)"
+ * var expand "watch -n $(WATCH_TIME) $(CMD)"
  * - prints the expanded version of its argument
  * 
- * var_expand -e "watch -n $(WATCH_TIME) $(CMD)"
+ * var expand -e "watch -n $(WATCH_TIME) $(CMD)"
  * -e means "csh-execute the expanded argument"
  * 
- * var_unset CMD
- * var_show
+ * var unset CMD
+ * var show
  * 
- * var_clear
- * var_show
+ * var clear
+ * var show
  * 
- * var_set MY_PASSWORD 123456 # Don't you ever do that!
- * var_expand -q -e "command -p $(PASSWORD)"
+ * var set MY_PASSWORD 123456 # Don't you ever do that!
+ * var expand -q -e "command -p $(PASSWORD)"
  * -q means do NOT print the expanded version of its argument, but just csh-execute it.
  * This is useful if you do not want the "PASSWORD" variable to appear in logs, for instance. The log will still
- * contain this 'var_expand -q -e "command -p $(PASSWORD)"', which is still useful enough for tracing/debugging without
+ * contain this 'var expand -q -e "command -p $(PASSWORD)"', which is still useful enough for tracing/debugging without
  * leaking sensitive info.
  */
 
@@ -234,7 +234,7 @@ static int slash_var_clear(struct slash *slash)
         return SLASH_EINVAL;
     }
     if ((slash->argc - argi) > 1) {
-        printf("var_clear takes no parameters\n");
+        printf("var clear takes no parameters\n");
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
@@ -341,7 +341,7 @@ static int slash_var_show(struct slash *slash)
         return SLASH_EINVAL;
     }
     if ((slash->argc - argi) > 1) {
-        printf("var_show takes no parameters\n");
+        printf("var show takes no parameters\n");
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
