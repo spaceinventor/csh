@@ -81,7 +81,9 @@
 		"thread": "c",
 		"cinttypes": "c",
 		"cstdbool": "c",
-		"version": "c"
+		"version": "c",
+		"any": "c",
+		"fstream": "c"
 	},
 	"files.exclude": {
 		"**/.gitignore": true,
