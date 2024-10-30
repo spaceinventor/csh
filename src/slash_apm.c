@@ -376,3 +376,12 @@ static int apm_info_cmd(struct slash *slash) {
 
 }
 slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
+
+static int doc_cmd(struct slash *slash) {
+
+    system("xdg-open /usr/share/si-csh/CSH_MAN.pdf >nul 2>nul");
+    printf("CSH manual is now open in PDF viewer, if available\n");
+
+    return SLASH_SUCCESS;
+}
+slash_command(manual, doc_cmd, "", "Show CSH documentation as PDF");
