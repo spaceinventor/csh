@@ -30,4 +30,17 @@ echo "Description: CSP shell client application" >> si-csh_$REVID/DEBIAN/control
 echo " For easy operation of Space Inventor" >> si-csh_$REVID/DEBIAN/control
 echo " satellites and modules based on CSP and libparam" >> si-csh_$REVID/DEBIAN/control
 
+#!/bin/sh
+
+echo 'USER_FOLDER=`eval echo ~$SUDO_USER`' >  si-csh_$REVID/DEBIAN/postinst
+echo 'if [ -f "$USER_FOLDER/.local/bin/csh" ]' >>  si-csh_$REVID/DEBIAN/postinst
+echo 'then' >>  si-csh_$REVID/DEBIAN/postinst
+echo '    echo "Removing CSH from local installation"' >>  si-csh_$REVID/DEBIAN/postinst
+echo '    rm $USER_FOLDER/.local/bin/csh' >>  si-csh_$REVID/DEBIAN/postinst
+echo 'fi' >>  si-csh_$REVID/DEBIAN/postinst
+
+chmod +x si-csh_$REVID/DEBIAN/postinst
+
 dpkg -b si-csh_$REVID
+
+rm -R si-csh_$REVID
