@@ -293,6 +293,9 @@ int apm_load_search(lib_search_t *lib_search) {
         strncat(path, dir, WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
     }
 
+    strncat(path, ";", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+    strncat(path, "/usr/share/csh", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+
     build_apm_list(lib_search);
 
     if (lib_search->lib_count == 0) {
@@ -379,7 +382,7 @@ slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
 
 static int doc_cmd(struct slash *slash) {
 
-    system("xdg-open /usr/share/si-csh/CSH_MAN.pdf >nul 2>nul");
+    system("xdg-open /usr/share/si-csh/CSH_MAN.pdf >/dev/null 2>/dev/null");
     printf("CSH manual is now open in PDF viewer, if available\n");
 
     return SLASH_SUCCESS;
