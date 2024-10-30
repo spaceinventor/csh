@@ -31,7 +31,7 @@ echo " For easy operation of Space Inventor" >> si-csh_$REVID/DEBIAN/control
 echo " satellites and modules based on CSP and libparam" >> si-csh_$REVID/DEBIAN/control
 
 echo '#!/bin/sh' >  si-csh_$REVID/DEBIAN/postinst
-echo 'setcap cap_net_raw+ep /usr/bin/csh'
+echo 'setcap cap_net_raw,cap_net_admin+ep /usr/bin/csh' >> si-csh_$REVID/DEBIAN/postinst
 echo 'USER_FOLDER=`eval echo ~$SUDO_USER`' >> si-csh_$REVID/DEBIAN/postinst
 echo 'if [ -f "$USER_FOLDER/.local/bin/csh" ]' >>  si-csh_$REVID/DEBIAN/postinst
 echo 'then' >>  si-csh_$REVID/DEBIAN/postinst
