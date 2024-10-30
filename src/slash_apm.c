@@ -294,7 +294,7 @@ int apm_load_search(lib_search_t *lib_search) {
     }
 
     strncat(path, ";", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
-    strncat(path, "/usr/share/csh", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+    strncat(path, "/usr/lib/csh", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
 
     build_apm_list(lib_search);
 
