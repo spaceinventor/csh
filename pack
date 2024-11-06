@@ -43,10 +43,12 @@ then
     rm \$USER_FOLDER/.local/bin/csh
 fi
 if [ -f "\$USER_FOLDER/.local/lib/csh/libcsh_obc.so" ]
+then
     echo "Removing libcsh_obc from local installation"
     rm "\$USER_FOLDER/.local/lib/csh/libcsh_obc.so"
 fi
 if [ -f "\$USER_FOLDER/.local/lib/csh/libcsh_si.so" ]
+then
     echo "Removing libcsh_si from local installation"
     rm "\$USER_FOLDER/.local/lib/csh/libcsh_si.so"
 fi
