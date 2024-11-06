@@ -4,43 +4,54 @@
 ./build
 ./gendoc.py
 
-IFS='-' read -ra a <<< `git describe --long --always`
+IFS='-' read -ra a <<< `git describe --long --always --dirty`
 REVID="${a[0]}-${a[1]}"
 
-rm -R si-csh_$REVID
-mkdir si-csh_$REVID
-mkdir si-csh_$REVID/usr
-mkdir si-csh_$REVID/usr/bin
+#rm -R si-csh_$REVID
+mkdir -p si-csh_$REVID/usr/bin
+mkdir -p si-csh_$REVID/usr/lib/csh
+mkdir -p si-csh_$REVID/usr/share/si-csh
+
+# TODO: this is really a hack, we fish selected APM *OUT OF OUR LOCAL INSTALLATION* to copy them, this needs to be better!!!!
+cp ~/.local/lib/csh/libcsh_obc.so si-csh_$REVID/usr/lib/csh
+cp ~/.local/lib/csh/libcsh_si.so si-csh_$REVID/usr/lib/csh
+
 cp builddir/csh si-csh_$REVID/usr/bin
-
-mkdir si-csh_$REVID/usr/share
-mkdir si-csh_$REVID/usr/share/si-csh
 cp build-doc/CSH_MAN.pdf si-csh_$REVID/usr/share/si-csh
+mkdir -p si-csh_$REVID/DEBIAN
 
-mkdir si-csh_$REVID/DEBIAN
+cat  << EOF > si-csh_$REVID/DEBIAN/control
+Package: si-csh
+Version: $REVID
+Section: base
+Priority: optional
+Architecture: amd64
+Depends: can-utils (>= 2020.11.0-1), fonts-powerline (>= 2.8.2-1)
+Maintainer: Space Inventor A/S <sales@space-inventor.com>
+Description: CSP shell client application
+ For easy operation of Space Inventor
+ satellites and modules based on CSP and libparam
+EOF
 
-echo "Package: si-csh" >  si-csh_$REVID/DEBIAN/control
-echo "Version: $REVID" >> si-csh_$REVID/DEBIAN/control
-echo "Section: base" >> si-csh_$REVID/DEBIAN/control
-echo "Priority: optional" >> si-csh_$REVID/DEBIAN/control
-echo "Architecture: amd64" >> si-csh_$REVID/DEBIAN/control
-echo "Depends: can-utils (>= 2020.11.0-1), fonts-powerline (>= 2.8.2-1)" >> si-csh_$REVID/DEBIAN/control
-echo "Maintainer: Space Inventor A/S <sales@space-inventor.com>" >> si-csh_$REVID/DEBIAN/control
-echo "Description: CSP shell client application" >> si-csh_$REVID/DEBIAN/control
-echo " For easy operation of Space Inventor" >> si-csh_$REVID/DEBIAN/control
-echo " satellites and modules based on CSP and libparam" >> si-csh_$REVID/DEBIAN/control
-
-echo '#!/bin/sh' >  si-csh_$REVID/DEBIAN/postinst
-echo 'setcap cap_net_raw,cap_net_admin+ep /usr/bin/csh' >> si-csh_$REVID/DEBIAN/postinst
-echo 'USER_FOLDER=`eval echo ~$SUDO_USER`' >> si-csh_$REVID/DEBIAN/postinst
-echo 'if [ -f "$USER_FOLDER/.local/bin/csh" ]' >>  si-csh_$REVID/DEBIAN/postinst
-echo 'then' >>  si-csh_$REVID/DEBIAN/postinst
-echo '    echo "Removing CSH from local installation"' >>  si-csh_$REVID/DEBIAN/postinst
-echo '    rm $USER_FOLDER/.local/bin/csh' >>  si-csh_$REVID/DEBIAN/postinst
-echo 'fi' >>  si-csh_$REVID/DEBIAN/postinst
+cat  << EOF > si-csh_$REVID/DEBIAN/postinst
+#!/bin/sh
+setcap cap_net_raw,cap_net_admin+ep /usr/bin/csh
+USER_FOLDER=`eval echo ~\$SUDO_USER`
+if [ -f "\$USER_FOLDER/.local/bin/csh" ]
+then
+    echo "Removing CSH from local installation"
+    rm \$USER_FOLDER/.local/bin/csh
+fi
+if [ -f "\$USER_FOLDER/.local/lib/csh/libcsh_obc.so" ]
+    echo "Removing libcsh_obc from local installation"
+    rm "\$USER_FOLDER/.local/lib/csh/libcsh_obc.so"
+fi
+if [ -f "\$USER_FOLDER/.local/lib/csh/libcsh_si.so" ]
+    echo "Removing libcsh_si from local installation"
+    rm "\$USER_FOLDER/.local/lib/csh/libcsh_si.so"
+fi
+EOF
 
 chmod +x si-csh_$REVID/DEBIAN/postinst
-
 dpkg -b si-csh_$REVID
-
 rm -R si-csh_$REVID
