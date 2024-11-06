@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp/csp_hooks.h>
@@ -566,16 +567,19 @@ static int slash_csp_cmp_poke(struct slash *slash)
 
 slash_command(poke, slash_csp_cmp_poke, "<address> <data>", "Poke");
 
+const struct slash_command slash_cmd_time;
 static int slash_csp_cmp_time(struct slash *slash)
 {
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
 	unsigned int timestamp = 0;
 	int sync = 0;
+	int human_friendly = 0;
 
-    optparse_t * parser = optparse_new("time", "");
+    optparse_t * parser = optparse_new_ex("time", "", slash_cmd_time.help);
     optparse_add_help(parser);
 	optparse_add_set(parser, 's', "sync", 1, &sync, "sync time with CSH");
+	optparse_add_set(parser, 'H', "human", 1, &human_friendly, "show the date/time info in human friendly manner");
     optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'T', "timestamp", "NUM", 0, &timestamp, "timestamp to configure in remote node)");
@@ -594,12 +598,12 @@ static int slash_csp_cmp_time(struct slash *slash)
 
 	struct csp_cmp_message message;
 
-	csp_timestamp_t localtime;
-	csp_clock_get_time(&localtime);
+	csp_timestamp_t csp_localtime;
+	csp_clock_get_time(&csp_localtime);
 
 	if (sync) {
-		message.clock.tv_sec = htobe32(localtime.tv_sec);
-		message.clock.tv_nsec = htobe32(localtime.tv_nsec);
+		message.clock.tv_sec = htobe32(csp_localtime.tv_sec);
+		message.clock.tv_nsec = htobe32(csp_localtime.tv_nsec);
 	} else {
 		message.clock.tv_sec = htobe32(timestamp);
 		message.clock.tv_nsec = htobe32(0);
@@ -615,7 +619,27 @@ static int slash_csp_cmp_time(struct slash *slash)
 	message.clock.tv_nsec = be32toh(message.clock.tv_nsec);
 
 	int64_t remote_time_ns = message.clock.tv_sec * (uint64_t) 1E9 + message.clock.tv_nsec;
-	int64_t local_time_ns = localtime.tv_sec * (uint64_t) 1E9 + localtime.tv_nsec;
+	int64_t local_time_ns = csp_localtime.tv_sec * (uint64_t) 1E9 + csp_localtime.tv_nsec;
+	if(human_friendly) {
+		char date_buffer[40];
+		time_t local_time = csp_localtime.tv_sec;
+		struct tm mt;
+		localtime_r((const time_t *)&local_time, &mt);
+		strftime(date_buffer, sizeof(date_buffer),"%Y-%m-%d %H:%M:%S %Z", &mt);
+		printf("Local date/time:\n\t%s\n", date_buffer);
+		struct tm in_utc;
+		gmtime_r((const time_t *)&local_time, &in_utc);
+		strftime(date_buffer, sizeof(date_buffer),"%Y-%m-%d %H:%M:%S %Z", &in_utc);
+		printf("\t%s\n", date_buffer);
+
+		time_t remote_time = message.clock.tv_sec;
+		localtime_r((const time_t *)&remote_time, &mt);
+		strftime(date_buffer, sizeof(date_buffer),"%Y-%m-%d %H:%M:%S %Z", &mt);
+		printf("Date/time on Node %d:\n\t%s\n", node, date_buffer);
+		gmtime_r((const time_t *)&remote_time, &in_utc);
+		strftime(date_buffer, sizeof(date_buffer),"%Y-%m-%d %H:%M:%S %Z", &in_utc);
+		printf("\t%s\n", date_buffer);		
+	}
 
 	printf("Remote time is %"PRIu32".%09"PRIu32" (diff %"PRIi64" ms)\n", message.clock.tv_sec, message.clock.tv_nsec, (remote_time_ns - local_time_ns) / 1000000);
 
