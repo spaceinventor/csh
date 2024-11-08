@@ -1,39 +1,56 @@
 #!/bin/bash
 
-./configure
-./build
-./gendoc.py
-
 IFS='-' read -ra a <<< `git describe --long --always --dirty`
 REVID="${a[0]}-${a[1]}"
+ubuntu_version=$(lsb_release -r -s)
+debbuild_dir=$(realpath si-csh_$ubuntu_version_$REVID)
 
-#rm -R si-csh_$REVID
-mkdir -p si-csh_$REVID/usr/bin
-mkdir -p si-csh_$REVID/usr/lib/csh
-mkdir -p si-csh_$REVID/usr/share/si-csh
+rm -R $debbuild_dir
+mkdir -p $debbuild_dir/usr/bin
+mkdir -p $debbuild_dir/usr/lib/csh
+mkdir -p $debbuild_dir/usr/share/si-csh
 
-# TODO: this is really a hack, we fish selected APM *OUT OF OUR LOCAL INSTALLATION* to copy them, this needs to be better!!!!
-cp ~/.local/lib/csh/libcsh_obc.so si-csh_$REVID/usr/lib/csh
-cp ~/.local/lib/csh/libcsh_si.so si-csh_$REVID/usr/lib/csh
+# build csh_si
+cd ../csh_si
+prefix=/usr ./configure
+DESTDIR=$debbuild_dir ./install
 
-cp builddir/csh si-csh_$REVID/usr/bin
-cp build-doc/CSH_MAN.pdf si-csh_$REVID/usr/share/si-csh
-mkdir -p si-csh_$REVID/DEBIAN
+# build csh_obc
+cd -
+cd ../csh_obc
+prefix=/usr ./configure
+DESTDIR=$debbuild_dir ./install
 
-cat  << EOF > si-csh_$REVID/DEBIAN/control
+# build csh
+cd -
+./configure
+./build
+
+if [ "$ubuntu_version" == "22.04" ]
+then
+    Depends="libcurl4 (>=7.81.0), libzmq5 (>=4.3.4), libc6 (>=2.35), libsocketcan2 (>=0.0.12), can-utils (>= 2020.11.0), fonts-powerline (>= 2.8.2)"
+else
+    Depends="libcurl4t64 (>=8.5.0), libzmq5 (>=4.3.5), libc6 (>=2.39), libsocketcan2 (>=0.0.12), can-utils (>= 2023.03), fonts-powerline (>= 2.8.3)"
+fi
+
+cp builddir/csh $debbuild_dir/usr/bin
+cp build-doc/CSH_MAN.pdf $debbuild_dir/usr/share/si-csh
+mkdir -p $debbuild_dir/DEBIAN
+
+cat  << EOF > $debbuild_dir/DEBIAN/control
 Package: si-csh
 Version: $REVID
 Section: base
 Priority: optional
 Architecture: amd64
-Depends: can-utils (>= 2020.11.0-1), fonts-powerline (>= 2.8.2-1)
+Depends: $Depends
 Maintainer: Space Inventor A/S <sales@space-inventor.com>
 Description: CSP shell client application
  For easy operation of Space Inventor
  satellites and modules based on CSP and libparam
 EOF
 
-cat  << EOF > si-csh_$REVID/DEBIAN/postinst
+cat  << EOF > $debbuild_dir/DEBIAN/postinst
 #!/bin/sh
 setcap cap_net_raw,cap_net_admin+ep /usr/bin/csh
 USER_FOLDER=`eval echo ~\$SUDO_USER`
@@ -54,6 +71,7 @@ then
 fi
 EOF
 
-chmod +x si-csh_$REVID/DEBIAN/postinst
-dpkg -b si-csh_$REVID
-rm -R si-csh_$REVID
+chmod +x $debbuild_dir/DEBIAN/postinst
+dpkg -b $debbuild_dir
+mv si-csh_${REVID}.deb si-csh_${ubuntu_version}_${REVID}.deb 
+rm -R $debbuild_dir
