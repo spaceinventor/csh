@@ -104,22 +104,21 @@ apm_entry_t * load_apm(const char * path) {
 
     e->handle = handle;
 
-    apm_queue_add(e);
 
     return e;
 
 }
 
-void initialize_apm(apm_entry_t * e) {
+int initialize_apm(apm_entry_t * e) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL) {
         fprintf(stderr, "APM is missing symbol \"apm_init_version\", refusing to load %s\n", e->file);
-        return;
+        return -1;
     }
     if(apm_init_version != *apm_init_version_in_apm_ptr) {        
-        fprintf(stderr, "APM init function version mismatch, csh version: %d apm version: %d\nRefusing to load %s\n", apm_init_version, *apm_init_version_in_apm_ptr, e->file);
-        return;
+        fprintf(stderr, "\033[31mError loading %s: Version mismatch: csh (%d) vs apm (%d)\033[0m\n", e->file, apm_init_version, *apm_init_version_in_apm_ptr);
+        return -1;
     }
 
     int res = 1;
@@ -132,6 +131,8 @@ void initialize_apm(apm_entry_t * e) {
         /* main.c atexit() should restore the terminal. */
         exit(1);
     }
+
+    return 0;
 }
 
 /**
@@ -206,6 +207,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
     /* Verify not already loaded */
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (strcmp(e->file, last_entry) == 0) {
+            fprintf(stderr, "\033[33mWarn skipping %s already loaded\033[0m\n", last_entry);
             return;
         }
     }
@@ -310,9 +312,16 @@ int apm_load_search(lib_search_t *lib_search) {
             return SLASH_EUSAGE;
         }
 
-        printf("\033[32mLoaded: %s\033[0m\n", e->path);
+        if(initialize_apm(e) != 0){
+            if (e->handle) {
+                dlclose(e->handle);
+            }
+            free(e);
+            continue;
+        }
 
-        initialize_apm(e);
+        apm_queue_add(e);
+        printf("\033[32mLoaded: %s\033[0m\n", e->path);
     }
 
     return SLASH_SUCCESS;
