@@ -28,7 +28,7 @@ slash_command_group(apm, "apm");
     1 = void libmain(void)
     2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = 7;  // NOTE: Must be updated when APM init or library signature(s) change.
+__attribute__((used)) const int apm_init_version = 8;  // NOTE: Must be updated when APM init or library signature(s) change.
 typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
