@@ -297,6 +297,41 @@ int main(int argc, char **argv) {
 		snprintf(buildpath, 100, "%s", initfile);
 	}
 	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
+
+	{  /* Setting environment variables for init script to use. */
+
+		#define INIT_FILE "INIT_FILE"
+		#define INIT_DIR "INIT_DIR"
+
+		/* Set environment variable for init script file/directory, before running it. */
+		char pathbuf[PATH_MAX] = {0};
+		if (NULL == realpath(buildpath, pathbuf)) {
+			pathbuf[0] = '\0';
+		}
+		/* NOTE: pathbuf can be a directory here, which is not the intention.
+			It's a pretty inconsequential edge case though, so there's not much need to fix it. */
+		csh_putvar(INIT_FILE, pathbuf);
+		printf("Variable %s defined, value=%s\n", INIT_FILE, csh_getvar(INIT_FILE));
+
+		/* Init file found, and space for trailing '/' */
+		if (strnlen(pathbuf, PATH_MAX) > 0) {
+
+			/* Find init script dir by terminating after last '/' */
+			/* NOTE: This will not handle multiple invalid init files involving '/', such as:
+				-i init.csh/
+				-i /home/user  # <-- User being a directory
+			*/
+			char *last_slash = strrchr(pathbuf, '/');
+			if (last_slash < pathbuf+PATH_MAX-1) {
+				*(last_slash+1) = '\0';
+			}
+		}
+
+		csh_putvar(INIT_DIR, pathbuf);
+		printf("Variable %s defined, value=%s\n", INIT_DIR, csh_getvar(INIT_DIR));
+
+	}
+
 	int ret = slash_run(slash, buildpath, 0);
 
 	{	/* Setting up signal handlers */
