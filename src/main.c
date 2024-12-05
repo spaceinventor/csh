@@ -316,14 +316,15 @@ int main(int argc, char **argv) {
 		/* Init file found, and space for trailing '/' */
 		if (strnlen(pathbuf, PATH_MAX) > 0) {
 
-			/* Find init script dir by terminating after last '/' */
+			/* Find init script dir by terminating at the last '/'.
+				Removing the last '/' will keep init scripts more readable. */
 			/* NOTE: This will not handle multiple invalid init files involving '/', such as:
 				-i init.csh/
 				-i /home/user  # <-- User being a directory
 			*/
 			char *last_slash = strrchr(pathbuf, '/');
 			if (last_slash < pathbuf+PATH_MAX-1) {
-				*(last_slash+1) = '\0';
+				*(last_slash) = '\0';
 			}
 		}
 
