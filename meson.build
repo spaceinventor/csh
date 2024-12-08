@@ -68,6 +68,7 @@ csh_sources = [
     'src/victoria_metrics.c', 
     'src/loki.c',
     'src/slash_env_var_cmds.c', 
+    'src/slash_run_environment.c', 
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
