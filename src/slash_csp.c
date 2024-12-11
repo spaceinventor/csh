@@ -207,7 +207,7 @@ slash_command(uptime, slash_csp_uptime, "[node]", "");
 
 static int slash_csp_cmp_ident(struct slash *slash)
 {
-	
+
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
     int override = false;
@@ -228,9 +228,10 @@ static int slash_csp_cmp_ident(struct slash *slash)
 		node = atoi(slash->argv[argi]);
 	}
 
-	struct csp_cmp_message msg;
-	msg.type = CSP_CMP_REQUEST;
-	msg.code = CSP_CMP_IDENT;
+	struct csp_cmp_message msg = {
+		.type = CSP_CMP_REQUEST,
+		.code = CSP_CMP_IDENT,
+	};
 	int size = sizeof(msg.type) + sizeof(msg.code) + sizeof(msg.ident);
 
 	csp_conn_t * conn = csp_connect(CSP_PRIO_NORM, node, CSP_CMP, timeout, CSP_O_CRC32);
