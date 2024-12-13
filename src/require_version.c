@@ -37,83 +37,122 @@ bool parse_version(const char *version_str, version_t *version) {
     return matched >= 2; // Parsed successfully in dot-separated format
 }
 
-
-static int compare_int(int a, int b) {
-    return (a > b) - (a < b); // Returns 1 if a > b, -1 if a < b, 0 if a == b
-}
-
-bool compare_version(const version_t *version, const char *constraint) {
-    if (!version || !constraint) {
-        return false;   
-    }
-
-    // Default values for constraint operator and version fields
-    char operator[3] = "=="; // Default to equality
-    version_t constraint_version = {0, 0, 0};
-
-    // Possible patterns to try
-    const char *patterns[] = {
-        "%2[<=>!]%d.%d.%d",  // Dot-separated with operator
-        "%2[<=>!]%d.%d-%d",  // Dash-separated with operator
-        "%d.%d.%d",          // Dot-separated without operator
-        "%d.%d-%d",          // Dash-separated without operator
-    };
-
-    int max_matched = 0;
-    for (size_t i = 0; i < sizeof(patterns) / sizeof(patterns[0]); ++i) {
-        char temp_operator[3] = {0}; // Temporary operator for this pattern
-        version_t temp_version = {0, 0, 0};
-
-        int matched = sscanf(constraint, patterns[i],
-                             temp_operator,
-                             &temp_version.major,
-                             &temp_version.minor,
-                             &temp_version.patch);
-
-        // Update the best match
-        if (matched <= max_matched) {
-            continue;  // This is not a better match
-        }
-
-        max_matched = matched;
-
-        // Save the best match results
-        if (matched >= 1 && strlen(temp_operator) > 0) {
-            strncpy(operator, temp_operator, sizeof(operator) - 1);
-        }
-        constraint_version = temp_version;
-    }
-
-    // Ensure at least major and minor versions were parsed
-    if (max_matched < 2) {
+bool compare_version(const version_t *version, const char *constraint_dirty) {
+    if (!version || !constraint_dirty) {
         return false;
     }
 
-    // Compare the parsed constraint version against the given version
-    int major_cmp = compare_int(version->major, constraint_version.major);
-    int minor_cmp = compare_int(version->minor, constraint_version.minor);
-    int patch_cmp = compare_int(version->patch, constraint_version.patch);
+    /* Sanitize provided constraint */
+    #define CONSTRAINT_MAXLEN sizeof(">=v9999.9999.9999")
+    #define DEFAULT_OPERATOR "=="
+    #define OPERATOR_MAXLEN sizeof(DEFAULT_OPERATOR)
+    char operator[OPERATOR_MAXLEN] = DEFAULT_OPERATOR;
+    char constraint[CONSTRAINT_MAXLEN] = {0};
 
-    // Evaluate the operator
-    if (strcmp(operator, "==") == 0) {
-        return major_cmp == 0 && minor_cmp == 0 && patch_cmp == 0;
-    } else if (strcmp(operator, "!=") == 0) {
-        return major_cmp != 0 || minor_cmp != 0 || patch_cmp != 0;
-    } else if (strcmp(operator, ">=") == 0) {
-        return (major_cmp > 0) || (major_cmp == 0 && minor_cmp > 0) ||
-               (major_cmp == 0 && minor_cmp == 0 && patch_cmp >= 0);
-    } else if (strcmp(operator, "<=") == 0) {
-        return (major_cmp < 0) || (major_cmp == 0 && minor_cmp < 0) ||
-               (major_cmp == 0 && minor_cmp == 0 && patch_cmp <= 0);
-    } else if (strcmp(operator, ">") == 0) {
-        return (major_cmp > 0) || (major_cmp == 0 && minor_cmp > 0) ||
-               (major_cmp == 0 && minor_cmp == 0 && patch_cmp > 0);
-    } else if (strcmp(operator, "<") == 0) {
-        return (major_cmp < 0) || (major_cmp == 0 && minor_cmp < 0) ||
-               (major_cmp == 0 && minor_cmp == 0 && patch_cmp < 0);
+    version_t constraint_version = {0, 0, 0};
+    #define NUM_VERSION_SEPERATORS 3
+    enum  __attribute__((packed)) {
+        MAJOR = 0,
+        MINOR = 1,
+        PATCH = 2,
+    };
+    bool wildcard_arr[NUM_VERSION_SEPERATORS] = {false};
+
+    for (size_t clean_idx = 0, dirty_idx = 0, dot_count = 0;
+        (clean_idx < CONSTRAINT_MAXLEN) && (constraint_dirty[dirty_idx] != '\0') && (dot_count < NUM_VERSION_SEPERATORS);
+        clean_idx++, dirty_idx++) {
+
+        /* Allow first 2 letters in dirty constraint as operator */
+        if (dirty_idx < OPERATOR_MAXLEN && (constraint_dirty[dirty_idx] == '<' || constraint_dirty[dirty_idx] == '>' || constraint_dirty[dirty_idx] == '=' || constraint_dirty[dirty_idx] == '!')) {
+            clean_idx--;  /* Don't skip clean index */
+            operator[dirty_idx] = constraint_dirty[dirty_idx];
+
+            if (constraint_dirty[dirty_idx] == '=') {
+                continue;
+            }
+
+            /* zero the remaining parts of the operator, so '>' doesn't become '>=' because of our default. */
+            for (size_t i = dirty_idx+1; i < OPERATOR_MAXLEN; i++) {
+                operator[i] = '\0';
+            }
+            
+            continue;
+        }
+
+        switch (constraint_dirty[dirty_idx]) {
+            case 'v':
+            case 'V':
+                /* The letter 'v' has no place in our semantic versions */
+                clean_idx--;  /* Don't skip clean index */
+                continue;
+
+            case '-':  /* Replace '-' with '.' */
+            case '.':
+                constraint[clean_idx] = '.';
+                dot_count++;  // Also track '-' as a '.'
+                continue;
+
+            case '*':
+                wildcard_arr[dot_count] = true;  // Set the corresponding wildcard flag
+                constraint[clean_idx] = '0';  // Include '0' as a placeholder in the sanitized constraint
+                /* NOTE: We may get multiple consecutive zeros here, but that shouldn't confuse sscanf(). */
+                continue;
+            
+            default:
+                constraint[clean_idx] = constraint_dirty[dirty_idx];
+                break;
+        }
     }
 
-    return false; // Unknown operator
+    /* NOTE: Repeating these operators in the 'for' loop below seems a bit smelly.
+        But we're unlikely to add more operators in the future, so it's probably fine. */
+    if (!(strcmp(operator, "==") == 0) ||
+        (strcmp(operator, "!=") == 0) ||
+        (strcmp(operator, ">=") == 0) ||
+        (strcmp(operator, "<=") == 0) ||
+        (strcmp(operator, ">")  == 0) ||
+        (strcmp(operator, "<")) == 0) {
+            fprintf(stderr, "\033[31mUnknown version constraint operator \"%s\"\033[0m\n", operator);
+            return false;
+        }
+
+    /* Parse the sanitized constraint */
+    sscanf(constraint, "%d.%d.%d", &constraint_version.major, &constraint_version.minor, &constraint_version.patch);
+
+#if 0
+    /* Debug */
+    printf("Actual version: %d.%d.%d\n", version->major, version->minor, version->patch);
+    printf("Constraint: %s\n", constraint);
+    printf("Parsed constraint: %d.%d.%d\n", constraint_version.major, constraint_version.minor, constraint_version.patch);
+    printf("Parsed operator %s\n", operator);
+    printf("Wildcards %d.%d.%d\n", wildcard_arr[MAJOR], wildcard_arr[MINOR], wildcard_arr[PATCH]);
+#endif
+
+    /* Array-based comparison for major, minor, and patch */
+    int version_parts[NUM_VERSION_SEPERATORS] = {version->major, version->minor, version->patch};
+    int constraint_parts[NUM_VERSION_SEPERATORS] = {constraint_version.major, constraint_version.minor, constraint_version.patch};
+
+    // Compare each version component
+    for (int i = 0; i < NUM_VERSION_SEPERATORS; ++i) {
+
+        if (wildcard_arr[i]) {  /* No comparison for wildcards. */
+            /* We don't care to support odd constraints such as 2.*.27.
+                So we can skip parsing patch if we find a wildcard for minor, etc. */
+            break;
+        }
+
+        int cmp = (version_parts[i] - constraint_parts[i]);
+        if ((strcmp(operator, "==") == 0 && cmp != 0) ||
+            (strcmp(operator, "!=") == 0 && cmp == 0) ||
+            (strcmp(operator, ">=") == 0 && cmp < 0) ||
+            (strcmp(operator, "<=") == 0 && cmp > 0) ||
+            (strcmp(operator, ">") == 0 && cmp <= 0) ||
+            (strcmp(operator, "<") == 0 && cmp >= 0)) {
+            return false;  // Mismatch found
+        }
+    }
+
+    return true; // Unknown operator
 }
 
 /* TODO: Should we have either a command or argument for whether to allow dirty version of CSH?
