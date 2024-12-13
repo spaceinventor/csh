@@ -12,6 +12,7 @@ typedef struct {
 } version_t;
 
 
+// TODO: We should probably reuse the parsing logic from compare_version(), but then we need a separate function for parse operator.
 bool parse_version(const char *version_str, version_t *version) {
     if (!version_str || !version) return false;
 
@@ -184,13 +185,13 @@ static int slash_require_version_csh_cmd(struct slash *slash) {
 
     /* Check if version constraint is present */
 	if (++argi >= slash->argc) {
-        /* TODO: We could arguably have Fatal as default */
-		printf("missing error-level parameter\n");
+        /* TODO: We could arguably have Quit as default */
+		printf("missing error-action parameter\n");
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char *error_level = slash->argv[argi];
-    *error_level = tolower(*error_level);  // Convert first letter to lower case
+    char *error_action = slash->argv[argi];
+    *error_action = tolower(*error_action);  // Convert first letter to lower case
 
     /* Check if user message is present */
 	if (++argi < slash->argc) {
@@ -199,14 +200,14 @@ static int slash_require_version_csh_cmd(struct slash *slash) {
 
     int err_ret = SLASH_EXIT;
 
-    if        (strcasestr("fatal", error_level)) {
+    if        (strcasestr("quit", error_action)) {
         err_ret = SLASH_EXIT;
-    } else if (strcasestr("error", error_level)) {
+    } else if (strcasestr("error", error_action)) {
         err_ret = SLASH_EBREAK;
-    } else if (strcasestr("warn", error_level)) {
+    } else if (strcasestr("warn", error_action)) {
         err_ret = SLASH_EINVAL;
     } else {
-        fprintf(stderr, "Unknown error type specfied: '%s'. Choices are: Fatal, Error, Warn\n", error_level);
+        fprintf(stderr, "Unknown error type specfied: '%s'. Choices are: Quit, Error, Warn\n", error_action);
         optparse_del(parser);
         return SLASH_EINVAL;
     }
@@ -240,13 +241,13 @@ static int slash_require_version_csh_cmd(struct slash *slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_subsub(require, version, csh, slash_require_version_csh_cmd, "<version-constraint> <error-level> [error-message]",\
+slash_command_subsub(require, version, csh, slash_require_version_csh_cmd, "<version-constraint> <error-action> [error-message]",\
 "Checks whether CSH fulfills the specified version requirements.\n\n "\
-"A failed comparison may perform a varity of actions, based on the specified error level.\n "\
-"Possible error levels are:\n "\
-"- Fatal: Which will exit CSH,\n "\
+"A failed comparison may perform a varity of actions, based on the specified error action.\n "\
+"Possible error actions are:\n "\
+"- Quit: Which will exit CSH,\n "\
 "- Error: Which will break execution of a script,\n "\
 "- Warn: Which simply prints the specified message,\n "\
-"(Single letters may be used for error codes, e.g 'F' for Fatal).\n\n "\
+"(Single letters may be used for error codes, e.g 'F' for Quit).\n\n "\
 "Version constraint supports the typical comparisons: \"==\", \"!=\", \">=\", \"<=\", \">\" and \"<\".\n "\
 "For example: >=2.5-20");
