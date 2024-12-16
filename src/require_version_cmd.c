@@ -75,7 +75,7 @@ static int slash_require_version_csh_cmd(struct slash *slash) {
         return err_ret;
     }
 
-    if (false == compare_version(&csh_version, version_constraint)) {
+    if (false == compare_version(&csh_version, version_constraint, true)) {
         /* TODO: Should we print the error message in red, or let the user specify the color code? */
         fprintf(stderr, "\033[31mVersion %s does not satisfy constraint %s", version_string, version_constraint);
         if (user_message) {

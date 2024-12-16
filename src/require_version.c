@@ -8,10 +8,11 @@
 #include <stdlib.h>
 
 
+/* We have kept ourselves quite flexible/generic in regards to adding more parts to the version, i.e: 3.4.3.4,
+    not that we expect this to happen. */
 #define NUM_VERSION_PARTS 3
 
 
-// TODO: We should probably reuse the parsing logic from compare_version(), but then we need a separate function for parse operator.
 bool parse_version(const char *version_str, version_t *version_out) {
     if (!version_str || !version_out) return false;
 
@@ -60,7 +61,7 @@ bool parse_version(const char *version_str, version_t *version_out) {
                 *semver_out[dot_count] = atoi(number_start);
                 dot_count++;  // Go to next out index: major -> minor
                 if (dot_count >= NUM_VERSION_PARTS) {
-                    /* Dot overload, too many dots! We can't do 3.4.5.3 */
+                    /* Dot overload, too many dots! We can't do 3.4.5.3.56.5.6 */
                     return false;
                 }
                 number_start = NULL;
@@ -92,7 +93,7 @@ bool parse_version(const char *version_str, version_t *version_out) {
     
 }
 
-bool compare_version(const version_t *version, const char *constraint_dirty) {
+bool compare_version(const version_t *version, const char *constraint_dirty, bool verbose) {
     if (!version || !constraint_dirty) {
         return false;
     }
@@ -144,6 +145,10 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
             case '.':
                 constraint[clean_idx] = '.';
                 dot_count++;  // Also track '-' as a '.'
+                if (dot_count >= NUM_VERSION_PARTS) {
+                    /* Dot overload, too many dots! We can't do 3.4.5.3.56.5.6 */
+                    return false;
+                }
                 continue;
 
             case '*':
@@ -153,6 +158,9 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
                 continue;
             
             default:
+                if (!isdigit(constraint_dirty[dirty_idx])) {
+                    return false;  // Invalid character.
+                }
                 constraint[clean_idx] = constraint_dirty[dirty_idx];
                 break;
         }
@@ -187,7 +195,7 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
 
         for (size_t i = 0; i < NUM_VERSION_PARTS; i++) {
             if (wildcard_arr[i]) {
-                break;  // Don't compare from wildcard and down.
+                break;  // Don't compare from wildcard and down, by essentially leaving them zeroed.
             }
 
             version_scaled += version_parts[i] * scaling_factors[i];
@@ -210,7 +218,8 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
         return version_scaled < constraint_scaled;
     }
 
-    fprintf(stderr, "\033[31mUnknown version constraint operator \"%s\"\033[0m\n", operator);
-
-    return true; // Unknown operator
+    if (verbose) {
+        fprintf(stderr, "\033[31mUnknown version constraint operator \"%s\"\033[0m\n", operator);
+    }
+    return false;  // Unknown operator
 }
