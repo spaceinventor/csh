@@ -19,7 +19,7 @@ typedef struct {
 
 bool parse_version(const char *version_str, version_t *version_out);
 
-bool compare_version(const version_t *version, const char *constraint);
+bool compare_version(const version_t *version, const char *constraint, bool verbose);
 
 #ifdef __cplusplus
 }
