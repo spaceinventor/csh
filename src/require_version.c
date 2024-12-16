@@ -3,7 +3,12 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <assert.h>
 #include <string.h>
+#include <stdlib.h>
+
+
+#define NUM_VERSION_PARTS 3
 
 
 // TODO: We should probably reuse the parsing logic from compare_version(), but then we need a separate function for parse operator.
@@ -13,23 +18,78 @@ bool parse_version(const char *version_str, version_t *version_out) {
     // Default the version fields to 0
     version_out->major = version_out->minor = version_out->patch = 0;
 
-    // Attempt to parse the version string
-    int matched = sscanf(version_str, "%d.%d-%d", 
-                         &version_out->major, 
-                         &version_out->minor, 
-                         &version_out->patch);
+    #define VERSION_MAXLEN sizeof("v9999.9999.9999")
+    char version_mut[VERSION_MAXLEN] = {0};
+    strncpy(version_mut, version_str, VERSION_MAXLEN);
+    int *semver_out[NUM_VERSION_PARTS] = {&version_out->major, &version_out->minor, &version_out->patch};
 
-    if (matched >= 2) { // Parsed successfully in dash-separated format
-        return true;
-    } 
+    if (strnlen(version_str, VERSION_MAXLEN) >= VERSION_MAXLEN-1) {
+        /* String too long. We could easily accept a length argument,
+            but no sensible semver should be bigger than VERSION_MAXLEN. */
+        return false;
+    }
 
-    // Try parsing the dot-separated format as fallback
-    matched = sscanf(version_str, "%d.%d.%d", 
-                     &version_out->major, 
-                     &version_out->minor, 
-                     &version_out->patch);
+    char *number_start = NULL;
 
-    return matched >= 2; // Parsed successfully in dot-separated format
+    size_t dot_count = 0;
+    for (size_t i = 0; (i < VERSION_MAXLEN) && (version_mut[i] != '\0'); i++) {
+        assert(semver_out[dot_count] != NULL);  // This may fail if we change NUM_VERSION_PARTS
+        assert(version_mut[i] == version_str[i]);  // Check that string was copied correctly as we go.
+        assert(i < VERSION_MAXLEN);
+        
+        switch (version_mut[i]) {
+
+            case 'v':
+            case 'V': {
+                version_mut[i] = '\0';  // Remove likely but otherwise invalid characters.
+                number_start = NULL;
+                if (i > 0) {
+                    /* Only allow a single prefixed 'v' */
+                    return false;
+                }
+                continue;
+            }
+
+            case '-':  /* Parse '-' as '.' */
+            case '.': {
+                version_mut[i] = '\0';  /* Terminate current version part/number here. */
+                if (number_start == NULL) {
+                    /* We have multiple dots in a row, or a dot before a number, either way this is an invalid format. */
+                    return false;
+                }
+                *semver_out[dot_count] = atoi(number_start);
+                dot_count++;  // Go to next out index: major -> minor
+                if (dot_count >= NUM_VERSION_PARTS) {
+                    /* Dot overload, too many dots! We can't do 3.4.5.3 */
+                    return false;
+                }
+                number_start = NULL;
+                continue;
+            }
+
+            default: {  /* Valid digits but also other invalid characters. */
+                if (!isdigit(version_mut[i])) {
+                    return false;  // Invalid character.
+                }
+                if (number_start == NULL) {
+                    number_start = &version_mut[i];
+                }
+                continue;
+            }
+        }
+    }
+
+    if (number_start == NULL) {
+        /* There was likely a trailing dot, anyway wrong format */
+        return false;
+    }
+
+    /* Parse this last remaining version part. */
+    *semver_out[dot_count] = atoi(number_start);
+
+    /* We have finished and successfully parsed the version, including: major, minor and or patch */
+    return true;
+    
 }
 
 bool compare_version(const version_t *version, const char *constraint_dirty) {
@@ -45,16 +105,15 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
     char constraint[CONSTRAINT_MAXLEN] = {0};
 
     version_t constraint_version = {0, 0, 0};
-    #define NUM_VERSION_SEPERATORS 3
     enum  __attribute__((packed)) {
         MAJOR = 0,
         MINOR = 1,
         PATCH = 2,
     };
-    bool wildcard_arr[NUM_VERSION_SEPERATORS] = {false};
+    bool wildcard_arr[NUM_VERSION_PARTS] = {false};
 
     for (size_t clean_idx = 0, dirty_idx = 0, dot_count = 0;
-        (clean_idx < CONSTRAINT_MAXLEN) && (constraint_dirty[dirty_idx] != '\0') && (dot_count < NUM_VERSION_SEPERATORS);
+        (clean_idx < CONSTRAINT_MAXLEN) && (constraint_dirty[dirty_idx] != '\0') && (dot_count < NUM_VERSION_PARTS);
         clean_idx++, dirty_idx++) {
 
         /* Allow first 2 letters in dirty constraint as operator */
@@ -99,18 +158,6 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
         }
     }
 
-    /* NOTE: Repeating these operators in the 'for' loop below seems a bit smelly.
-        But we're unlikely to add more operators in the future, so it's probably fine. */
-    if (!(strcmp(operator, "==") == 0) ||
-        (strcmp(operator, "!=") == 0) ||
-        (strcmp(operator, ">=") == 0) ||
-        (strcmp(operator, "<=") == 0) ||
-        (strcmp(operator, ">")  == 0) ||
-        (strcmp(operator, "<")) == 0) {
-            fprintf(stderr, "\033[31mUnknown version constraint operator \"%s\"\033[0m\n", operator);
-            return false;
-        }
-
     /* Parse the sanitized constraint */
     sscanf(constraint, "%d.%d.%d", &constraint_version.major, &constraint_version.minor, &constraint_version.patch);
 
@@ -123,29 +170,47 @@ bool compare_version(const version_t *version, const char *constraint_dirty) {
     printf("Wildcards %d.%d.%d\n", wildcard_arr[MAJOR], wildcard_arr[MINOR], wildcard_arr[PATCH]);
 #endif
 
-    /* Array-based comparison for major, minor, and patch */
-    int version_parts[NUM_VERSION_SEPERATORS] = {version->major, version->minor, version->patch};
-    int constraint_parts[NUM_VERSION_SEPERATORS] = {constraint_version.major, constraint_version.minor, constraint_version.patch};
+    /* Create a single summed integer for the version and constraint,
+        which account for their hierarchical nature. */
+    long version_scaled = 0;
+    long constraint_scaled = 0;
+    {
+        /* Array-based comparison for major, minor, and patch */
+        const int version_parts[NUM_VERSION_PARTS] = {version->major, version->minor, version->patch};
+        const int constraint_parts[NUM_VERSION_PARTS] = {constraint_version.major, constraint_version.minor, constraint_version.patch};
 
-    // Compare each version component
-    for (int i = 0; i < NUM_VERSION_SEPERATORS; ++i) {
+        /* Apply scaling to convert versions into comparable integers */
+        #define MAJOR_SCALE (1000000)
+        #define MINOR_SCALE (1000)
+        #define PATCH_SCALE (1)
+        const long scaling_factors[NUM_VERSION_PARTS] = {MAJOR_SCALE, MINOR_SCALE, PATCH_SCALE};
 
-        if (wildcard_arr[i]) {  /* No comparison for wildcards. */
-            /* We don't care to support odd constraints such as 2.*.27.
-                So we can skip parsing patch if we find a wildcard for minor, etc. */
-            break;
-        }
+        for (size_t i = 0; i < NUM_VERSION_PARTS; i++) {
+            if (wildcard_arr[i]) {
+                break;  // Don't compare from wildcard and down.
+            }
 
-        int cmp = (version_parts[i] - constraint_parts[i]);
-        if ((strcmp(operator, "==") == 0 && cmp != 0) ||
-            (strcmp(operator, "!=") == 0 && cmp == 0) ||
-            (strcmp(operator, ">=") == 0 && cmp < 0) ||
-            (strcmp(operator, "<=") == 0 && cmp > 0) ||
-            (strcmp(operator, ">") == 0 && cmp <= 0) ||
-            (strcmp(operator, "<") == 0 && cmp >= 0)) {
-            return false;  // Mismatch found
+            version_scaled += version_parts[i] * scaling_factors[i];
+            constraint_scaled += constraint_parts[i] * scaling_factors[i];
         }
     }
+
+    /* Evaluate the operator */
+    if (strcmp(operator, "==") == 0) {
+        return version_scaled == constraint_scaled;
+    } else if (strcmp(operator, "!=") == 0) {
+        return version_scaled != constraint_scaled;
+    } else if (strcmp(operator, ">=") == 0) {
+        return version_scaled >= constraint_scaled;
+    } else if (strcmp(operator, "<=") == 0) {
+        return version_scaled <= constraint_scaled;
+    } else if (strcmp(operator, ">") == 0) {
+        return version_scaled > constraint_scaled;
+    } else if (strcmp(operator, "<") == 0) {
+        return version_scaled < constraint_scaled;
+    }
+
+    fprintf(stderr, "\033[31mUnknown version constraint operator \"%s\"\033[0m\n", operator);
 
     return true; // Unknown operator
 }
