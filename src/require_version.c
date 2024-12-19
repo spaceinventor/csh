@@ -218,7 +218,7 @@ bool compare_version(const version_t *version, const char *constraint_dirty, boo
         return version_scaled < constraint_scaled;
     }
 
-    if (verbose) {
+    if (verbose) {  // Mostly for guarded by verbose flag for the sake of unit tests.
         fprintf(stderr, "\033[31mUnknown version constraint operator \"%s\"\033[0m\n", operator);
     }
     return false;  // Unknown operator

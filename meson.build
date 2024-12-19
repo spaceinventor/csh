@@ -70,6 +70,7 @@ csh_sources = [
     'src/slash_env_var_cmds.c', 
     'src/slash_run_environment.c', 
     'src/require_version.c', 
+    'src/require_version_cmd.c', 
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
