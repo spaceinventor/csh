@@ -17,5 +17,15 @@ environment_tests = executable(
     dependencies: [gtest_dep, gtest_main_dep, utils_lib_dep],
     build_by_default: false
 )
+require_version_tests = executable(
+    'require_version_tests',
+    [
+        'require_version_tests.cpp',
+    ],
+    include_directories: ['../src'],
+    dependencies: [gtest_dep, gtest_main_dep, utils_lib_dep],
+    build_by_default: false
+)
 
 test('environment_tests', environment_tests)
+test('require_version_tests', require_version_tests)

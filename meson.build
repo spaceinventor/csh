@@ -69,11 +69,13 @@ csh_sources = [
     'src/loki.c',
     'src/slash_env_var_cmds.c', 
     'src/slash_run_environment.c', 
+    'src/require_version.c', 
+    'src/require_version_cmd.c', 
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
-utils_lib_src = ['src/url_utils.c', 'src/environment.c']
+utils_lib_src = ['src/url_utils.c', 'src/environment.c', 'src/require_version.c']
 utils_lib_inc = include_directories('src')
 utils_lib = static_library('csh_utils', utils_lib_src, include_directories: utils_lib_inc)
 utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with : utils_lib)
