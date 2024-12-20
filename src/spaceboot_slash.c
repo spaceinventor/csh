@@ -68,7 +68,7 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 		param_queue_add(&queue, boot_img[i], 0, &zero);
 	}
 	param_queue_add(&queue, boot_img[flash], 0, &times);
-	param_push_queue(&queue, 1, node, 1000, 0, false);
+	param_push_queue(&queue, CSP_PRIO_NORM, 1, node, 1000, 0, false);
 
 	printf("  Rebooting");
 	csp_reboot(node);
