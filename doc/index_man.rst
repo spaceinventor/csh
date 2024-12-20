@@ -77,7 +77,7 @@ List of commands
 Built-in commands
 ~~~~~~~~~~~~~~~~~
 
-.. partool -q --csv -s builddir/csh | (read -r; printf "%s\n" "$REPLY"; sort) > doc/MAN/Operating_Instructions/builtin_commands.csv
+.. partool -q --csv -s builddir/csh > doc/MAN/Operating_Instructions/builtin_commands.csv
 
 .. csv-table:: Built-in commands
     :file: MAN/Operating_Instructions/builtin_commands.csv

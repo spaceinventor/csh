@@ -1,7 +1,7 @@
 Environment variables in CSH
 -----------------------------
 
-From version XXXX, CSH provides handling of environment variables, making it easier to perform repeatitive tasks where only parameter values differ.
+From version 2.5 onwards, CSH provides handling of environment variables, making it easier to perform repeatitive tasks where only parameter values differ.
 The environment variable related commands all start with the ``var`` prefix and are:
 
 * ``var set``: define or update an environment variable
