@@ -220,6 +220,18 @@ int main(int argc, char **argv) {
 			dirname = "";
 			initfile = optarg;
 			break;
+		case ':':
+			switch (optopt)
+			{
+			case 'i':
+				dirname = "";
+				initfile = "";
+				break;
+			default:
+				fprintf(stderr, "Argument -%c is missing a required argument\n", optopt);
+				exit(EXIT_FAILURE);
+			}
+			break;
 		default:
 			printf("Argument -%c not recognized\n", c);
 			exit(EXIT_FAILURE);
