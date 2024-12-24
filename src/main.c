@@ -154,8 +154,9 @@ uint64_t clock_get_nsec(void) {
 
 void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
+	printf("Type 'manual' to open CSH manual\n");
 	printf("\n");
-	printf("Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
+	printf("Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>\n");
 	printf("\n");
 }
 
@@ -207,6 +208,7 @@ static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
 int main(int argc, char **argv) {
 
 	int remain, index, i, c, p = 0;
+	int ret = SLASH_SUCCESS;
 
 	char * initfile = "init.csh";
 	char * dirname = getenv("HOME");
@@ -248,7 +250,7 @@ int main(int argc, char **argv) {
 		printf("  ***********************\n\n");
 
 		printf("\033[32m");
-		printf("  Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
+		printf("  Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>\n");
 		printf("  Compiled: %s git: %s\n\n", __DATE__, version_string);
 
 		printf("\033[0m");
@@ -298,8 +300,9 @@ int main(int argc, char **argv) {
 	} else {
 		snprintf(path, 100, "csh_hosts");
 	}
-	slash_run(slash, path, 0);
-
+	if (access(path, F_OK) == 0) {
+		slash_run(slash, path, 0);
+	}
 
 	/* Init file */
 	char buildpath[100];
@@ -308,7 +311,6 @@ int main(int argc, char **argv) {
 	} else {
 		snprintf(buildpath, 100, "%s", initfile);
 	}
-	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
 
 	{  /* Setting environment variables for init script to use. */
 
@@ -323,7 +325,6 @@ int main(int argc, char **argv) {
 		/* NOTE: pathbuf can be a directory here, which is not the intention.
 			It's a pretty inconsequential edge case though, so there's not much need to fix it. */
 		csh_putvar(INIT_FILE, pathbuf);
-		printf("Variable %s defined, value=%s\n", INIT_FILE, csh_getvar(INIT_FILE));
 
 		/* Init file found, and space for trailing '/' */
 		if (strnlen(pathbuf, PATH_MAX) > 0) {
@@ -341,11 +342,13 @@ int main(int argc, char **argv) {
 		}
 
 		csh_putvar(INIT_DIR, pathbuf);
-		printf("Variable %s defined, value=%s\n", INIT_DIR, csh_getvar(INIT_DIR));
-
 	}
 
-	int ret = slash_run(slash, buildpath, 0);
+	/* Explicit init file given, or default file exists */
+	if ((strlen(dirname) == 0 && strlen(initfile) > 0) || access(buildpath, F_OK) == 0) {
+		printf("\033[34m  Init file: %s\033[0m\n", buildpath);
+		ret = slash_run(slash, buildpath, 0);
+	}
 
 	{	/* Setting up signal handlers */
 
