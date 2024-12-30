@@ -16,7 +16,7 @@
 #include <curl/curl.h>
 
 #include <param/param.h>
-#ifdef PARAM_HAVE_COMMANDS
+#ifdef PARAM_HAVE_COMMANDS_CLIENT
 #include <param/param_commands.h>
 #endif
 #ifdef PARAM_HAVE_SCHEDULER
@@ -101,7 +101,7 @@ int slash_prompt(struct slash * slash) {
 
 	}
 
-#ifdef PARAM_HAVE_COMMANDS
+#ifdef PARAM_HAVE_COMMANDS_CLIENT
 	extern param_queue_t param_queue;
 	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
 
