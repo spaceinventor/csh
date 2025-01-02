@@ -3,7 +3,7 @@
 csh_si=$(realpath ../csh_si)
 csh_obc=$(realpath ../csh_obc)
 # Ubuntu 24.04
-docker build -f debian/Dockerfile_ubuntu-24.04 /home/tjessen/git/csh -t si-ubuntu-24.04-builder
+docker build -f debian/Dockerfile_ubuntu-24.04 . -t si-ubuntu-24.04-builder
 docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-24.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 
 # Ubuntu 22.04
