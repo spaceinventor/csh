@@ -134,7 +134,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 		if (param) {
 			*param->timestamp = timestamp;
 			if (*param->timestamp == 0) {
-				printf("Param timestamp is missing for %u:%s, logging is aborted\n", param->node, param->name);
+				printf("Param timestamp is missing for %u:%s, logging is aborted\n", *(param->node), param->name);
 				break;
 			}
 			*param->timestamp += local_epoch;

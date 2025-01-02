@@ -42,7 +42,7 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
     }
 
     double vts_arr[4];
-    int vts = check_vts(param->node, param->id);
+    int vts = check_vts(*(param->node), param->id);
 
     uint64_t time_ms;
     if (timestamp > 0) {
@@ -62,26 +62,26 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
             case PARAM_TYPE_XINT16:
             case PARAM_TYPE_UINT32:
             case PARAM_TYPE_XINT32:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, param->node, i, mpack_expect_uint(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_uint(reader), time_ms);
                 break;
             case PARAM_TYPE_UINT64:
             case PARAM_TYPE_XINT64:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_u64(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_u64(reader), time_ms);
                 break;
             case PARAM_TYPE_INT8:
             case PARAM_TYPE_INT16:
             case PARAM_TYPE_INT32:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, param->node, i, mpack_expect_int(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_int(reader), time_ms);
                 break;
             case PARAM_TYPE_INT64:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_i64(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_i64(reader), time_ms);
                 break;
             case PARAM_TYPE_FLOAT:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, mpack_expect_float(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_float(reader), time_ms);
                 break;
             case PARAM_TYPE_DOUBLE: {
                 double tmp_dbl = mpack_expect_double(reader);
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %.12e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %.12e %"PRIu64"\n", param->name, *(param->node), i, tmp_dbl, time_ms);
                 if(vts){
                     vts_arr[i] = tmp_dbl;
                 }

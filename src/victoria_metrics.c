@@ -224,7 +224,7 @@ void vm_add_param(param_t * param) {
 
     for (int j = 0; j < arr_cnt; j++) {
         param_value_str(param, j, valstr, 100);
-        snprintf(outstr, 1000, "%s{node=\"%u\", idx=\"%u\"} %s %"PRIu64"\n", param->name, param->node, j, valstr, time_ms);
+        snprintf(outstr, 1000, "%s{node=\"%u\", idx=\"%u\"} %s %"PRIu64"\n", param->name, *(param->node), j, valstr, time_ms);
         vm_add(outstr);
     }
 }
