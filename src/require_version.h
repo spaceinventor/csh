@@ -5,8 +5,6 @@ extern "C"
 {
 #endif
 
-#include <ctype.h>
-#include <string.h>
 #include <stdbool.h>
 
 

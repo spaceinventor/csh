@@ -1,7 +1,8 @@
 
+#define _GNU_SOURCE
 #include "require_version.h"
-
 #include <ctype.h>
+
 #include <string.h>
 
 #include <slash/slash.h>
