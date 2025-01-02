@@ -17,7 +17,7 @@ typedef struct {
 } version_t;
 
 
-bool parse_version(const char *version_str, version_t *version_out);
+bool parse_version(const char *version_str, version_t *version_out, bool allow_suffix);
 
 bool compare_version(const version_t *version, const char *constraint, bool verbose);
 

@@ -1,48 +1,37 @@
 
 #include "require_version.h"
 
+#include <errno.h>
+#include <stdint.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
 
-
 /* We have kept ourselves quite flexible/generic in regards to adding more parts to the version, i.e: 3.4.3.4,
     not that we expect this to happen. */
 #define NUM_VERSION_PARTS 3
 
 
-bool parse_version(const char *version_str, version_t *version_out) {
+bool parse_version(const char *version_str, version_t *version_out, bool allow_suffix) {
     if (!version_str || !version_out) return false;
 
     // Default the version fields to 0
     version_out->major = version_out->minor = version_out->patch = 0;
 
-    #define VERSION_MAXLEN sizeof("v9999.9999.9999")
-    char version_mut[VERSION_MAXLEN] = {0};
-    strncpy(version_mut, version_str, VERSION_MAXLEN);
     int *semver_out[NUM_VERSION_PARTS] = {&version_out->major, &version_out->minor, &version_out->patch};
 
-    if (strnlen(version_str, VERSION_MAXLEN) >= VERSION_MAXLEN-1) {
-        /* String too long. We could easily accept a length argument,
-            but no sensible semver should be bigger than VERSION_MAXLEN. */
-        return false;
-    }
-
-    char *number_start = NULL;
+    const char *number_start = NULL;
 
     size_t dot_count = 0;
-    for (size_t i = 0; (i < VERSION_MAXLEN) && (version_mut[i] != '\0'); i++) {
+    for (size_t i = 0; version_str[i] != '\0'; i++) {
         assert(semver_out[dot_count] != NULL);  // This may fail if we change NUM_VERSION_PARTS
-        assert(version_mut[i] == version_str[i]);  // Check that string was copied correctly as we go.
-        assert(i < VERSION_MAXLEN);
         
-        switch (version_mut[i]) {
+        switch (version_str[i]) {
 
             case 'v':
             case 'V': {
-                version_mut[i] = '\0';  // Remove likely but otherwise invalid characters.
                 number_start = NULL;
                 if (i > 0) {
                     /* Only allow a single prefixed 'v' */
@@ -53,27 +42,32 @@ bool parse_version(const char *version_str, version_t *version_out) {
 
             case '-':  /* Parse '-' as '.' */
             case '.': {
-                version_mut[i] = '\0';  /* Terminate current version part/number here. */
                 if (number_start == NULL) {
                     /* We have multiple dots in a row, or a dot before a number, either way this is an invalid format. */
                     return false;
                 }
-                *semver_out[dot_count] = atoi(number_start);
                 dot_count++;  // Go to next out index: major -> minor
                 if (dot_count >= NUM_VERSION_PARTS) {
                     /* Dot overload, too many dots! We can't do 3.4.5.3.56.5.6 */
-                    return false;
+                    return allow_suffix;
                 }
                 number_start = NULL;
                 continue;
             }
 
             default: {  /* Valid digits but also other invalid characters. */
-                if (!isdigit(version_mut[i])) {
+                if (!isdigit(version_str[i])) {
                     return false;  // Invalid character.
                 }
                 if (number_start == NULL) {
-                    number_start = &version_mut[i];
+                    number_start = &version_str[i];
+                    const long temp_long_ver = strtol(number_start, NULL, 10);
+                    /* We're supposed to also check if 'errno == ERANGE' here,
+                        but for some reason parsing "3" in "v3" gives ERANGE.  */
+                    if (temp_long_ver > INT32_MAX) {  
+                        return false;  /* Conversion overflow. */
+                    }
+                    *semver_out[dot_count] = temp_long_ver;
                 }
                 continue;
             }

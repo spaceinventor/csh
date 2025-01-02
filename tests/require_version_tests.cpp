@@ -19,49 +19,61 @@ TEST(require_version, require_version_tests) {
         version_t version = {0};
 
         /* Here are some things that are not valid version specifiers */
-        ASSERT_FALSE(parse_version("vv3.4.5", &version));
-        ASSERT_FALSE(parse_version("3..4.5", &version));
-        ASSERT_FALSE(parse_version("3.4.5.3", &version));
-        ASSERT_FALSE(parse_version("3.", &version));
-        ASSERT_FALSE(parse_version("3.d", &version));
-        ASSERT_FALSE(parse_version("3.v", &version));
-        ASSERT_FALSE(parse_version("2094967295.2094967295.2094967295", &version));  // Longer than VERSION_MAXLEN
+        ASSERT_FALSE(parse_version("vv3.4.5", &version, false));
+        ASSERT_FALSE(parse_version("3..4.5", &version, false));
+        ASSERT_FALSE(parse_version("3.4.5.3", &version, false));
+        ASSERT_FALSE(parse_version("3.", &version, false));
+        ASSERT_FALSE(parse_version("3.d", &version, false));
+        ASSERT_FALSE(parse_version("3.v", &version, false));
+        ASSERT_FALSE(parse_version("200000000000000000000000000000.200000000000000000000000000000.200000000000000000000000000000", &version, false));  // Long overflow
+        ASSERT_FALSE(parse_version("2147483648.2147483648.2147483648", &version, false));  // int32 overflow
 
         /* It should be permissable to leave out certain parts of the version. */
-        ASSERT_TRUE(parse_version("v3", &version));
+        ASSERT_TRUE(parse_version("v3", &version, false));
         /* In such cases the remaining fields should be zeroed. */
         ASSERT_EQ(version.major, 3);
         ASSERT_EQ(version.minor, 0);
         ASSERT_EQ(version.patch, 0);
 
-        ASSERT_TRUE(parse_version("4", &version));
+        ASSERT_TRUE(parse_version("4", &version, false));
         ASSERT_EQ(version.major, 4);
         ASSERT_EQ(version.minor, 0);
         ASSERT_EQ(version.patch, 0);
 
-        ASSERT_TRUE(parse_version("5.3", &version));
+        ASSERT_TRUE(parse_version("5.3", &version, false));
         ASSERT_EQ(version.major, 5);
         ASSERT_EQ(version.minor, 3);
         ASSERT_EQ(version.patch, 0);
 
-        ASSERT_TRUE(parse_version(STR_MAJOR "." STR_MINOR "." STR_PATCH, &version));
+        ASSERT_TRUE(parse_version(STR_MAJOR "." STR_MINOR "." STR_PATCH, &version, false));
         /* Version parsed successfully, now check if it was also done correctly. */
         ASSERT_EQ(version.major, MAJOR);
         ASSERT_EQ(version.minor, MINOR);
         ASSERT_EQ(version.patch, PATCH);
 
         /* We currently also allow dashes */
-        ASSERT_TRUE(parse_version(STR_MAJOR "." STR_MINOR "-" STR_PATCH, &version));
+        ASSERT_TRUE(parse_version(STR_MAJOR "." STR_MINOR "-" STR_PATCH, &version, false));
         /* So that should also be parsed correctly */
         ASSERT_EQ(version.major, MAJOR);
         ASSERT_EQ(version.minor, MINOR);
         ASSERT_EQ(version.patch, PATCH);
 
         /* Check that it works with 'v' prefix as well */
-        ASSERT_TRUE(parse_version("v" STR_MAJOR "." STR_MINOR "-" STR_PATCH, &version));
+        ASSERT_TRUE(parse_version("v" STR_MAJOR "." STR_MINOR "-" STR_PATCH, &version, false));
         ASSERT_EQ(version.major, MAJOR);
         ASSERT_EQ(version.minor, MINOR);
         ASSERT_EQ(version.patch, PATCH);
+
+        /* Test an actual CSH version */
+        ASSERT_TRUE(parse_version("2.5-36-g3b8a51f+", &version, true));
+        ASSERT_EQ(version.major, 2);
+        ASSERT_EQ(version.minor, 5);
+        ASSERT_EQ(version.patch, 36);
+
+        ASSERT_TRUE(parse_version("3.4.5.3", &version, true));
+        ASSERT_EQ(version.major, 3);
+        ASSERT_EQ(version.minor, 4);
+        ASSERT_EQ(version.patch, 5);
     
     }
 
