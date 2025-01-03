@@ -391,8 +391,12 @@ slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
 
 static int doc_cmd(struct slash *slash) {
 
-    system("xdg-open /usr/share/si-csh/CSH_MAN.pdf >/dev/null 2>/dev/null");
-    printf("CSH manual is now open in PDF viewer, if available\n");
+    int res = system("xdg-open /usr/share/si-csh/CSH_MAN.pdf >/dev/null 2>/dev/null");
+    if(res) {
+        printf("Could not open CSH PDF manual\n");
+    } else {
+        printf("CSH manual is now open in PDF viewer, if available\n");
+    }
 
     return SLASH_SUCCESS;
 }

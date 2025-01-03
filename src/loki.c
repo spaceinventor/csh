@@ -202,7 +202,8 @@ next:
             // An error occured in such way that there is no HTTP response code at all
             snprintf(res_str, 512, "\033[1;31mLOKI CURL: %s\033[0m\n", curl_easy_strerror(res));
         }
-        write(old_stdout, res_str, strlen(res_str));
+        ssize_t wres = write(old_stdout, res_str, strlen(res_str));
+        (void)wres;
         if(curl_err_count > 5){
             loki_running = 0;
             curl_err_count = 0;
@@ -221,7 +222,8 @@ static void *read_pipe(void *arg) {
     while(1){
         n = read(pipe_fd[0], readbuffer, sizeof(readbuffer) - 1);
         if(n > 0){
-            write(old_stdout, readbuffer, n); // write to terminal
+            ssize_t wres = write(old_stdout, readbuffer, n); // write to terminal
+            (void)wres;
             loki_add(readbuffer, 0);
             memset(readbuffer, 0, n);
         }
