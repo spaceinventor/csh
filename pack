@@ -9,3 +9,7 @@ docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_ob
 # Ubuntu 22.04
 docker build -f debian/Dockerfile_ubuntu-22.04 . -t si-ubuntu-22.04-builder
 docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-22.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
+
+# Ubuntu 20.04
+docker build -f debian/Dockerfile_ubuntu-20.04 . -t si-ubuntu-20.04-builder
+docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-20.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu

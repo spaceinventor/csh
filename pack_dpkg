@@ -26,11 +26,18 @@ cd -
 ./configure
 ./build
 
-if [ "$ubuntu_version" == "22.04" ]
+if [ "$ubuntu_version" == "20.04" ]
+then
+    Depends="libcurl4 (>=7.68), libzmq5 (>=4.3.2), libc6 (>=2.31), libsocketcan2 (>=0.0.11), can-utils (>= 2018.02), fonts-powerline (>=2.7)"
+elif [ "$ubuntu_version" == "22.04" ]
 then
     Depends="libcurl4 (>=7.81.0), libzmq5 (>=4.3.4), libc6 (>=2.35), libsocketcan2 (>=0.0.12), can-utils (>= 2020.11.0), fonts-powerline (>= 2.8.2)"
-else
+elif [ "$ubuntu_version" == "24.04" ]
+then
     Depends="libcurl4t64 (>=8.5.0), libzmq5 (>=4.3.5), libc6 (>=2.39), libsocketcan2 (>=0.0.12), can-utils (>= 2023.03), fonts-powerline (>= 2.8.3)"
+else
+    echo "Unsupported Ubuntu version: $ubuntu_version"
+    exit 1
 fi
 
 cp builddir/csh $debbuild_dir/usr/bin
