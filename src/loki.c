@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
@@ -11,7 +12,9 @@
 #include <slash/dflopt.h>
 
 #include <csp/csp.h>
+#include <csp/arch/csp_queue.h>
 
+#include "arch/posix/pthread_queue.h"
 #include "url_utils.h"
 
 // TODO maybe a thread that empties a buffer
@@ -22,11 +25,17 @@ static int loki_running = 0;
 #define BUFFER_SIZE      1024 * 1024
 
 // TODO reduce buffers and or use malloc
-static char buffer[BUFFER_SIZE] = {0};
 static char readbuffer[BUFFER_SIZE] = {0};
 static char formatted_log[BUFFER_SIZE - 100] = {0};
 // size_t buffer_size = 0;
 static pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_queue_t * loki_q;
+
+typedef struct {
+    char * data;
+    size_t len;
+} json_str_t;
+
 
 int pipe_fd[2]; 
 static int old_stdout;
@@ -167,11 +176,25 @@ next:
         return;
     }
 
+    int format_len = 0; 
     if(*formatted_log){
-        formatted_log[strlen(formatted_log) - 1] = '\0';
+        format_len = strlen(formatted_log);
+        formatted_log[format_len - 1] = '\0';
+    } else {
+        pthread_mutex_unlock(&buffer_mutex);
+        return;
+    }
+    const size_t json_str_max = format_len + 100;
+    char * json_str_buf = malloc(json_str_max);
+    if(!json_str_buf){
+        const char err_str[] = "\033[1;31mLOKI CURL: Out of memory! Log skipped\033[0m\n";
+        write(old_stdout, err_str, sizeof(err_str));
+        pthread_mutex_unlock(&buffer_mutex);
+        return;
     }
 
-    snprintf(buffer, sizeof(buffer),
+
+    int written = snprintf(json_str_buf, json_str_max,
              "{"
              "\"streams\": [{"
              "\"stream\": {"
@@ -183,43 +206,56 @@ next:
              "}]"
              "}", csp_get_conf()->hostname, slash_dfl_node, iscmd ? "cmd" : "stdout", formatted_log);
 
-    size_t log_len = strlen(buffer);
 
-
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, log_len);
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, buffer);
-    curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
-    res = curl_easy_perform(curl);
-    if(res != CURLE_OK){
-        curl_err_count++;
-        char res_str[512];
-        long response_code;
-        curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
-        if (0 != response_code) {
-            // There is an HTTP response code to look at, so do that
-            snprintf(res_str, 512, "\033[1;31mLOKI CURL: http response code was: %ld\033[0m\n", response_code);
-        } else {
-            // An error occured in such way that there is no HTTP response code at all
-            snprintf(res_str, 512, "\033[1;31mLOKI CURL: %s\033[0m\n", curl_easy_strerror(res));
-        }
-        ssize_t wres = write(old_stdout, res_str, strlen(res_str));
-        (void)wres;
-        if(curl_err_count > 5){
-            loki_running = 0;
-            curl_err_count = 0;
-            printf("\n\033[31mLOKI LOGGING STOPPED!\033[0m\n");
-        }
-    } else {
-        curl_err_count = 0;
-    }
-    // Unlock the buffer mutex
     pthread_mutex_unlock(&buffer_mutex);
+    json_str_t json_str = {.data = json_str_buf, .len = written};
+    pthread_queue_enqueue(loki_q, &json_str, CSP_MAX_TIMEOUT);
+    // Unlock the buffer mutex
+}
+
+static void *post_thread(void *arg) {
+
+    while(loki_running){
+        json_str_t json_str;
+        int p_res = pthread_queue_dequeue(loki_q, (void *)&json_str, CSP_MAX_TIMEOUT);
+        if(p_res != PTHREAD_QUEUE_OK){
+            continue;
+        }
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, json_str.len);
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str.data);
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, 1);
+        res = curl_easy_perform(curl);
+        if(res != CURLE_OK){
+            curl_err_count++;
+            char res_str[512];
+            long response_code;
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+            if (0 != response_code) {
+                // There is an HTTP response code to look at, so do that
+                snprintf(res_str, 512, "\033[1;31mLOKI CURL: http response code was: %ld\033[0m\n", response_code);
+            } else {
+                // An error occured in such way that there is no HTTP response code at all
+                snprintf(res_str, 512, "\033[1;31mLOKI CURL: %s\033[0m\n", curl_easy_strerror(res));
+            }
+            ssize_t wres = write(old_stdout, res_str, strlen(res_str));
+            (void)wres;
+            if(curl_err_count > 5){
+                loki_running = 0;
+                curl_err_count = 0;
+                printf("\n\033[31mLOKI LOGGING STOPPED!\033[0m\n");
+            }
+        } else {
+            curl_err_count = 0;
+        }
+        free(json_str.data);
+    }
+    return NULL;
 }
 
 static void *read_pipe(void *arg) {
     int n;
 
-    while(1){
+    while(loki_running){
         n = read(pipe_fd[0], readbuffer, sizeof(readbuffer) - 1);
         if(n > 0){
             ssize_t wres = write(old_stdout, readbuffer, n); // write to terminal
@@ -400,9 +436,18 @@ static int loki_start_cmd(struct slash * slash) {
         perror("dup2");
         return SLASH_EINVAL;
     }
+    if(!loki_q){
+        loki_q = pthread_queue_create(2000, sizeof(json_str_t));
+        if(!loki_q){
+            printf("\033[1;31mLOKI CURL: Out of memory!\033[0m\n");
+            return SLASH_EINVAL;
+        }
 
-    pthread_t thread_id;
-    pthread_create(&thread_id, NULL, &read_pipe, NULL);
+    }
+    pthread_t read_thread_id;
+    pthread_create(&read_thread_id, NULL, &read_pipe, NULL);
+    pthread_t post_thread_id;
+    pthread_create(&post_thread_id, NULL, &post_thread, NULL);
     loki_running = 1;
     printf("Loki logging started\n");
 
