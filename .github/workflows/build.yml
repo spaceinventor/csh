@@ -15,7 +15,7 @@ jobs:
           packages: libcurl4-openssl-dev libzmq3-dev libsocketcan-dev
       - uses: actions/setup-python@v1
       - name: Install gcovr
-        run: pip3 install gcovr==5.0      
+        run: pip3 install gcovr
       - uses: BSFishy/meson-build@v1.0.3
         with:
           action: build
