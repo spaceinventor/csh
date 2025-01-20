@@ -440,11 +440,11 @@ static int loki_start_cmd(struct slash * slash) {
         }
 
     }
+    loki_running = 1;
     pthread_t read_thread_id;
     pthread_create(&read_thread_id, NULL, &read_pipe, NULL);
     pthread_t post_thread_id;
     pthread_create(&post_thread_id, NULL, &post_thread, NULL);
-    loki_running = 1;
     printf("Loki logging started\n");
 
     optparse_del(parser);
