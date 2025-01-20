@@ -12,22 +12,19 @@
 #include <slash/dflopt.h>
 
 #include <csp/csp.h>
+#include <csp/csp_types.h>
 #include <csp/arch/csp_queue.h>
 
 #include "arch/posix/pthread_queue.h"
 #include "url_utils.h"
 
-// TODO maybe a thread that empties a buffer
-// static pthread_t loki_thread;
 static int loki_running = 0;
 
 #define SERVER_PORT      3100
 #define BUFFER_SIZE      1024 * 1024
 
-// TODO reduce buffers and or use malloc
 static char readbuffer[BUFFER_SIZE] = {0};
 static char formatted_log[BUFFER_SIZE - 100] = {0};
-// size_t buffer_size = 0;
 static pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_queue_t * loki_q;
 
@@ -184,7 +181,19 @@ next:
         pthread_mutex_unlock(&buffer_mutex);
         return;
     }
-    const size_t json_str_max = format_len + 100;
+
+    const char json_format_str[] = "{"
+    "\"streams\": [{"
+    "\"stream\": {"
+    "\"instance\": \"%s\","
+    "\"node\": \"%u\","
+    "\"type\": \"%s\""
+    "},"
+    "\"values\": [%s]"
+    "}]"
+    "}";
+
+    const size_t json_str_max = format_len + CSP_HOSTNAME_LEN + sizeof(json_format_str) + 11; // 11 for type & node
     char * json_str_buf = malloc(json_str_max);
     if(!json_str_buf){
         const char err_str[] = "\033[1;31mLOKI CURL: Out of memory! Log skipped\033[0m\n";
@@ -193,24 +202,11 @@ next:
         return;
     }
 
-
-    int written = snprintf(json_str_buf, json_str_max,
-             "{"
-             "\"streams\": [{"
-             "\"stream\": {"
-             "\"instance\": \"%s\","
-             "\"node\": \"%u\","
-             "\"type\": \"%s\""
-             "},"
-             "\"values\": [%s]"
-             "}]"
-             "}", csp_get_conf()->hostname, slash_dfl_node, iscmd ? "cmd" : "stdout", formatted_log);
-
+    int written = snprintf(json_str_buf, json_str_max, json_format_str, csp_get_conf()->hostname, slash_dfl_node, iscmd ? "cmd" : "stdout", formatted_log);
 
     pthread_mutex_unlock(&buffer_mutex);
     json_str_t json_str = {.data = json_str_buf, .len = written};
     pthread_queue_enqueue(loki_q, &json_str, CSP_MAX_TIMEOUT);
-    // Unlock the buffer mutex
 }
 
 static void *post_thread(void *arg) {
