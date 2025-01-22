@@ -4,4 +4,4 @@ libdir="${libdir:-lib/csh}"
 
 rm -r builddir
 
-meson setup . builddir -Dprefix=$prefix -Dlibdir=$libdir
+meson setup . builddir -Dprefix=$prefix -Dlibdir=$libdir $*
