@@ -1,5 +1,6 @@
 .settings
 *.bin
+*.deb
 *.elf
 *.hex
 *.lss
@@ -18,6 +19,6 @@ build-doc
 *.log
 .cache
 .codechecker
-sysroot
+sysroot*/
 lib/googletest-1.14.0
 lib/packagecache
