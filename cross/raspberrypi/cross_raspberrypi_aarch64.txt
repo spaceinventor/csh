@@ -13,7 +13,7 @@ cpu = ''
 endian = 'little'
 
 [constants]
-sys_root = '@GLOBAL_SOURCE_ROOT@' / 'sysroot'
+sys_root = '@GLOBAL_SOURCE_ROOT@' / 'sysroot-aarch64'
 
 [properties]
 pkg_config_libdir = sys_root + '/usr/lib/aarch64-linux-gnu/pkgconfig'
