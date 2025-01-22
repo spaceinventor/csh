@@ -62,12 +62,12 @@ Details:
 
 
 ```
-docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build-gnueabihf
+docker run -v /<path>/to/csh/sysroot-gnueabihf:/sysroot -e LIST_OF_PACKAGES="libsocketcan-dev libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build-gnueabihf
 ```
 or
 
 ```
-docker run -v /<path>/to/csh/sysroot:/sysroot -e LIST_OF_PACKAGES="libcurl4-openssl-dev libzmq3-dev" --platform linux/aarch64 -it sysroot-build-aarch64
+docker run -v /<path>/to/csh/sysroot-aarch64:/sysroot -e LIST_OF_PACKAGES="libsocketcan-dev libcurl4-openssl-dev libzmq3-dev" --platform linux/aarch64 -it sysroot-build-aarch64
 ```
 
 to create a usable, shared sysroot located in this example here `/<path>/to/csh/sysroot`
