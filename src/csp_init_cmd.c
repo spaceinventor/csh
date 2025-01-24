@@ -148,8 +148,14 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter server\n");
@@ -261,8 +267,14 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     csp_usart_conf_t conf = {
         .device = device,
@@ -326,8 +338,14 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     csp_iface_t * iface;
     
@@ -411,8 +429,14 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     eth_select_interface(&device);
     if (strlen(device) == 0) {
@@ -473,8 +497,14 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter server\n");
@@ -531,8 +561,14 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     if (++argi >= slash->argc) {
 		printf("missing parameter tun src\n");
