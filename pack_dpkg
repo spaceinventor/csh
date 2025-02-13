@@ -68,7 +68,7 @@ EOF
 cat  << EOF > $debbuild_dir/DEBIAN/postinst
 #!/bin/sh
 setcap cap_net_raw,cap_net_admin+ep /usr/bin/csh
-USER_FOLDER=`eval echo ~\$SUDO_USER`
+USER_FOLDER=\`echo /home/$SUDO_USER\`
 if [ -f "\$USER_FOLDER/.local/bin/csh" ]
 then
     echo "Removing CSH from local installation"
