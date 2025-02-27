@@ -101,6 +101,38 @@ slash_command_subsub(require, version, csh, slash_require_version_csh_cmd, "<ver
 "- Quit: Which will exit CSH,\n "\
 "- Error: Which will break execution of a script,\n "\
 "- Warn: Which simply prints the specified message,\n "\
-"(Single letters may be used for error codes, e.g 'F' for Quit).\n\n "\
+"(Single letters may be used for error codes, e.g 'Q' for Quit).\n\n "\
 "Version constraint supports the typical comparisons: \"==\", \"!=\", \">=\", \"<=\", \">\" and \"<\".\n "\
 "For example: >=2.5-20");
+
+
+const struct slash_command slash_cmd_version;
+static int slash_version_cmd(struct slash *slash) {
+
+	int verbose = false;
+
+    int argi = -1;
+    {
+        optparse_t * parser = optparse_new_ex(slash_cmd_version.name, slash_cmd_version.args, slash_cmd_version.help);
+        optparse_add_help(parser);
+        optparse_add_set(parser, 'v', "verbose", 1, &verbose, "Verbose comparison");
+
+        argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+        optparse_del(parser);
+    }
+
+    if (argi < 0) {
+        return SLASH_EINVAL;
+    }
+
+    if (verbose) {
+        printf("Compiled: %s ", __DATE__);
+    }
+
+    extern const char *version_string;
+    printf("git: %s\n", version_string);
+
+    return SLASH_SUCCESS;
+}
+slash_command(version, slash_version_cmd, NULL, "Print CSH version (and date if verbose)")
