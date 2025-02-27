@@ -241,7 +241,6 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     char name[10];
     sprintf(name, "KISS%u", ifidx++);
     
-    int promisc = 0;
     int mask = 8;
     int dfl = 0;
     int baud = 1000000;
@@ -249,7 +248,6 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
     optparse_t * parser = optparse_new("csp add kiss", "<addr>");
     optparse_add_help(parser);
-    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate (defaults to 1000000)");
     optparse_add_string(parser, 'u', "uart", "STR", &device, "UART device name (defaults to /dev/ttyUSB0)");
