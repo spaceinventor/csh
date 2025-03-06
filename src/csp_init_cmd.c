@@ -116,8 +116,8 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "ZMQ%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "ZMQ%u", ifidx++);
     
     int promisc = 0;
     int mask = 8;
@@ -238,8 +238,8 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "KISS%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name,CSP_IFLIST_NAME_MAX, "KISS%u", ifidx++);
     
     int mask = 8;
     int dfl = 0;
@@ -307,8 +307,8 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "CAN%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "CAN%u", ifidx++);
     
     int promisc = 0;
     int mask = 8;
@@ -398,8 +398,8 @@ static void eth_select_interface(const char ** device) {
 static int csp_ifadd_eth_cmd(struct slash *slash) {
 
     static int ifidx = 0;
-    char name[CSP_IFLIST_NAME_MAX + 1];
-    sprintf(name, "ETH%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "ETH%u", ifidx++);
     const char * device = "e";
    
     int promisc = 0;
@@ -466,8 +466,8 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "UDP%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "UDP%u", ifidx++);
     
     int promisc = 0;
     int mask = 8;
@@ -534,8 +534,8 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "TUN%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "TUN%u", ifidx++);
     
     int promisc = 0;
     int mask = 8;
