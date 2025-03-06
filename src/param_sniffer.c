@@ -194,7 +194,8 @@ static void * param_sniffer(void * param) {
                 param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);
-                break;
+                mpack_discard(&reader);
+                continue;
             }
         }
         csp_buffer_free(packet);
