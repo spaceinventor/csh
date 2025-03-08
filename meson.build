@@ -14,11 +14,6 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'csp:port_max_bind=16',
 	'csp:use_rtable=true',
 	'param:have_fopen=true', 
-	'param:slash=true', 
-	'param:commands=false',
-	'param:scheduler=false',
-	'param:commands_client=true',
-	'param:scheduler_client=true',
 	'param:collector=false', 
 	'param:list_dynamic=true'])
 
@@ -71,6 +66,14 @@ csh_sources = [
     'src/slash_run_environment.c', 
     'src/require_version.c', 
     'src/require_version_cmd.c', 
+	'src/param_commands_slash.c',
+	'src/param_scheduler_slash.c',
+	'src/param_list_slash.c',
+	'src/param_slash.c',
+	'src/vmem_client_slash.c',
+	'src/vmem_client_slash_ftp.c',
+	'src/param_scheduler_client.c',
+	'src/param_commands_client.c',
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
