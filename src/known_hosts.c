@@ -13,7 +13,6 @@
 #include <slash/optparse.h>
 #include <slash/dflopt.h>
 
-
 /*Both of these may be modified by APMs  */
 __attribute__((used, retain)) unsigned int known_host_storage_size = sizeof(host_t);
 SLIST_HEAD(known_host_s, host_s) known_hosts = {};
@@ -88,59 +87,52 @@ int known_hosts_get_node(const char * find_name) {
 
 }
 
+static void node_save(const char * filename) {
 
-static int cmd_node_save(struct slash *slash)
-{
-    
     FILE * out = stdout;
 
-    char * dirname = getenv("HOME");
-    char path[100];
-
-	if (strlen(dirname)) {
-        snprintf(path, 100, "%s/csh_hosts", dirname);
-    } else {
-        snprintf(path, 100, "csh_hosts");
-    }
-
-    /* write to file */
-	FILE * fd = fopen(path, "w");
-    if (fd) {
-        out = fd;
+    if (filename) {
+        FILE * fd = fopen(filename, "w");
+        if (fd) {
+            out = fd;
+            printf("Writing to file %s\n", filename);
+        }
     }
 
     for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
         assert(host->node != 0);  // Holdout from array-based known_hosts
         if (host->node != 0) {
             fprintf(out, "node add -n %d %s\n", host->node, host->name);
-            printf("node add -n %d %s\n", host->node, host->name);
         }
     }
 
-    if (fd) {
-        fclose(fd);
+    if (out != stdout) {
+        fflush(out);
+        fclose(out);
     }
-
-
-    return SLASH_SUCCESS;
 }
 
-slash_command_sub(node, save, cmd_node_save, NULL, NULL);
+const struct slash_command slash_cmd_node_save;
+static int cmd_node_save(struct slash *slash) {
+    char * filename = NULL;
 
+    optparse_t * parser = optparse_new_ex(slash_cmd_node_save.name, slash_cmd_node_save.args, slash_cmd_node_save.help);
+    optparse_add_help(parser);
+    optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file");
 
-static int cmd_nodes(struct slash *slash)
-{
-    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
-        assert(host->node != 0);  // Holdout from array-based known_hosts
-        if (host->node != 0) {
-            printf("node add -n %d %s\n", host->node, host->name);
-        }
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
     }
 
+    node_save(filename);
+
+    optparse_del(parser);
     return SLASH_SUCCESS;
 }
-
-slash_command_sub(node, list, cmd_nodes, NULL, NULL);
+slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes");
+slash_command_sub(node, list, cmd_node_save, "", "Save or print known nodes");  // Alias
 
 static int cmd_hosts_add(struct slash *slash)
 {

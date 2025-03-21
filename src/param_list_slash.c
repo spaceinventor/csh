@@ -37,7 +37,7 @@ void param_list_save(const char * const filename, int node, int skip_node) {
     FILE * out = stdout;
 
     if (filename) {
-       FILE * fd = fopen(filename, "w");
+        FILE * fd = fopen(filename, "w");
         if (fd) {
             out = fd;
             printf("Writing to file %s\n", filename);
