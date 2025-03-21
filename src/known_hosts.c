@@ -128,6 +128,7 @@ static int cmd_node_save(struct slash *slash) {
 
     node_save(filename);
 
+    optparse_del(parser);
     return SLASH_SUCCESS;
 }
 slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes");
