@@ -93,21 +93,20 @@ static void node_save(const char * filename) {
 
     if (filename) {
         FILE * fd = fopen(filename, "w");
-         if (fd) {
-             out = fd;
-             printf("Writing to file %s\n", filename);
-         }
-     }
+        if (fd) {
+            out = fd;
+            printf("Writing to file %s\n", filename);
+        }
+    }
 
-     for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
         assert(host->node != 0);  // Holdout from array-based known_hosts
         if (host->node != 0) {
             fprintf(out, "node add -n %d %s\n", host->node, host->name);
         }
     }
 
-
-     if (out != stdout) {
+    if (out != stdout) {
         fflush(out);
         fclose(out);
     }
