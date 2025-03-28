@@ -10,8 +10,8 @@
 #include <signal.h>
 
 #include <slash/slash.h>
-#include <slash/dflopt.h>
 #include <slash/optparse.h>
+#include <apm/csh_api.h>
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_client.h>
@@ -24,6 +24,8 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp/csp_crc32.h>
+
+#include "csh_internals.h"
 
 static int ping(int node) {
 

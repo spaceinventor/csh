@@ -10,3 +10,6 @@
   path = lib/slash
   url = https://github.com/spaceinventor/slash
   branch = master
+[submodule "lib/apm"]
+	path = lib/apm
+	url = https://github.com/spaceinventor/libapm_csh

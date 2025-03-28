@@ -2,7 +2,6 @@
 #include "walkdir.h"
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include <slash/dflopt.h>
 #include <param/param.h>
 #include <param/param_list.h>
 #include <dlfcn.h>

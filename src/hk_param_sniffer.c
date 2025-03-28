@@ -15,8 +15,8 @@
 #include <csp/csp_crc32.h>
 
 #include <slash/slash.h>
-#include <slash/dflopt.h>
 #include <slash/optparse.h>
+#include <apm/csh_api.h>
 
 #include "param_sniffer.h"
 

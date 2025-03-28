@@ -11,7 +11,7 @@
 #include <limits.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include <slash/dflopt.h>
+#include <apm/csh_api.h>
 
 /*Both of these may be modified by APMs  */
 __attribute__((used, retain)) unsigned int known_host_storage_size = sizeof(host_t);

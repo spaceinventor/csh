@@ -22,7 +22,7 @@
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include <slash/dflopt.h>
+#include <apm/csh_api.h>
 
 static int vmem_client_slash_list(struct slash *slash)
 {

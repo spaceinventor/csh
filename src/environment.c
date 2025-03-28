@@ -25,7 +25,11 @@ static struct csh_env_entry *csh_get_env_entry(const char *name) {
 static char *csh_copy_char_and_grow(char *dest, size_t at, size_t *dest_len, char c) {
     if (at == *dest_len) {
         *dest_len += 16;
-        dest = realloc(dest, *dest_len);
+        char *tmp = realloc(dest, *dest_len);
+        if(!tmp) {
+            return NULL;
+        }
+        dest = tmp;
     }
     dest[at] = c;
     return dest;
@@ -95,7 +99,7 @@ char *csh_expand_vars(const char *input) {
     size_t var_s = 0;
     size_t var_e = 0;
     bool in_var = false;
-    while (idx < input_len) {
+    while (idx < input_len && res) {
         if(!in_var) {
             if(idx < input_len - 2) {
                 if(input[idx] == '$' && input[idx+1] == '(') {
@@ -103,10 +107,16 @@ char *csh_expand_vars(const char *input) {
                     var_s = idx + 2;
                 } else {
                     res = csh_copy_char_and_grow(res, res_idx, &res_len, input[idx]);
+                    if (!res) {
+                        break;
+                    }
                     res_idx++;
                 }
             } else {
                 res = csh_copy_char_and_grow(res, res_idx, &res_len, input[idx]);
+                if (!res) {
+                    break;
+                }
                 res_idx++;
             }            
         } else {
@@ -121,6 +131,9 @@ char *csh_expand_vars(const char *input) {
                 if(var_value) {
                     for(int i = 0; i < strlen(var_value); i++) {
                         res = csh_copy_char_and_grow(res, res_idx, &res_len, var_value[i]);
+                        if (!res) {
+                            break;
+                        }
                         res_idx++;
                     }
                 } else {
@@ -131,7 +144,9 @@ char *csh_expand_vars(const char *input) {
         }
         idx++;
     }
-    res[res_idx] = 0;
+    if (res) {
+        res[res_idx] = 0;
+    }
     return res;
 }
 

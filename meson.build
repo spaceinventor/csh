@@ -19,6 +19,8 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 
 add_global_arguments('-I../include', language: 'c')
 
+apm_api_dep = dependency('apm', fallback: ['apm', 'apm_csh_dep'], required: false).partial_dependency(includes: true)
+
 curl_dep = dependency('libcurl', required: false)
 if not curl_dep.found()
   error('libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.')
@@ -74,15 +76,15 @@ csh_sources = [
 	'src/vmem_client_slash.c',
 	'src/vmem_client_slash_ftp.c',
 	'src/param_scheduler_client.c',
-	'src/param_commands_client.c',
+	'src/param_commands_client.c'
 ]
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
 utils_lib_src = ['src/url_utils.c', 'src/environment.c', 'src/require_version.c', 'src/csh_defaults.c']
 utils_lib_inc = include_directories('src')
-utils_lib = static_library('csh_utils', utils_lib_src, include_directories: utils_lib_inc)
-utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with : utils_lib)
+utils_lib = static_library('csh_utils', utils_lib_src, include_directories: utils_lib_inc, dependencies: [apm_api_dep])
+utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with : utils_lib, dependencies: [apm_api_dep])
 
 subdir('tests')
 
