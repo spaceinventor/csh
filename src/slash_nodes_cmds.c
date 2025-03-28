@@ -3,10 +3,6 @@
 #include <slash/slash.h>
 #include <slash/dflopt.h>
 
-
-unsigned int slash_dfl_node = 0;
-unsigned int slash_dfl_timeout = 1000;
-
 static int cmd_node(struct slash *slash) {
 
 	if (slash->argc < 1) {
