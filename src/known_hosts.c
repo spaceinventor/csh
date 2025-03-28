@@ -69,6 +69,7 @@ void host_name_completer(struct slash *slash, char * token) {
         */
         if(slash->buffer[slash->length-1] != ' ' && len_to_compare_to < prefix_len) {
             strncpy(&slash->buffer[slash->length] - len_to_compare_to, completion->name, prefix_len);
+            slash->buffer[slash->length - len_to_compare_to + prefix_len] = '\0';
             slash->cursor = slash->length = strlen(slash->buffer);
         }
     }
