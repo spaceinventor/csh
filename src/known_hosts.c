@@ -153,47 +153,45 @@ int known_hosts_get_node(const char * find_name) {
 }
 
 static void node_save(const char * filename) {
-    
     FILE * out = stdout;
-
-if (filename) {
-    FILE * fd = fopen(filename, "w");
-    if (fd) {
-        out = fd;
-        printf("Writing to file %s\n", filename);
-    }
+    if (filename) {
+        FILE * fd = fopen(filename, "w");
+        if (fd) {
+            out = fd;
+            printf("Writing to file %s\n", filename);
+        }
     }
 
     for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
         assert(host->node != 0);  // Holdout from array-based known_hosts
         if (host->node != 0) {
             fprintf(out, "node add -n %d %s\n", host->node, host->name);
+        }
     }
-}
 
-if (out != stdout) {
-    fflush(out);
-    fclose(out);
+    if (out != stdout) {
+        fflush(out);
+        fclose(out);
     }
 }
 
 const struct slash_command slash_cmd_node_save;
 static int cmd_node_save(struct slash *slash) {
-char * filename = NULL;
+    char * filename = NULL;
 
-optparse_t * parser = optparse_new_ex(slash_cmd_node_save.name, slash_cmd_node_save.args, slash_cmd_node_save.help);
-optparse_add_help(parser);
-optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file");
+    optparse_t * parser = optparse_new_ex(slash_cmd_node_save.name, slash_cmd_node_save.args, slash_cmd_node_save.help);
+    optparse_add_help(parser);
+    optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file");
 
-int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
-if (argi < 0) {
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
+
+    node_save(filename);
+
     optparse_del(parser);
-    return SLASH_EINVAL;
-}
-
-node_save(filename);
-
-optparse_del(parser);
     return SLASH_SUCCESS;
 }
 slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes");
