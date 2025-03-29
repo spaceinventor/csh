@@ -42,7 +42,7 @@ struct apm_entry_s {
     char args[256];
     libmain_t libmain_f;
     libinfo_t libinfo_f;
-
+    int apm_init_version;
     apm_entry_t * next;
 };
 
@@ -101,6 +101,7 @@ apm_entry_t * load_apm(const char * path) {
     /* Get references to APM API functions */
     e->libmain_f = dlsym(handle, "libmain");
     e->libinfo_f = dlsym(handle, "libinfo");
+    e->apm_init_version = *(int *)dlsym(handle, "apm_init_version");
 
     e->handle = handle;
 
@@ -386,7 +387,7 @@ static int apm_info_cmd(struct slash *slash) {
 
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (!search_str || strstr(e->file, search_str)) {
-            printf("  \033[32m%-30s\033[0m %-80s\n", e->file, e->path);
+            printf("  \033[32m%-30s\033[0m %-80s\tCSH API: %d\n", e->file, e->path, e->apm_init_version);
             if (e->libinfo_f) {
                 e->libinfo_f();
             }
