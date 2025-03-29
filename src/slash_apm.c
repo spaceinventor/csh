@@ -4,6 +4,7 @@
 #include <slash/optparse.h>
 #include <param/param.h>
 #include <param/param_list.h>
+#include <apm/csh_api.h>
 #include <dlfcn.h>
 #include <pwd.h>
 #include <stdbool.h>
@@ -27,7 +28,7 @@ slash_command_group(apm, "apm");
     1 = void libmain(void)
     2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = 8;  // NOTE: Must be updated when APM init or library signature(s) change.
+__attribute__((used)) const int apm_init_version = APM_INIT_VERSION;
 typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
@@ -115,9 +116,19 @@ int initialize_apm(apm_entry_t * e) {
         fprintf(stderr, "APM is missing symbol \"apm_init_version\", refusing to load %s\n", e->file);
         return -1;
     }
-    if(apm_init_version != *apm_init_version_in_apm_ptr) {        
-        fprintf(stderr, "\033[31mError loading %s: Version mismatch: csh (%d) vs apm (%d)\033[0m\n", e->file, apm_init_version, *apm_init_version_in_apm_ptr);
-        return -1;
+    if(apm_init_version != *apm_init_version_in_apm_ptr) {
+        switch(apm_init_version) {
+            case 9: {
+                if (8 == *apm_init_version_in_apm_ptr) {
+                    /* CSH with API 9 *can* load APMs 8 or 9 */
+                    break;
+                }
+            }
+            default: {
+                fprintf(stderr, "\033[31mError loading %s: Version mismatch: csh (%d) vs apm (%d)\033[0m\n", e->file, apm_init_version, *apm_init_version_in_apm_ptr);
+                return -1;
+            }
+        }
     }
 
     int res = 1;
