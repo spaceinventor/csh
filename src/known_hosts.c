@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
+#include <limits.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include <slash/dflopt.h>
@@ -16,6 +16,72 @@
 /*Both of these may be modified by APMs  */
 __attribute__((used, retain)) unsigned int known_host_storage_size = sizeof(host_t);
 SLIST_HEAD(known_host_s, host_s) known_hosts = {};
+
+void host_name_completer(struct slash *slash, char * token) {
+        SLIST_HEAD(known_host_s, host_s) matching_hosts = {};
+    size_t token_l = strnlen(token, HOSTNAME_MAXLEN - 1);
+    int cur_prefix;
+    struct host_s *completion = NULL;
+    int len_to_compare_to = strlen(token);
+    int matches = 0;
+    int res;
+    for (host_t* element = SLIST_FIRST(&known_hosts); element != NULL; element = SLIST_NEXT(element, next)) {
+        res = strncmp(element->name, token, token_l);
+        if (0 == res) {
+            matches++;
+            completion = malloc(sizeof(struct host_s));
+            completion->node = element->node;
+            strncpy(completion->name, element->name, HOSTNAME_MAXLEN - 1); 
+            SLIST_INSERT_HEAD(&matching_hosts, completion, next);
+        }
+    }
+    if(matches > 1) {
+        /* We only print all commands over 1 match here */
+        slash_printf(slash, "\n");
+    }
+    struct host_s *prev_completion = NULL;
+    struct host_s *cur_completion = NULL;
+    int prefix_len = INT_MAX;
+
+    SLIST_FOREACH(cur_completion, &matching_hosts, next) {
+        /* Compute the length of prefix common to all completions */
+        if (prev_completion != 0) {
+            cur_prefix = slash_prefix_length(prev_completion->name, cur_completion->name);
+            if(cur_prefix < prefix_len) {
+                prefix_len = cur_prefix;
+                completion = cur_completion;
+            }
+        }
+        prev_completion = cur_completion;
+        if(matches > 1) {
+            slash_printf(slash, cur_completion->name);
+            slash_printf(slash, "\n");
+        }
+    }
+    if (matches == 1) {
+        *token = '\0';
+        strcat(slash->buffer, completion->name);
+        slash->cursor = slash->length = strlen(slash->buffer);
+    } else if(matches > 1) {
+        /* Fill the buffer with as much characters as possible:
+        * if what the user typed in doesn't end with a space, we might
+        * as well put all the common prefix in the buffer
+        */
+        if(slash->buffer[slash->length-1] != ' ' && len_to_compare_to < prefix_len) {
+            strncpy(&slash->buffer[slash->length] - len_to_compare_to, completion->name, prefix_len);
+            slash->buffer[slash->length - len_to_compare_to + prefix_len] = '\0';
+            slash->cursor = slash->length = strlen(slash->buffer);
+        }
+    }
+    /* Free up the completion list we built up earlier */
+    while (!SLIST_EMPTY(&matching_hosts))
+    {
+        completion = SLIST_FIRST(&matching_hosts);
+        SLIST_REMOVE(&matching_hosts, completion, host_s, next);
+        free(completion);
+    }
+
+}
 
 void known_hosts_del(int host) {
 
@@ -88,9 +154,7 @@ int known_hosts_get_node(const char * find_name) {
 }
 
 static void node_save(const char * filename) {
-
     FILE * out = stdout;
-
     if (filename) {
         FILE * fd = fopen(filename, "w");
         if (fd) {
@@ -123,7 +187,7 @@ static int cmd_node_save(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
         optparse_del(parser);
-	    return SLASH_EINVAL;
+        return SLASH_EINVAL;
     }
 
     node_save(filename);
@@ -134,19 +198,19 @@ static int cmd_node_save(struct slash *slash) {
 slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes");
 slash_command_sub(node, list, cmd_node_save, "", "Save or print known nodes");  // Alias
 
-static int cmd_hosts_add(struct slash *slash)
+static int cmd_node_add(struct slash *slash)
 {
 
     int node = slash_dfl_node;
 
-    optparse_t * parser = optparse_new("hosts add", "<name>");
+    optparse_t * parser = optparse_new("node add", "<name>");
     optparse_add_help(parser);
     optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
         optparse_del(parser);
-	    return SLASH_EINVAL;
+        return SLASH_EINVAL;
     }
 
     if (node == 0) {
@@ -155,14 +219,14 @@ static int cmd_hosts_add(struct slash *slash)
         return SLASH_EINVAL;
     }
 
-	/* Check if name is present */
-	if (++argi >= slash->argc) {
-		printf("missing node hostname\n");
+    /* Check if name is present */
+    if (++argi >= slash->argc) {
+        printf("missing node hostname\n");
         optparse_del(parser);
-		return SLASH_EINVAL;
-	}
+        return SLASH_EINVAL;
+    }
 
-	char * name = slash->argv[argi];
+    char * name = slash->argv[argi];
 
     if (known_hosts_add(node, name, true) == NULL) {
         fprintf(stderr, "No more memory, failed to add host");
@@ -173,4 +237,4 @@ static int cmd_hosts_add(struct slash *slash)
     return SLASH_SUCCESS;
 }
 
-slash_command_sub(node, add, cmd_hosts_add, NULL, NULL);
+slash_command_sub(node, add, cmd_node_add, NULL, NULL);
