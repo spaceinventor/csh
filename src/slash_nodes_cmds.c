@@ -24,9 +24,4 @@ static int cmd_node(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-
-/* Temporarily declare host_name_completer prototype here */
-
-extern void host_name_completer(struct slash *slash, char * token);
-
 slash_command_completer(node, cmd_node, host_name_completer, "[node]", "Set global default node");
