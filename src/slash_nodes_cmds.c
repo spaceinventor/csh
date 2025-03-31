@@ -30,3 +30,15 @@ static int cmd_node(struct slash *slash) {
 extern void host_name_completer(struct slash *slash, char * token);
 
 slash_command_completer(node, cmd_node, host_name_completer, "[node]", "Set global default node");
+
+static int cmd_timeout(struct slash *slash) {
+
+	if (slash->argc == 2) {
+		slash_dfl_timeout = atoi(slash->argv[1]);
+	}
+
+    printf("timeout = %d\n", slash_dfl_timeout);
+
+	return SLASH_SUCCESS;
+}
+slash_command(timeout, cmd_timeout, "[timeout ms]", "Set global default timeout");
