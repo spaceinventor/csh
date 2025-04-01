@@ -20,7 +20,8 @@
 #include <slash/slash.h>
 #include <slash/completer.h>
 #include <slash/optparse.h>
-#include <slash/dflopt.h>
+#include <apm/csh_api.h>
+#include "csh_internals.h"
 
 static int vmem_client_slash_download(struct slash *slash)
 {
@@ -382,13 +383,6 @@ static int vmem_client_slash_crc32(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 slash_command(crc32, vmem_client_slash_crc32, "<address> <length>", "Calculate CRC32 on a VMEM area");
-
-unsigned int rdp_dfl_window = 3;
-unsigned int rdp_dfl_conn_timeout = 10000;
-unsigned int rdp_dfl_packet_timeout = 5000;
-unsigned int rdp_dfl_delayed_acks = 1;
-unsigned int rdp_dfl_ack_timeout = 2000;
-unsigned int rdp_dfl_ack_count = 2;
 
 static int vmem_client_rdp_options(struct slash *slash) {
 

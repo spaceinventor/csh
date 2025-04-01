@@ -2,9 +2,9 @@
 #include "walkdir.h"
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include <slash/dflopt.h>
 #include <param/param.h>
 #include <param/param_list.h>
+#include <apm/csh_api.h>
 #include <dlfcn.h>
 #include <pwd.h>
 #include <stdbool.h>
@@ -28,7 +28,7 @@ slash_command_group(apm, "apm");
     1 = void libmain(void)
     2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = 8;  // NOTE: Must be updated when APM init or library signature(s) change.
+static const int apm_init_version = APM_INIT_VERSION;
 typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
@@ -42,7 +42,7 @@ struct apm_entry_s {
     char args[256];
     libmain_t libmain_f;
     libinfo_t libinfo_f;
-
+    int apm_init_version;
     apm_entry_t * next;
 };
 
@@ -101,6 +101,7 @@ apm_entry_t * load_apm(const char * path) {
     /* Get references to APM API functions */
     e->libmain_f = dlsym(handle, "libmain");
     e->libinfo_f = dlsym(handle, "libinfo");
+    e->apm_init_version = *(int *)dlsym(handle, "apm_init_version");
 
     e->handle = handle;
 
@@ -116,9 +117,19 @@ int initialize_apm(apm_entry_t * e) {
         fprintf(stderr, "APM is missing symbol \"apm_init_version\", refusing to load %s\n", e->file);
         return -1;
     }
-    if(apm_init_version != *apm_init_version_in_apm_ptr) {        
-        fprintf(stderr, "\033[31mError loading %s: Version mismatch: csh (%d) vs apm (%d)\033[0m\n", e->file, apm_init_version, *apm_init_version_in_apm_ptr);
-        return -1;
+    if(apm_init_version != *apm_init_version_in_apm_ptr) {
+        switch(apm_init_version) {
+            case 9: {
+                if (8 == *apm_init_version_in_apm_ptr) {
+                    /* CSH with API 9 *can* load APMs 8 or 9 */
+                    break;
+                }
+            }
+            default: {
+                fprintf(stderr, "\033[31mError loading %s: Version mismatch: csh (%d) vs apm (%d)\033[0m\n", e->file, apm_init_version, *apm_init_version_in_apm_ptr);
+                return -1;
+            }
+        }
     }
 
     int res = 1;
@@ -374,9 +385,11 @@ static int apm_info_cmd(struct slash *slash) {
 		search_str = slash->argv[argi];
 	}
 
+    printf("\033[1mCSH host API: \033[32m%d\033[0m\n\n", apm_init_version);
+
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (!search_str || strstr(e->file, search_str)) {
-            printf("  \033[32m%-30s\033[0m %-80s\n", e->file, e->path);
+            printf("  \033[32m%-30s\033[0m %-80s\tCSH API: %d\n", e->file, e->path, e->apm_init_version);
             if (e->libinfo_f) {
                 e->libinfo_f();
             }
