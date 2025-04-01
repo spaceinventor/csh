@@ -28,7 +28,7 @@ slash_command_group(apm, "apm");
     1 = void libmain(void)
     2 = int libmain(void)
 */
-__attribute__((used)) const int apm_init_version = APM_INIT_VERSION;
+static const int apm_init_version = APM_INIT_VERSION;
 typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 
@@ -384,6 +384,8 @@ static int apm_info_cmd(struct slash *slash) {
 	if (!search_str && (++argi < slash->argc)) {
 		search_str = slash->argv[argi];
 	}
+
+    printf("\033[1mCSH host API: \033[32m%d\033[0m\n\n", apm_init_version);
 
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (!search_str || strstr(e->file, search_str)) {
