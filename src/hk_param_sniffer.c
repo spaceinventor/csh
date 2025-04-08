@@ -99,14 +99,17 @@ slash_command_sub(hk, utcparam, hk_utcparam, NULL, NULL);
 
 void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 
-	time_t current_time;
-	time(&current_time);
+	time_t current_epoch;
+	time(&current_epoch);
+	char current_time_str[32];
+	strftime(current_time_str, sizeof(current_time_str), "%Y-%m-%d %H:%M:%S", gmtime(&current_epoch));
 
 	/* 1577833200: Jan 1st 2020 */
-	if (epoch > current_time || epoch < 1577833200) {
-		char time[32];
-		strftime(time, sizeof(time), "%Y-%m-%d %H:%M:%S", gmtime(&epoch));
-		printf("Illegal EPOCH %lu (%s) received\n", current_time, time);
+	if (epoch > current_epoch || epoch < 1577833200) {
+		char current_epoch_str[32];
+		strftime(current_epoch_str, sizeof(current_epoch_str), "%Y-%m-%d %H:%M:%S", gmtime(&epoch));
+		printf("At %s: Illegal EPOCH %lu (%s) received\n", current_time_str, current_epoch, current_epoch_str);
+		return;
 	}
 
 	/* update existing */
@@ -118,7 +121,7 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 				strftime(time, sizeof(time), "%Y-%m-%d %H:%M:%S", gmtime(&epoch));
 				char time_current[32];
 				strftime(time_current, sizeof(time_current), "%Y-%m-%d %H:%M:%S", gmtime(&hks.local_epoch[i]));
-				printf("Skipping possible invalid EPOCH %s, current EPOCH for HK node %u is %s\n", time, node, time_current);
+				printf("At %s: Skipping possible invalid EPOCH %s, current EPOCH for HK node %u is %s\n", current_time_str, time, node, time_current);
 				return;
 			}
 
@@ -126,7 +129,7 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 				/* get unix time to string time */
 				char time[32];
 				strftime(time, sizeof(time), "%Y-%m-%d %H:%M:%S", gmtime(&epoch));
-				printf("Updating HK node %u EPOCH by %ld sec to %s\n", node, hks.local_epoch[i] - epoch, time);
+				printf("At %s: Updating HK node %u EPOCH by %ld sec to %s\n", current_time_str, node, hks.local_epoch[i] - epoch, time);
 			}
 
 			hks.local_epoch[i] = epoch;
@@ -135,14 +138,14 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 	}
 
 	if (hks.count >= MAX_HKS) {
-		printf("Error: Maximum number of HK nodes reached (%d). Cannot set new epoch for node %u\n", MAX_HKS, node);
+		printf("At %s: Error: Maximum number of HK nodes reached (%d). Cannot set new epoch for node %u\n", current_time_str, MAX_HKS, node);
 		return;
 	}
 
 	hks.node[hks.count] = node;
 	hks.local_epoch[hks.count++] = epoch;
 
-	printf("Setting new hk node %u EPOCH to %ld\n", node, epoch);
+	printf("At %s: Setting new hk node %u EPOCH to %ld\n", current_time_str, node, epoch);
 }
 
 static int hk_timeoffset(struct slash * slash) {
