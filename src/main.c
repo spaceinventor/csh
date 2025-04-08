@@ -25,8 +25,7 @@
 #include <vmem/vmem_file.h>
 #include <vmem/vmem_client.h>
 
-#include "known_hosts.h"
-#include "environment.h"
+#include <apm/environment.h>
 #include "slash_env_var_completion.h"
 
 extern const char *version_string;

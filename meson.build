@@ -67,6 +67,7 @@ csh_sources = [
     'src/slash_env_var_cmds.c', 
     'src/slash_nodes_cmds.c', 
     'src/slash_run_environment.c', 
+	'src/slash_utils.c',
     'src/require_version.c', 
     'src/require_version_cmd.c', 
 	'src/param_commands_slash.c',

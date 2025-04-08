@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "environment.h"
+#include <apm/environment.h>
 
 TEST(environment, environment_tests) {
     ASSERT_EQ(NULL, csh_getvar("JB"));

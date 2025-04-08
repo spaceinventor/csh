@@ -2,7 +2,7 @@
 #include <slash/optparse.h>
 #include <stdlib.h>
 #include <string.h>
-#include "environment.h"
+#include <apm/environment.h>
 #include "slash_env_var_completion.h"
 
 /**

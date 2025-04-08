@@ -2,31 +2,84 @@
  * Naive, slow and simple storage of nodeid and hostname
  */
 
-#include "known_hosts.h"
+ #include "known_hosts.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
+#include <sys/queue.h>
+
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include <apm/csh_api.h>
 
-/*Both of these may be modified by APMs  */
-__attribute__((used, retain)) unsigned int known_host_storage_size = sizeof(host_t);
+#define HOSTNAME_MAXLEN 50
+
+struct host_s {
+    int node;
+    char name[HOSTNAME_MAXLEN];
+    SLIST_ENTRY(host_s) next;
+};
+
+static uint32_t known_host_storage_size = sizeof(host_t);
 SLIST_HEAD(known_host_s, host_s) known_hosts = {};
 
+/** Private (CSH-only API) */
+void node_save(const char * filename) {
+    FILE * out = stdout;
+    if (filename) {
+        FILE * fd = fopen(filename, "w");
+        if (fd) {
+            out = fd;
+            printf("Writing to file %s\n", filename);
+        }
+    }
+
+    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
+        assert(host->node != 0);  // Holdout from array-based known_hosts
+        if (host->node != 0) {
+            fprintf(out, "node add -n %d %s\n", host->node, host->name);
+        }
+    }
+
+    if (out != stdout) {
+        fflush(out);
+        fclose(out);
+    }
+}
+
+
+/** Public API */
+void known_host_set_storage_size(uint32_t new_size){
+    known_host_storage_size = new_size;
+}
+
+uint32_t known_host_get_storage_size() {
+    return known_host_storage_size;
+}
+
+
 void host_name_completer(struct slash *slash, char * token) {
-        SLIST_HEAD(known_host_s, host_s) matching_hosts = {};
-    size_t token_l = strnlen(token, HOSTNAME_MAXLEN - 1);
+    SLIST_HEAD(known_host_s, host_s) matching_hosts = {};
+    char *part_to_complete = token + strnlen(token, slash->length);
+    /* Rewind to a potential whitespace */
+    while(part_to_complete > token) {
+        if(*part_to_complete == ' ') {
+            part_to_complete++;
+            break;
+        }
+        part_to_complete--;
+    }
+    size_t token_l = strnlen(part_to_complete, HOSTNAME_MAXLEN - 1);
     int cur_prefix;
     struct host_s *completion = NULL;
-    int len_to_compare_to = strlen(token);
+    int len_to_compare_to = strlen(part_to_complete);
     int matches = 0;
     int res;
     for (host_t* element = SLIST_FIRST(&known_hosts); element != NULL; element = SLIST_NEXT(element, next)) {
-        res = strncmp(element->name, token, token_l);
+        res = strncmp(element->name, part_to_complete, token_l);
         if (0 == res) {
             matches++;
             completion = malloc(sizeof(struct host_s));
@@ -59,7 +112,7 @@ void host_name_completer(struct slash *slash, char * token) {
         }
     }
     if (matches == 1) {
-        *token = '\0';
+        *part_to_complete = '\0';
         strcat(slash->buffer, completion->name);
         slash->cursor = slash->length = strlen(slash->buffer);
     } else if(matches > 1) {
@@ -118,7 +171,9 @@ host_t * known_hosts_add(int addr, const char * new_name, bool override_existing
     }
     host->node = addr;
     strncpy(host->name, new_name, HOSTNAME_MAXLEN-1);  // -1 to fit NULL byte
-
+    char address_str[64];
+    snprintf(address_str, sizeof(address_str) - 1, "%d", host->node);
+    csh_putvar(host->name, address_str);
     SLIST_INSERT_HEAD(&known_hosts, host, next);
 
     return host;
@@ -153,88 +208,21 @@ int known_hosts_get_node(const char * find_name) {
 
 }
 
-static void node_save(const char * filename) {
-    FILE * out = stdout;
-    if (filename) {
-        FILE * fd = fopen(filename, "w");
-        if (fd) {
-            out = fd;
-            printf("Writing to file %s\n", filename);
-        }
-    }
 
-    for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
-        assert(host->node != 0);  // Holdout from array-based known_hosts
-        if (host->node != 0) {
-            fprintf(out, "node add -n %d %s\n", host->node, host->name);
-        }
-    }
-
-    if (out != stdout) {
-        fflush(out);
-        fclose(out);
-    }
+int get_host_by_addr_or_name(void *res_ptr, const char *arg) {
+	int res = 0;
+	long node = (long)known_hosts_get_node(arg);	
+	if(0 == node) {
+		char *number_start = (char *)arg;
+		char *end = NULL;
+		node = strtol(number_start, &end, 10);
+		if (node != INT32_MAX && node < 16384 && *end == '\0') {  
+			*(int*)res_ptr = (int)node;
+			res = 1;
+		}
+	} else {
+		*(int*)res_ptr = (int)node;
+		res = 1;
+	}
+	return res;
 }
-
-const struct slash_command slash_cmd_node_save;
-static int cmd_node_save(struct slash *slash) {
-    char * filename = NULL;
-
-    optparse_t * parser = optparse_new_ex(slash_cmd_node_save.name, slash_cmd_node_save.args, slash_cmd_node_save.help);
-    optparse_add_help(parser);
-    optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file");
-
-    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
-    if (argi < 0) {
-        optparse_del(parser);
-        return SLASH_EINVAL;
-    }
-
-    node_save(filename);
-
-    optparse_del(parser);
-    return SLASH_SUCCESS;
-}
-slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes");
-slash_command_sub(node, list, cmd_node_save, "", "Save or print known nodes");  // Alias
-
-static int cmd_node_add(struct slash *slash)
-{
-
-    int node = slash_dfl_node;
-
-    optparse_t * parser = optparse_new("node add", "<name>");
-    optparse_add_help(parser);
-    optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-
-    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
-    if (argi < 0) {
-        optparse_del(parser);
-        return SLASH_EINVAL;
-    }
-
-    if (node == 0) {
-        fprintf(stderr, "Refusing to add hostname for node 0");
-        optparse_del(parser);
-        return SLASH_EINVAL;
-    }
-
-    /* Check if name is present */
-    if (++argi >= slash->argc) {
-        printf("missing node hostname\n");
-        optparse_del(parser);
-        return SLASH_EINVAL;
-    }
-
-    char * name = slash->argv[argi];
-
-    if (known_hosts_add(node, name, true) == NULL) {
-        fprintf(stderr, "No more memory, failed to add host");
-        optparse_del(parser);
-        return SLASH_ENOMEM;  // We have already checked for node 0, so this can currently only be a memory error.
-    }
-    optparse_del(parser);
-    return SLASH_SUCCESS;
-}
-
-slash_command_sub(node, add, cmd_node_add, NULL, NULL);
