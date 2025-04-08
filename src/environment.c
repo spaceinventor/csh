@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include "environment.h"
+#include <apm/environment.h>
 
 static SLIST_HEAD( csh_env_llist, csh_env_entry ) csh_env = SLIST_HEAD_INITIALIZER(csh_env);
 struct csh_env_entry {

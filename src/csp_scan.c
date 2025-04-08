@@ -4,9 +4,7 @@
 #include <slash/optparse.h>
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
-
-#include "known_hosts.h"
-
+#include <apm/csh_api.h>
 
 static int csp_scan(struct slash *slash)
 {

@@ -32,7 +32,7 @@
 #include <slash/optparse.h>
 #include <apm/csh_api.h>
 #include "base16.h"
-#include "known_hosts.h"
+
 
 slash_command_group(csp, "Cubesat Space Protocol");
 
@@ -581,7 +581,7 @@ static int slash_csp_cmp_time(struct slash *slash)
     optparse_add_help(parser);
 	optparse_add_set(parser, 's', "sync", 1, &sync, "sync time with CSH");
 	optparse_add_set(parser, 'H', "human", 1, &human_friendly, "show the date/time info in human friendly manner");
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+	csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'T', "timestamp", "NUM", 0, &timestamp, "timestamp to configure in remote node)");
 

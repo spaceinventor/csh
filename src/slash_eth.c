@@ -38,7 +38,6 @@
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include "base16.h"
-#include "known_hosts.h"
 
 slash_command_group(eth, "Ethernet");
 

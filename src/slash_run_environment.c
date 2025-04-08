@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "environment.h"
+#include <apm/environment.h>
 
 #define ENV_FILE "__FILE__"
 #define ENV_FILE_DIR "__FILE_DIR__"
