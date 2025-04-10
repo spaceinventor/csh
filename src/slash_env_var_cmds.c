@@ -65,20 +65,15 @@ static int prefix_length(const char *s1, const char *s2)
 
 static void env_var_completer_csh_foreach_var_cb(const char *name, void *ctx) {
     env_var_completer_t *my_ctx = (env_var_completer_t *)ctx;
-    if(strncmp(my_ctx->to_match, name, slash_min(strlen(name), strlen(my_ctx->to_match))) == 0) {
-        int cur_l = strlen(name);
+    size_t cur_cmd_len = strlen(name);
+    size_t to_match_len = strlen(my_ctx->to_match);
+    if(strncmp(my_ctx->to_match, name, slash_min(cur_cmd_len, to_match_len)) == 0) {
         my_ctx->matches++;
         if(NULL != my_ctx->previous_match) {
-            if(cur_l <= my_ctx->prev_match_length && strlen(my_ctx->to_match) < my_ctx->prev_match_length) {
-                my_ctx->prev_match_length = prefix_length(name, my_ctx->previous_match);
-            } else {
-                if(*my_ctx->to_match) {
-                    my_ctx->matches--;
-                }
-            }
+            my_ctx->prev_match_length = prefix_length(name, my_ctx->previous_match);
         } else {
             my_ctx->previous_match = name;
-            my_ctx->prev_match_length = cur_l;
+            my_ctx->prev_match_length = strlen(name);
         }
         switch(my_ctx->matches) {
             case 1:
