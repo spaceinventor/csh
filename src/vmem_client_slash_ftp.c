@@ -34,7 +34,7 @@ static int vmem_client_slash_download(struct slash *slash)
 
     optparse_t * parser = optparse_new("download", "<address> <length base10 or base16> <file>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	// optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
@@ -187,7 +187,7 @@ static int vmem_client_slash_upload(struct slash *slash)
 
     optparse_t * parser = optparse_new("upload", "<file> <address>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
@@ -277,7 +277,7 @@ static int vmem_client_slash_crc32(struct slash *slash) {
 
 	optparse_t * parser = optparse_new("crc32", "<address> [length base10 or base16]");
 	optparse_add_help(parser);
-	optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+	csh_add_node_option(parser, &node);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 	optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	optparse_add_string(parser, 'f', "file", "STR", &file, "file to compare crc32 against, length = file size");

@@ -99,7 +99,7 @@ static int slash_csp_switch(struct slash * slash) {
 
     optparse_t * parser = optparse_new("switch", "<slot>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 'c', "count", "NUM", 0, &times, "number of times to boot into this slow (deafult = 1)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
 
@@ -308,7 +308,7 @@ static int slash_csp_program(struct slash * slash) {
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
     optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
@@ -475,7 +475,7 @@ static int slash_sps(struct slash * slash) {
 
     optparse_t * parser = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
     optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 

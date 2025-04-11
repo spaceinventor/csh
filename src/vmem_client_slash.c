@@ -32,7 +32,7 @@ static int vmem_client_slash_list(struct slash *slash)
 
     optparse_t * parser = optparse_new("vmem", NULL);
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 2)");
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);

@@ -78,7 +78,7 @@ static int hk_utcparam(struct slash * slash) {
 	unsigned int node = slash_dfl_node;
 	if (semicolon > slash->argv[argi]) {
 		*semicolon = '\0';
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	} else {
 		/* Node is not included, so we fake a semicolon before the string */
 		semicolon = slash->argv[argi] - 1;
@@ -152,7 +152,7 @@ static int hk_timeoffset(struct slash * slash) {
 
 	unsigned int node = slash_dfl_node;
 	optparse_t * parser = optparse_new("hk timeoffset [epoch]", "Satellite epoch time in seconds relative to Jan 1th 1970");
-	optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+	csh_add_node_option(parser, &node);
 	optparse_add_help(parser);
 	int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
 	if (argi < 0) {
