@@ -59,7 +59,7 @@ static int slash_csp_ping(struct slash *slash)
 
     optparse_t * parser = optparse_new("ping", "[node]");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 	optparse_add_unsigned(parser, 's', "size", "NUM", 0, &size, "size (default = 0)");
 
@@ -70,7 +70,7 @@ static int slash_csp_ping(struct slash *slash)
     }
 
 	if (++argi < slash->argc) {
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	}
 
 	slash_printf(slash, "Ping node %u size %u timeout %u: ", node, size, timeout);
@@ -87,7 +87,7 @@ static int slash_csp_ping(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(ping, slash_csp_ping, "[node]", "Ping a system");
+slash_command_completer(ping, slash_csp_ping, host_name_completer, "[node]", "Ping a system");
 
 static int slash_csp_reboot(struct slash *slash)
 {
@@ -96,7 +96,7 @@ static int slash_csp_reboot(struct slash *slash)
 
     optparse_t * parser = optparse_new("reboot", "[node]");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -105,7 +105,7 @@ static int slash_csp_reboot(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	}
 
 
@@ -124,7 +124,7 @@ static int slash_csp_shutdown(struct slash *slash)
 
     optparse_t * parser = optparse_new("shutdown", "[node]");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -133,7 +133,7 @@ static int slash_csp_shutdown(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	}
 
 
@@ -153,7 +153,7 @@ static int slash_csp_buffree(struct slash *slash)
 
     optparse_t * parser = optparse_new("buffree", "[node]");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -163,7 +163,7 @@ static int slash_csp_buffree(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	}
 
 
@@ -183,7 +183,7 @@ static int slash_csp_uptime(struct slash *slash)
 
     optparse_t * parser = optparse_new("uptime", "[node]");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -193,7 +193,7 @@ static int slash_csp_uptime(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	}
 
 
@@ -214,7 +214,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 
     optparse_t * parser = optparse_new("ident", "[node]");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 	optparse_add_set(parser, 'o', "override", true, &override, "Allow overriding hostname for a known node");
 
@@ -225,7 +225,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
     }
 
 	if (++argi < slash->argc) {
-		node = atoi(slash->argv[argi]);
+		get_host_by_addr_or_name(&node, slash->argv[argi]);
 	}
 
 	struct csp_cmp_message msg = {
@@ -269,7 +269,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(ident, slash_csp_cmp_ident, "[node]", "Ident");
+slash_command_completer(ident, slash_csp_cmp_ident, host_name_completer, "[node]", "Ident");
 
 
 static int slash_csp_cmp_ifstat(struct slash *slash)
@@ -280,7 +280,7 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 
     optparse_t * parser = optparse_new("ifstat", "<ifname>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -349,7 +349,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
 
     optparse_t * parser = optparse_new("peek", "<addr> <len>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version, 1=32-bit <addr>, 2=64-bit <addr> (default = 1)");
 
@@ -463,7 +463,7 @@ static int slash_csp_cmp_poke(struct slash *slash)
 
     optparse_t * parser = optparse_new("poke", "<addr> <data base16>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version, 1=32-bit <addr>>, 2=64-bit <addr> (default = 1)");
 

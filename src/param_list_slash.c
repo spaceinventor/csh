@@ -245,7 +245,7 @@ Fetches metadata such as name and type\n\
 Metadata must be known before values can be pulled.\n\
 Parameters can be manually added with 'list add'.");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 3)");
     optparse_add_set(parser, 'r', "remote", 1, &include_remotes, "Include remote params when storing list");
@@ -257,8 +257,7 @@ Parameters can be manually added with 'list add'.");
     }
 
     if (++argi < slash->argc) {
-        printf("Node as argument, is deprecated\n");
-        node = atoi(slash->argv[argi]);
+        get_host_by_addr_or_name(&node, slash->argv[argi]);
     }
 
     if(node == 0){
@@ -292,8 +291,7 @@ This makes it possible to download them again, in cases where they've changed.")
     }
 
     if (++argi < slash->argc) {
-        printf("Node as argument, is deprecated\n");
-        node = atoi(slash->argv[argi]);
+        get_host_by_addr_or_name(&node, slash->argv[argi]);
     }
 
     printf("Removed %i parameters\n", param_list_remove(node, 1));
@@ -316,7 +314,7 @@ static int list_add(struct slash *slash)
 
     optparse_t * parser = optparse_new("list add", "<name> <id> <type>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 'a', "array", "NUM", 0, &array_len, "array length (default = none)");
     optparse_add_int(parser, 'v', "vmem", "NUM", 0, &vmem_type, "VMEM type (default = none)");
     optparse_add_string(parser, 'c', "comment", "STRING", (char **) &helpstr, "help text");

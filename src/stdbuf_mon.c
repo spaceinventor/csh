@@ -91,7 +91,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
     optparse_t * parser = optparse_new("stdbuf2", "");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "paramversion (default = 2)");
 

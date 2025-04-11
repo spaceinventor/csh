@@ -71,7 +71,7 @@ static int resbuf_dump_slash(struct slash *slash) {
 
     optparse_t * parser = optparse_new("resbuf", "");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
 	optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file, or 'timestamp' for timestamped file in cwd");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
