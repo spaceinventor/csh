@@ -271,7 +271,7 @@ Parameters can be manually added with 'list add'.");
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(list, download, list_download, "[OPTIONS...] [node]", "Download a list of remote parameters");
+slash_command_sub_completer(list, download, list_download, host_name_completer, "[OPTIONS...] [node]", "Download a list of remote parameters");
 
 static int list_forget(struct slash *slash)
 {
@@ -299,7 +299,7 @@ This makes it possible to download them again, in cases where they've changed.")
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(list, forget, list_forget, "[node]", "Forget remote parameters. Omit or set node to -1 to include all.");
+slash_command_sub_completer(list, forget, list_forget, host_name_completer, "[node]", "Forget remote parameters. Omit or set node to -1 to include all.");
 
 
 static int list_add(struct slash *slash)
