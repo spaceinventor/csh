@@ -82,7 +82,7 @@ void param_list_save(const char * const filename, int node, int skip_node) {
             list_add_output_user_flags(mask,out);
         }
 
-        if (param_sorted[i]->vmem != NULL && param_sorted[i]->vmem->type > 0) {
+        if (param_sorted[i]->vmem != NULL && param_sorted[i]->vmem->type != VMEM_TYPE_UNKNOWN) {
             fprintf(out, "-v %u ", param_sorted[i]->vmem->type);
         }
 
