@@ -32,7 +32,7 @@ static int cmd_server_upload(struct slash *slash) {
     optparse_t * parser = optparse_new("cmd server upload", "<name>");
     optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
-	optparse_add_unsigned(parser, 's', "server", "NUM", 0, &server, "server to push parameters to (default = <env>))");
+	optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -68,7 +68,7 @@ static int cmd_server_download(struct slash *slash) {
     optparse_t * parser = optparse_new("cmd server download", "<name>");
     optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
-	optparse_add_unsigned(parser, 's', "server", "NUM", 0, &server, "server to push parameters to (default = <env>))");
+	optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -104,7 +104,7 @@ static int cmd_server_list(struct slash *slash) {
     optparse_t * parser = optparse_new("cmd server list", NULL);
     optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
-	optparse_add_unsigned(parser, 's', "server", "NUM", 0, &server, "server to push parameters to (default = <env>))");
+	optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -133,7 +133,7 @@ static int cmd_server_rm(struct slash *slash) {
     optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
 	optparse_add_set(parser, 'a', "all", 1, &rm_all, "delete all");
-	optparse_add_unsigned(parser, 's', "server", "NUM", 0, &server, "server to push parameters to (default = <env>))");
+	optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {

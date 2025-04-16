@@ -78,7 +78,11 @@ static int hk_utcparam(struct slash * slash) {
 	unsigned int node = slash_dfl_node;
 	if (semicolon > slash->argv[argi]) {
 		*semicolon = '\0';
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	} else {
 		/* Node is not included, so we fake a semicolon before the string */
 		semicolon = slash->argv[argi] - 1;

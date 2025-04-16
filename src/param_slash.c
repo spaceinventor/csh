@@ -367,11 +367,11 @@
 	 param_t *prefix = NULL;
 	 char * orig_slash_buf = NULL;
 
-	 int node = slash_dfl_node;
+	 unsigned int node = slash_dfl_node;
 
 	 /* Build args */
 	 optparse_t * parser = optparse_new("", "");
-	 optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+	 csh_add_node_option(parser, &node);
 	 int argi = optparse_parse(parser, slash->argc, (const char **) slash->argv);
 	 optparse_del(parser);
 
@@ -478,15 +478,15 @@
 
  static int cmd_get(struct slash *slash) {
 
-	 int node = slash_dfl_node;
+	 unsigned int node = slash_dfl_node;
 	 int paramver = 2;
 	 int server = 0;
 	 int prio = CSP_PRIO_NORM;
 
 	 optparse_t * parser = optparse_new("get", "<name>");
 	 optparse_add_help(parser);
-	 optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-	 optparse_add_int(parser, 's', "server", "NUM", 0, &server, "server to get parameters from (default = node))");
+	 csh_add_node_option(parser, &node);
+	 optparse_add_custom(parser, 's', "server", "NUM", "server to get parameters from (default = node)", get_host_by_addr_or_name, &server);
 	 optparse_add_int(parser, 'v', "paramver", "NUM", 0, &paramver, "parameter system version (default = 2)");
 	 optparse_add_int(parser, 'p', "prio", "NUM", 0, &prio, "CSP priority (0 = CRITICAL, 1 = HIGH, 2 = NORM (default), 3 = LOW)");
 
@@ -557,7 +557,7 @@
  slash_command_completer(get, cmd_get, param_get_cmd_completer, "<param>", "Get");
 
  static int cmd_set(struct slash *slash) {
-	 int node = slash_dfl_node;
+	 unsigned int node = slash_dfl_node;
 	 int paramver = 2;
 	 int server = 0;
 	 int ack_with_pull = true;
@@ -566,8 +566,8 @@
 
 	 optparse_t * parser = optparse_new("set", "<name>[offset] <value>");
 	 optparse_add_help(parser);
-	 optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-	 optparse_add_int(parser, 's', "server", "NUM", 0, &server, "server to set parameters on (default = node)");
+	 csh_add_node_option(parser, &node);
+	 optparse_add_custom(parser, 's', "server", "NUM", "server to set parameters on (default = node)", get_host_by_addr_or_name, &server);
 	 optparse_add_int(parser, 'v', "paramver", "NUM", 0, &paramver, "parameter system version (default = 2)");
 	 optparse_add_set(parser, 'a', "no_ack_push", 0, &ack_with_pull, "Disable ack with param push queue");
 	 optparse_add_set(parser, 'f', "force", true, &force, "force setting readonly params");
@@ -825,14 +825,14 @@
 
  static int cmd_add(struct slash *slash) {
 
-	 int node = slash_dfl_node;
+	 unsigned int node = slash_dfl_node;
 	 char * include_mask_str = NULL;
 	 char * exclude_mask_str = NULL;
 	 int force = false;
 
 	 optparse_t * parser = optparse_new("cmd add", "<name>[offset] [value]");
 	 optparse_add_help(parser);
-	 optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+	 csh_add_node_option(parser, &node);
 	 optparse_add_string(parser, 'm', "imask", "MASK", &include_mask_str, "Include mask (param letters) (used for get with wildcard)");
 	 optparse_add_string(parser, 'e', "emask", "MASK", &exclude_mask_str, "Exclude mask (param letters) (used for get with wildcard)");
 	 optparse_add_set(parser, 'f', "force", true, &force, "force setting readonly params");
@@ -956,7 +956,7 @@
 	 optparse_t * parser = optparse_new("run", "");
 	 optparse_add_help(parser);
 	 optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
-	 optparse_add_unsigned(parser, 's', "server", "NUM", 0, &server, "server to push parameters to (default = <env>))");
+	 optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);
 	 optparse_add_unsigned(parser, 'h', "hwid", "NUM", 16, &hwid, "include hardware id filter (default = off)");
 	 optparse_add_set(parser, 'a', "no_ack_push", 0, &ack_with_pull, "Disable ack with param push queue");
 	 optparse_add_int(parser, 'p', "prio", "NUM", 0, &prio, "CSP priority (0 = CRITICAL, 1 = HIGH, 2 = NORM (default), 3 = LOW)");

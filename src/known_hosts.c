@@ -196,7 +196,7 @@ int known_hosts_get_name(int find_host, char * name, int buflen) {
 int known_hosts_get_node(const char * find_name) {
 
     if (find_name == NULL)
-        return 0;
+        return -1;
 
     for (host_t* host = SLIST_FIRST(&known_hosts); host != NULL; host = SLIST_NEXT(host, next)) {
         if (strncmp(find_name, host->name, HOSTNAME_MAXLEN) == 0) {
@@ -204,25 +204,27 @@ int known_hosts_get_node(const char * find_name) {
         }
     }
 
-    return 0;
+    return -1;
 
 }
 
 
 int get_host_by_addr_or_name(void *res_ptr, const char *arg) {
-	int res = 0;
-	long node = (long)known_hosts_get_node(arg);	
-	if(0 == node) {
-		char *number_start = (char *)arg;
-		char *end = NULL;
-		node = strtol(number_start, &end, 10);
-		if (node != INT32_MAX && node < 16384 && *end == '\0') {  
-			*(int*)res_ptr = (int)node;
-			res = 1;
-		}
-	} else {
-		*(int*)res_ptr = (int)node;
-		res = 1;
-	}
-	return res;
+    long node = (long)known_hosts_get_node(arg);	
+    
+    /* Found node */
+    if (0 <= node) {
+        *(int*)res_ptr = (int)node;
+        return 1;  /* Found hostname */
+    }
+
+    char *number_start = (char *)arg;
+    char *end = NULL;
+    node = strtol(number_start, &end, 10);
+    if (node != INT32_MAX && node < 16384 && *end == '\0') {  
+        *(int*)res_ptr = (int)node;
+        return 2;  /* Found number */
+    }
+
+	return 0;  /* Failed */
 }

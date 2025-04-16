@@ -32,7 +32,7 @@ test('require_version_tests', require_version_tests)
 
 set_array_tests = executable(
     'set_array_tests',
-    sources: ['param_slash_parse_array_tests.c', '../src/param_slash.c'],
+    sources: ['param_slash_parse_array_tests.c', '../src/param_slash.c', '../src/known_hosts.c',],
     dependencies: [csp_dep, slash_dep, param_dep, utils_lib_dep],
 )
 test('set_array_tests', set_array_tests)

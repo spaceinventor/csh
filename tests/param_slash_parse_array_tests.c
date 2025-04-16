@@ -4,9 +4,6 @@
 // #include "param_slash.c"
 
 vmem_t dummy;
-int known_hosts_get_node(char * find_name) {
-    return 0;
-}
 
 int serial_get(void) {
     return 1234;

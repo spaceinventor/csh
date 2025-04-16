@@ -195,7 +195,7 @@ void list_add_output_user_flags(uint32_t mask, FILE * out){
 
 static int list(struct slash *slash)
 {
-    int node = slash_dfl_node;
+    unsigned int node = slash_dfl_node;
     int verbosity = 1;
     char * maskstr = NULL;
 
@@ -203,7 +203,7 @@ static int list(struct slash *slash)
 Will show a (filtered) list of known parameters on the specified node(s).\n\
 Shows cached/known values. Use -v to include parameter type and help text.");
     optparse_add_help(parser);
-    optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (-1 for all) (default = <env>)");
+    optparse_add_custom(parser, 'n', "node", "NUM",  "node (-1 for all) (default = <env>)", get_host_by_addr_or_name, &node);
     optparse_add_int(parser, 'v', "verbosity", "NUM", 0, &verbosity, "verbosity (default = 1, max = 3)");
     optparse_add_string(parser, 'm', "mask", "STR", &maskstr, "mask string");
 
@@ -257,7 +257,11 @@ Parameters can be manually added with 'list add'.");
     }
 
     if (++argi < slash->argc) {
-        get_host_by_addr_or_name(&node, slash->argv[argi]);
+        if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
     }
 
     if(node == 0){
@@ -276,13 +280,13 @@ slash_command_sub_completer(list, download, list_download, host_name_completer, 
 static int list_forget(struct slash *slash)
 {
 
-    int node = slash_dfl_node;
+    unsigned int node = slash_dfl_node;
 
     optparse_t * parser = optparse_new("list forget", "[node]\n\
 Will remove remote parameters from the local parameter list.\n\
 This makes it possible to download them again, in cases where they've changed.");
     optparse_add_help(parser);
-    optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (-1 for all) (default = <env>)");
+    optparse_add_custom(parser, 'n', "node", "NUM",  "node (-1 for all) (default = <env>)", get_host_by_addr_or_name, &node);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -291,7 +295,11 @@ This makes it possible to download them again, in cases where they've changed.")
     }
 
     if (++argi < slash->argc) {
-        get_host_by_addr_or_name(&node, slash->argv[argi]);
+        if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
     }
 
     printf("Removed %i parameters\n", param_list_remove(node, 1));
@@ -391,13 +399,13 @@ slash_command_sub(list, add, list_add, "<name> <id> <type>", NULL);
 static int list_save_cmd(struct slash *slash) {
 
     char * filename = NULL;
-    int node = slash_dfl_node;
+    unsigned int node = slash_dfl_node;
     int skip_node = 0;
 
     optparse_t * parser = optparse_new("list save", "[name wildcard=*]");
     optparse_add_help(parser);
     optparse_add_string(parser, 'f', "filename", "PATH", &filename, "write to file");
-    optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_set(parser, 'N', "skipnode", 1, &skip_node, "Exclude node argument");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);

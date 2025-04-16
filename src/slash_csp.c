@@ -70,7 +70,11 @@ static int slash_csp_ping(struct slash *slash)
     }
 
 	if (++argi < slash->argc) {
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	}
 
 	slash_printf(slash, "Ping node %u size %u timeout %u: ", node, size, timeout);
@@ -105,7 +109,11 @@ static int slash_csp_reboot(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	}
 
 
@@ -133,7 +141,11 @@ static int slash_csp_shutdown(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	}
 
 
@@ -163,7 +175,11 @@ static int slash_csp_buffree(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	}
 
 
@@ -193,7 +209,11 @@ static int slash_csp_uptime(struct slash *slash)
     }
 
    	if (++argi < slash->argc) {
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	}
 
 
@@ -225,7 +245,11 @@ static int slash_csp_cmp_ident(struct slash *slash)
     }
 
 	if (++argi < slash->argc) {
-		get_host_by_addr_or_name(&node, slash->argv[argi]);
+		if (0 >= get_host_by_addr_or_name(&node, slash->argv[argi])) {
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[argi]);
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 	}
 
 	struct csp_cmp_message msg = {

@@ -16,7 +16,7 @@ static int cmd_node(struct slash *slash) {
 	if (slash->argc == 2) {
 
 		if (0 == get_host_by_addr_or_name(&slash_dfl_node, slash->argv[1])) {
-			printf("'%s' does not resolve to a valid CSP address\n", slash->argv[1]);
+			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[1]);
 		}
 	}
 
@@ -51,11 +51,11 @@ slash_command_sub(node, list, cmd_node_save, "", "Save or print known nodes");  
 static int cmd_node_add(struct slash *slash)
 {
 
-    int node = slash_dfl_node;
+    unsigned int node = slash_dfl_node;
 
     optparse_t * parser = optparse_new("node add", "<name>");
     optparse_add_help(parser);
-    optparse_add_int(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
