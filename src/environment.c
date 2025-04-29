@@ -25,7 +25,8 @@ static struct csh_env_entry *csh_get_env_entry(const char *name) {
 static char *csh_copy_char_and_grow(char *dest, size_t at, size_t *dest_len, char c) {
     if (at == *dest_len) {
         *dest_len += 16;
-        char *tmp = realloc(dest, *dest_len);
+        /* Make sure there is space enough for the NULL termination that will be appended at the end */
+        char *tmp = realloc(dest, *dest_len + 1);
         if(!tmp) {
             return NULL;
         }
