@@ -1,54 +1,61 @@
 Name,Arguments,Detailed help
-apm load,-,Load an APM
 apm info,-,Information on APMs
-manual,-,Show CSH documentation as PDF
-info,-,Show CSP info
-ping,[node],Ping a system
-reboot,[node],Reboot a node
-shutdown,[node],Shutdown a node
+apm load,-,Load an APM
 buffree,[node],-
-uptime,[node],-
-ident,[node],Ident
-ifstat,<node> <interface> [timeout],Ident
-peek,<address> <len>,Peek
-poke,<address> <data>,Poke
-time,-,Get or synchronize timestamp
-eth debug,-,Toggle ethernet debugging
-eth info,-,List devices
-prometheus start,-,Start prometheus webserver
-resbuf,-,Monitor stdbuf
-stdbuf,-,Monitor stdbuf
-stdbuf2,-,Monitor stdbuf
-csp scan,-,-
-sleep,<sleep ms>,Sleep the specified amount of milliseconds
-switch,<slot>,switch
-program,<node> <slot> [filename],program
-sps,<node> <from> <to> [filename],switch program switch
-ls,[path],list files
-cd,-,change dir
 cat,[file],"cat out file, no concat"
-node save,-,-
-node list,-,-
-node add,-,-
-hk timeoffset,-,-
-csp init,-,Initialize CSP
-csp add zmq,-,Add a new ZMQ interface
-csp add kiss,-,Add a new KISS/UART interface
+cd,-,change dir
+cmd,-,Show current command
+cmd add,<param>[offset] [value],Add a new parameter to a command
+cmd done,-,Exit cmd edit mode
+cmd new,<get/set> <cmd name>,Create a new command
+cmd run,-,-
+cmd server download,<name>,-
+cmd server list,-,-
+cmd server rm,<name>,-
+cmd server upload,-,-
+confirm,-,Block until user confirmation
+crc32,<address> <length>,Calculate CRC32 on a VMEM area
 csp add can,-,Add a new CAN interface
 csp add eth,-,Add a new Ethernet interface
-csp add udp,-,Add a new UDP interface
-csp add tun,-,Add a new TUN interface
+csp add kiss,-,Add a new KISS/UART interface
 csp add route,-,Add a new route
-vts init,-,Push data to VTS
-vm start,-,Start Victoria Metrics push thread
-vm stop,-,Stop Victoria Metrics push thread
+csp add tun,-,Add a new TUN interface
+csp add udp,-,Add a new UDP interface
+csp add zmq,-,Add a new ZMQ interface
+csp init,-,Initialize CSP
+csp scan,-,-
+download,<address> <length> <file>,Download from VMEM to FILE
+eth debug,-,Toggle ethernet debugging
+eth info,-,List devices
+exit,-,Exit application
+get,<param>,Get
+help,[command],Show available commands
+history,-,Show previous commands
+hk timeoffset,-,-
+hk utcparam,-,-
+ident,[node],Ident
+ifstat,<node> <interface> [timeout],Ident
+info,-,Show CSP info
+list,[OPTIONS...] [name wildcard=*],List parameters
+list add,<name> <id> <type>,-
+list download,[OPTIONS...] [node],Download a list of remote parameters
+list forget,[node],Forget remote parameters. Omit or set node to -1 to include all.
+list save,-,Save parameters
 loki start,-,Start Loki log push thread
-var set,NAME VALUE,Create or update an environment variable in CSH
-var unset,NAME,Remove an environment variable in CSH
-var clear,-,Clear all environment variables in CSH
-var get,NAME,"Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined"
-var show,-,Print the defined variables and their values
-var expand,[-e] [-q] INPUT,Display the given INPUT string with references to defined variables expanded.
+ls,[path],list files
+manual,-,Show CSH documentation as PDF
+node,[node],Set global default node
+node add,-,-
+node list,-,Save or print known nodes
+node save,-,Save or print known nodes
+peek,<address> <len>,Peek
+ping,[node],Ping a system
+poke,<address> <data>,Poke
+program,<node> <slot> [filename],program
+prometheus start,-,Start prometheus webserver
+pull,[OPTIONS],Pull all metrics from given CSP node(s)
+rdp opt,-,Set RDP options to use in stream and file transfers
+reboot,[node],Reboot a node
 require version csh,<version-constraint> <error-action> [error-message],"Checks whether CSH fulfills the specified version requirements.
 
  A failed comparison may perform a varity of actions, based on the specified error action.
@@ -56,47 +63,42 @@ require version csh,<version-constraint> <error-action> [error-message],"Checks 
  - Quit: Which will exit CSH,
  - Error: Which will break execution of a script,
  - Warn: Which simply prints the specified message,
- (Single letters may be used for error codes, e.g 'F' for Quit).
+ (Single letters may be used for error codes, e.g 'Q' for Quit).
 
  Version constraint supports the typical comparisons: ""=="", ""!="", "">="", ""<="", "">"" and ""<"".
  For example: >=2.5-20"
-help,[command],Show available commands
-history,-,Show previous commands
-exit,-,Exit application
-confirm,-,Block until user confirmation
-watch,<command...>,Repeat a command
-node,[node],Set global default node
-timeout,[timeout ms],Set global default timeout
+resbuf,-,Monitor stdbuf
 run,<file>,"Runs commands in the specified file. 
 Sets the following environment variables during execution:
 
 - __FILE__ to the path and name of the executed file
 - __FILE_DIR__ to the directory containing the executed file, useful for running other files located relative to __FILE__"
-list,[OPTIONS...] [name wildcard=*],List parameters
-list download,[OPTIONS...] [node],Download a list of remote parameters
-list forget,[node],Forget remote parameters. Omit or set node to -1 to include all.
-list add,<name> <id> <type>,-
-list save,-,Save parameters
-get,<param>,Get
-set,<param> <value>,Set
-cmd add,<param>[offset] [value],Add a new parameter to a command
-cmd run,-,-
-pull,[OPTIONS],Pull all metrics from given CSP node(s)
-cmd new,<get/set> <cmd name>,Create a new command
-cmd done,-,Exit cmd edit mode
-cmd,-,Show current command
-vmem,-,List virtual memory
-download,<address> <length> <file>,Download from VMEM to FILE
-upload,<file> <address>,Upload from FILE to VMEM
-crc32,<address> <length>,Calculate CRC32 on a VMEM area
-rdp opt,-,Set RDP options to use in stream and file transfers
-schedule push,-,-
-schedule list,-,-
-schedule show,-,-
-schedule rm,<server> <id> [timeout],-
-schedule reset,<server> <last id> [timeout],-
 schedule cmd,-,-
-cmd server upload,-,-
-cmd server download,<name>,-
-cmd server list,-,-
-cmd server rm,<name>,-
+schedule list,-,-
+schedule push,-,-
+schedule reset,<server> <last id> [timeout],-
+schedule rm,<server> <id> [timeout],-
+schedule show,-,-
+set,<param> <value>,Set
+shutdown,[node],Shutdown a node
+sleep,<sleep ms>,Sleep the specified amount of milliseconds
+sps,<node> <from> <to> [filename],switch program switch
+stdbuf,-,Monitor stdbuf
+stdbuf2,-,Monitor stdbuf
+switch,<slot>,switch
+time,-,Get or synchronize timestamp
+timeout,[timeout ms],Set global default timeout
+upload,<file> <address>,Upload from FILE to VMEM
+uptime,[node],-
+var clear,-,Clear all environment variables in CSH
+var expand,[-e] [-q] INPUT,Display the given INPUT string with references to defined variables expanded.
+var get,NAME,"Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined"
+var set,NAME VALUE,Create or update an environment variable in CSH
+var show,-,Print the defined variables and their values
+var unset,NAME,Remove an environment variable in CSH
+version,-,Print CSH version (and date if verbose)
+vm start,-,Start Victoria Metrics push thread
+vm stop,-,Stop Victoria Metrics push thread
+vmem,-,List virtual memory
+vts init,-,Push data to VTS
+watch,<command...>,Repeat a command
