@@ -1,5 +1,7 @@
 project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'buildtype=debug', 
+	'optimization=2',
+	'warning_level=0',
 	'c_std=gnu11', 
 	'b_lto=false',
 	'default_library=static',
@@ -17,7 +19,16 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'param:collector=false', 
 	'param:list_dynamic=true'])
 
-add_global_arguments('-I../include', language: 'c')
+# Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
+# 'Consider using the built-in warning_level option instead of using "-Wall"'
+# 'Consider using the built-in warning_level option instead of using "-Wextra"'
+# which would be fine *IF* doing so didn't automatically propagate these options to this project's dependencies.
+# As we would like (at least for now) to only care about the warnings in this project's source code,
+# we don't want to propagate our warning settings to them, these dependencies can use whatever warning settings
+# they want.
+# As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
+# accept the Meson warnings given the flexibilty we gain
+add_project_arguments(['-I../include', '-Wall', '-Wextra', '-Wno-unused-parameter'], language: 'c')
 
 apm_api_dep = dependency('apm', fallback: ['apm', 'apm_csh_dep'], required: false).partial_dependency(includes: true)
 

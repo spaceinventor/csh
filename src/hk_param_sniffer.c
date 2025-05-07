@@ -40,7 +40,7 @@ static timesync_nodes_t timesync_nodes = {0};
 void hk_set_utcparam(unsigned int node, unsigned int paramid) {
 
 	// update existing
-	for (size_t i = 0; i < timesync_nodes.count; i++) {
+	for (int i = 0; i < timesync_nodes.count; i++) {
 		if (timesync_nodes.node[i] == node) {
 			timesync_nodes.node[i] = node;
 			timesync_nodes.paramid[i] = paramid;
@@ -117,7 +117,7 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 	}
 
 	/* update existing */
-	for (size_t i = 0; i < hks.count; i++) {
+	for (int i = 0; i < hks.count; i++) {
 		if (hks.node[i] == node) {
 
 			if (auto_sync && hks.local_epoch[i] - epoch > 86400) {
@@ -173,7 +173,7 @@ static int hk_timeoffset(struct slash * slash) {
 	if (time_offset > 0) {
 		hk_set_epoch(time_offset, node, false);
 	} else {
-		for (size_t i = 0; i < hks.count; i++) {
+		for (int i = 0; i < hks.count; i++) {
 			if (hks.node[i] == node) {
 				printf("Current satellite EPOCH is %s\nSeconds: %lu\n", ctime(&hks.local_epoch[i]), hks.local_epoch[i]);
 			}
@@ -234,7 +234,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 			}
 
 			time_t local_epoch = -1;
-			for (size_t i = 0; i < timesync_nodes.count; i++) {
+			for (int i = 0; i < timesync_nodes.count; i++) {
 				if (timesync_nodes.node[i] == node && timesync_nodes.paramid[i] == param->id) {
 					mpack_tag_t tag = mpack_peek_tag(&reader);
 					local_epoch = tag.v.i - timestamp;

@@ -513,8 +513,19 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 
     csp_iface_t * iface;
     iface = malloc(sizeof(csp_iface_t));
+    if(!iface) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     memset(iface, 0, sizeof(csp_iface_t));
     csp_if_udp_conf_t * udp_conf = malloc(sizeof(csp_if_udp_conf_t));
+    if(!udp_conf) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        free(iface);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     udp_conf->host = strdup(server);
     udp_conf->lport = listen_port;
     udp_conf->rport = remote_port;
@@ -584,7 +595,18 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
     csp_iface_t * iface;
     iface = malloc(sizeof(csp_iface_t));
+    if(!iface) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     csp_if_tun_conf_t * ifconf = malloc(sizeof(csp_if_tun_conf_t));
+    if(!ifconf) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        free(iface);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     ifconf->tun_dst = tun_dst;
     ifconf->tun_src = tun_src;
 

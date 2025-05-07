@@ -123,6 +123,9 @@ int initialize_apm(apm_entry_t * e) {
                 if (8 == *apm_init_version_in_apm_ptr) {
                     /* CSH with API 9 *can* load APMs 8 or 9 */
                     break;
+                } else {
+                    fprintf(stderr, "\033[31mError loading %s: Version mismatch: csh (%d) vs apm (%d)\033[0m\n", e->file, apm_init_version, *apm_init_version_in_apm_ptr);
+                    return -1;    
                 }
             }
             default: {
@@ -179,6 +182,9 @@ void init_info(lib_info_t * info, const char * path) {
 }
 
 static bool dir_callback(const char * path_and_file, const char * last_entry, void * custom) {
+    (void)path_and_file;
+    (void)last_entry;
+    (void)custom;
     /* All directories are searched */
 	return true;
 }
@@ -225,7 +231,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
 
     /* Verify that we have not already found this APM.
         This can happen when the same path is found multiple times, separated by ';' */
-    for (int i = 0; i < search->lib_count; i++) {
+    for (unsigned i = 0; i < search->lib_count; i++) {
         const char * filename = search->libs[i].path;
         const char * const dir = strrchr(search->libs[i].path, '/');
 
@@ -297,6 +303,7 @@ int apm_load_search(lib_search_t *lib_search) {
 
         if (count == -1) {
             perror("readlink");
+            lib_search->path = NULL;
             return SLASH_EUSAGE;
         }
 
@@ -315,7 +322,7 @@ int apm_load_search(lib_search_t *lib_search) {
         printf("\033[31mNo APMs found in %s\033[0m\n", lib_search->path);
     }
 
-    for (int i = 0; i < lib_search->lib_count; i++) {
+    for (unsigned i = 0; i < lib_search->lib_count; i++) {
         apm_entry_t * e = load_apm(lib_search->libs[i].path);
 
         if (!e) {
@@ -334,7 +341,7 @@ int apm_load_search(lib_search_t *lib_search) {
         apm_queue_add(e);
         printf("\033[32mLoaded: %s\033[0m\n", e->path);
     }
-
+    lib_search->path = NULL;
     return SLASH_SUCCESS;
 }
 

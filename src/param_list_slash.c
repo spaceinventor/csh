@@ -180,10 +180,10 @@ void list_add_output_user_flags(uint32_t mask, FILE * out){
 
 	if (mask > 0){
 		fprintf(out, "-M \"");
-		for (int i = PM_USER_FLAGS_OFFSET; i < 8*sizeof(mask); i++) {
+		for (uint8_t i = PM_USER_FLAGS_OFFSET; i < 8*sizeof(mask); i++) {
 			if (mask & (1<<i)) {
 				mask &= ~ (1<<i);
-				fprintf(out, "%x", i-PM_USER_FLAGS_OFFSET);
+				fprintf(out, "%"PRIu8, i-PM_USER_FLAGS_OFFSET);
 			}
 		}
 

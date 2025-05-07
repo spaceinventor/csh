@@ -157,12 +157,16 @@ static int vmem_client_slash_download(struct slash *slash)
 	free(data);
 
 	/* If byte count is not equal to length - offset write to status file for resume later */
-	if(count != length - offset) {
+	if(count != (int)(length - offset)) {
 		fd_status = fopen(file_status, "w+");
-		rewind(fd_status);
-		fprintf(fd_status, "%u", count + offset);
-		fclose(fd_status);
-        printf("Download didn't finish creating stat file %s. \nTo resume download rerun download cmd\n", file_status);
+		if(fd_status) {
+			rewind(fd_status);
+			fprintf(fd_status, "%u", count + offset);
+			fclose(fd_status);
+			printf("Download didn't finish,  creating stat file %s. \nTo resume download rerun download cmd\n", file_status);
+		} else {
+			printf("Error creating stat file %s.\nTo resume download rerun download cmd\n", file_status);
+		}
 	} else {
 		remove(file_status);
 	}

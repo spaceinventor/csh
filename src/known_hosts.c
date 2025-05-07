@@ -81,11 +81,13 @@ void host_name_completer(struct slash *slash, char * token) {
     for (host_t* element = SLIST_FIRST(&known_hosts); element != NULL; element = SLIST_NEXT(element, next)) {
         res = strncmp(element->name, part_to_complete, token_l);
         if (0 == res) {
-            matches++;
             completion = malloc(sizeof(struct host_s));
-            completion->node = element->node;
-            strncpy(completion->name, element->name, HOSTNAME_MAXLEN - 1); 
-            SLIST_INSERT_HEAD(&matching_hosts, completion, next);
+            if(completion) {
+                completion->node = element->node;
+                strncpy(completion->name, element->name, HOSTNAME_MAXLEN); 
+                SLIST_INSERT_HEAD(&matching_hosts, completion, next);
+                matches++;
+            }
         }
     }
     if(matches > 1) {

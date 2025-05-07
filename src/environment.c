@@ -28,6 +28,7 @@ static char *csh_copy_char_and_grow(char *dest, size_t at, size_t *dest_len, cha
         /* Make sure there is space enough for the NULL termination that will be appended at the end */
         char *tmp = realloc(dest, *dest_len + 1);
         if(!tmp) {
+            free(dest);
             return NULL;
         }
         dest = tmp;
@@ -59,9 +60,11 @@ int csh_putvar(const char *name, const char *value) {
         existing->value = strdup(value);
     } else {
         struct csh_env_entry *new_entry = calloc(1, sizeof(*new_entry));
-        new_entry->name = strdup(name);
-        new_entry->value = strdup(value);
-        SLIST_INSERT_HEAD(&csh_env, new_entry, list);
+        if(new_entry) {
+            new_entry->name = strdup(name);
+            new_entry->value = strdup(value);
+            SLIST_INSERT_HEAD(&csh_env, new_entry, list);
+        }
     }
     return 0;
 }
@@ -130,7 +133,7 @@ char *csh_expand_vars(const char *input) {
                 var_name[var_e - var_s] = 0;
                 var_value = csh_getvar(var_name);
                 if(var_value) {
-                    for(int i = 0; i < strlen(var_value); i++) {
+                    for(size_t i = 0; i < strlen(var_value); i++) {
                         res = csh_copy_char_and_grow(res, res_idx, &res_len, var_value[i]);
                         if (!res) {
                             break;

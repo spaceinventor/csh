@@ -74,10 +74,10 @@ retry_bind:
 			continue;
 		}
 
-		int written = send(conn_fd, header, strlen(header), MSG_NOSIGNAL);
+		send(conn_fd, header, strlen(header), MSG_NOSIGNAL);
 
 		/* Dump queued data */
-		written += send(conn_fd, prometheus_buf, prometheus_buf_len, MSG_NOSIGNAL);
+		send(conn_fd, prometheus_buf, prometheus_buf_len, MSG_NOSIGNAL);
 		//printf("Prometheus sent %d bytes\n", written);
 
 		prometheus_clear();

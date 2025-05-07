@@ -268,11 +268,13 @@ void slash_on_execute_hook(const char *line) {
 	if(loki_running){
 		int ex_len = strlen(line);
 		char * dup = malloc(ex_len + 2);
-		strncpy(dup, line, ex_len);
-		dup[ex_len] = '\n';
-		dup[ex_len + 1] = '\0';
-		loki_add(dup, 1);
-		free(dup);
+        if(dup) {
+            strncpy(dup, line, ex_len + 2);
+            dup[ex_len] = '\n';
+            dup[ex_len + 1] = '\0';
+            loki_add(dup, 1);
+            free(dup);
+        }
 	}
 }
 

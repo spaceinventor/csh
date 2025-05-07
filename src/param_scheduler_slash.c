@@ -169,7 +169,7 @@ static int cmd_schedule_rm(struct slash *slash) {
 	    return SLASH_EINVAL;
     }
 
-	unsigned int id = 0;
+	int id = 0;
 
 	if (!rm_all) {
 		if (++argi >= slash->argc) {
@@ -238,7 +238,7 @@ static int cmd_schedule_reset(struct slash *slash) {
 slash_command_sub(schedule, reset, cmd_schedule_reset, "<server> <last id> [timeout]", NULL);
 
 static void parse_name(char out[], char in[]) {
-	for (int i = 0; i < strlen(in); i++) {
+	for (size_t i = 0; i < strlen(in); i++) {
 			out[i] = in[i];
 		}
 	out[strlen(in)] = '\0';

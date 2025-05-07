@@ -191,8 +191,8 @@ static void param_transaction_callback_rm(csp_packet_t *response, int verbose, i
 		if (response->length == 14) {
 			name_copy(name, (char *) &response->data[4], 9);
 			char rmallcmds[] = "RMALLCMDS";
-			int count = 0;
-			for (int i = 0; i < strlen(rmallcmds); i++) {
+			size_t count = 0;
+			for (size_t i = 0; i < strlen(rmallcmds); i++) {
 				if (name[i] == rmallcmds[i]) {
 					count++;
 				} else {

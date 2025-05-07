@@ -46,10 +46,10 @@ int param_slash_parse_slice(char * token, int *start_index, int *end_index, int 
 int main (int agv, char *argv[]) {
     int start = 0, end = 0, slice_detected = 0;
 
-    for(int i = 0; i < sizeof(invalid_test_vectors)/sizeof(invalid_test_vectors[0]); i++) {
+    for(size_t i = 0; i < sizeof(invalid_test_vectors)/sizeof(invalid_test_vectors[0]); i++) {
         assert(param_slash_parse_slice(invalid_test_vectors[i], &start, &end, &slice_detected) < 0);
     }
-    for(int i = 0; i < sizeof(valid_test_vectors)/sizeof(valid_test_vectors[0]); i++) {
+    for(size_t i = 0; i < sizeof(valid_test_vectors)/sizeof(valid_test_vectors[0]); i++) {
         printf("%s\n", valid_test_vectors[i]);
         fflush(stdout);
         assert(param_slash_parse_slice(valid_test_vectors[i], &start, &end, &slice_detected) == 0);

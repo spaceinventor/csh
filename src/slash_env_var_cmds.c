@@ -80,6 +80,8 @@ static void env_var_completer_csh_foreach_var_cb(const char *name, void *ctx) {
                 break;
             case 2:
                 slash_printf(my_ctx->slash, "\n%s\n", my_ctx->previous_match);
+                slash_printf(my_ctx->slash, "%s\n", name);
+                break;
             default:
                 slash_printf(my_ctx->slash, "%s\n", name);
                 break;
@@ -322,6 +324,7 @@ static int slash_var_get(struct slash *slash)
 slash_command_sub_completer(var, get, slash_var_get, env_var_completer, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined");
 
 static void print_var(const char *name, void *ctx) {
+    (void)ctx;
     printf("%s=%s\n", name, csh_getvar(name));
 }
 
