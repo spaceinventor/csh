@@ -477,4 +477,4 @@ static int python_slash(struct slash *slash) {
 	return res;
 }
 
-slash_command(python, python_slash, "", "");
+slash_command(python, python_slash, "", "Starts an interactive Python interpreter");
