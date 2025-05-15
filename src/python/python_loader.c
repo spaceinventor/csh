@@ -40,7 +40,7 @@ void cleanup_free(void *const* obj) {
     //*obj = NULL;  // 
 }
 
-__attribute__((malloc(free, 1)))
+__attribute__((malloc))
 char *safe_strdup(const char *s) {
     if (s == NULL) {
         return NULL;
@@ -143,7 +143,8 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
 		but attempting to PyObject_GetAttrString() on the returned module causes a segmentation fault.
 		For future reference, here is some reading material on how Python handles the import on Unixes:
 		- https://stackoverflow.com/questions/25678174/how-does-module-loading-work-in-cpython */
-    return Py_NewRef(module);
+	Py_INCREF(module);
+    return module;
 }
 
 PyObject * pycsh_load_pymod(const char * const _filepath, const char * const init_function_name, int verbose) {
@@ -217,7 +218,8 @@ PyObject * pycsh_load_pymod(const char * const _filepath, const char * const ini
 			if (verbose >= 2) {
 				printf("Skipping init function for module '%s'\n", filename);
 			}
-			return Py_NewRef(pModule);
+			Py_INCREF(pModule);
+			return pModule;
 		}
 
 		// TODO Kevin: Consider the consequences of throwing away the module when failing to call init function.
@@ -229,7 +231,8 @@ PyObject * pycsh_load_pymod(const char * const _filepath, const char * const ini
 			if (verbose >= 2) {
 				fprintf(stderr, "Skipping missing init function '%s()' in module '%s'\n", init_function_name, filename);
 			}
-			return Py_NewRef(pModule);
+			Py_INCREF(pModule);
+			return pModule;
 		}
 
 		if (!PyCallable_Check(init_function)) {
@@ -258,7 +261,8 @@ PyObject * pycsh_load_pymod(const char * const _filepath, const char * const ini
 			printf("Script executed successfully: %s.%s()\n", filename, init_function_name);
 		}
 
-		return Py_NewRef(pModule);
+		Py_INCREF(pModule);
+		return pModule;
 	}
 }
 
