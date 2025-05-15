@@ -107,7 +107,6 @@ utils_lib_src = [
 	'src/require_version.c',
 	'src/csh_defaults.c',
 	'src/slash_utils.c',
-	'src/utils/param_utils.c',
 	'src/known_hosts.c'
 ]
 utils_lib_inc = include_directories('src')
