@@ -2,36 +2,17 @@
 ./gendoc.py
 csh_si=$(realpath ../csh_si)
 csh_obc=$(realpath ../csh_obc)
-# Ubuntu 24.04
-docker build -f debian/Dockerfile_ubuntu-24.04 . -t si-ubuntu-24.04-builder
-docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-24.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
+# Ubuntu 24.04, x86_64, aarch64
+docker build -f debian/Dockerfile_ubuntu-24.04 --platform linux/aarch64,linux/amd64 . -t si-ubuntu-24.04-builder
+docker run --platform linux/amd64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-24.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
+docker run --platform linux/aarch64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-24.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 
 # Ubuntu 22.04
-docker build -f debian/Dockerfile_ubuntu-22.04 . -t si-ubuntu-22.04-builder
-docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-22.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
+docker build -f debian/Dockerfile_ubuntu-22.04 --platform linux/aarch64,linux/amd64 . -t si-ubuntu-22.04-builder
+docker run --platform linux/amd64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-22.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
+docker run --platform linux/aarch64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-22.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 
 # Ubuntu 20.04
-docker build -f debian/Dockerfile_ubuntu-20.04 . -t si-ubuntu-20.04-builder
-docker run -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-20.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
-
-# Raspberry PI - 32 bits
-export sysroot=$(pwd)/sysroot-gnueabihf
-mkdir -p $sysroot
-pushd cross/raspberrypi
-docker build --platform linux/arm/v7 -t sysroot-build-gnueabihf -f Dockerfile_gnueabihf .
-docker run -v $sysroot:/sysroot -e LIST_OF_PACKAGES="libsocketcan-dev libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build-gnueabihf
-popd
-export crossfile="--cross-file $(pwd)/cross/raspberrypi/cross_raspberrypi_gnueabihf.txt"
-export ubuntu_version=gnueabihf
-./pack_dpkg
-
-# Raspberry PI - 64 bits
-export sysroot=$(pwd)/sysroot-aarch64
-mkdir -p $sysroot
-pushd cross/raspberrypi
-docker build --platform linux/aarch64 -t sysroot-build-aarch64 -f Dockerfile_aarch64 .
-docker run -v $sysroot:/sysroot -e LIST_OF_PACKAGES="libsocketcan-dev libcurl4-openssl-dev libzmq3-dev" --platform linux/aarch64 -it sysroot-build-aarch64
-popd
-export crossfile="--cross-file $(pwd)/cross/raspberrypi/cross_raspberrypi_aarch64.txt"
-export ubuntu_version=aarch64
-./pack_dpkg
+docker build -f debian/Dockerfile_ubuntu-20.04 --platform linux/aarch64,linux/amd64 . -t si-ubuntu-20.04-builder
+docker run --platform linux/amd64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-20.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
+docker run --platform linux/aarch64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it si-ubuntu-20.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
