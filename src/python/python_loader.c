@@ -10,6 +10,7 @@
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
+#include "python_loader.h"
 
 
 #define WALKDIR_MAX_PATH_SIZE 256
