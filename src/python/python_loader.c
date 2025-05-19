@@ -467,6 +467,8 @@ int py_apm_load_cmd(struct slash *slash) {
 static int python_slash(struct slash *slash) {
 	int res =  0;
 	slash_release_std_in_out(slash);
+    int py_init_interpreter(void);
+    py_init_interpreter();
 	PyEval_RestoreThread(main_thread_state);
 	PyThreadState *state __attribute__((cleanup(state_release_GIL))) = main_thread_state;
 	if (main_thread_state == NULL) {
@@ -481,4 +483,6 @@ static int python_slash(struct slash *slash) {
 	return res;
 }
 
-slash_command(python, python_slash, "", "Starts an interactive Python interpreter");
+slash_command(python, python_slash, "", "Starts an interactive Python interpreter in the current CSH process."\
+"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
+"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH.");
