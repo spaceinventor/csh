@@ -469,7 +469,6 @@ static int python_slash(struct slash *slash) {
 	int res =  0;
 	slash_release_std_in_out(slash);
     int py_init_interpreter(void);
-    py_init_interpreter();
 	PyEval_RestoreThread(main_thread_state);
 	PyThreadState *state __attribute__((cleanup(state_release_GIL))) = main_thread_state;
 	if (main_thread_state == NULL) {
