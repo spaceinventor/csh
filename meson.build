@@ -120,7 +120,7 @@ utils_lib_dep = declare_dependency(
 
 subdir('tests')
 py = import('python').find_installation('python3')
-python_ldflags = run_command('python'+py.language_version()+'-config', '--ldflags', '--embed').stdout().strip().split()
+python_ldflags = run_command('python'+py.language_version()+'-config', '--ldflags', '--embed', check: true).stdout().strip().split()
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
