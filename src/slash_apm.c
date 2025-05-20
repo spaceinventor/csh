@@ -372,7 +372,6 @@ static int apm_load_cmd(struct slash *slash) {
     int res = apm_load_search(&lib_search);
     optparse_del(parser);
     py_init_interpreter();
-    extern int py_apm_load_cmd(struct slash *slash);
     res = py_apm_load_cmd(slash);
     return res;
 }
