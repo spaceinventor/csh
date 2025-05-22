@@ -465,24 +465,50 @@ int py_apm_load_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
+const struct slash_command slash_cmd_python;
 static int python_slash(struct slash *slash) {
 	int res =  0;
-	slash_release_std_in_out(slash);
-    py_init_interpreter();
+    char * file = NULL;
+
+    optparse_t * parser = optparse_new_ex(slash_cmd_python.name, slash_cmd_python.args, slash_cmd_python.help);
+    optparse_add_help(parser);
+    optparse_add_string(parser, 'f', "file", "FILENAME", &file, "Execute Python code in given file");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+	py_init_interpreter();
 	PyEval_RestoreThread(main_thread_state);
 	PyThreadState *state __attribute__((cleanup(state_release_GIL))) = main_thread_state;
 	if (main_thread_state == NULL) {
 		fprintf(stderr, "main_thread_state is NULL\n");
+		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	PyRun_SimpleString("import rlcompleter");
-	PyRun_SimpleString("import readline");
-	PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
-	res = PyRun_InteractiveLoop(stdin, "<stdin>");
-	slash_acquire_std_in_out(slash);
+	if(file) {
+		FILE *fp = fopen(file, "rb");
+		if(fp) {
+			res = PyRun_AnyFileEx(fp, file, 1);
+
+		} else {
+			res = SLASH_EINVAL;
+		}
+	} else {
+		slash_release_std_in_out(slash);
+		PyRun_SimpleString("import rlcompleter");
+		PyRun_SimpleString("import readline");
+		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
+		res = PyRun_InteractiveLoop(stdin, "<stdin>");
+		slash_acquire_std_in_out(slash);
+	}
+	optparse_del(parser);
 	return res;
 }
 
-slash_command(python, python_slash, "", "Starts an interactive Python interpreter in the current CSH process."\
-"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
-"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH.");
+slash_command(python, python_slash, "[-f <filename>]", "Starts an interactive Python interpreter in the current CSH process\n"\
+	"or execute the script in given file.\n"
+	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
+	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH.");
