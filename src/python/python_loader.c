@@ -465,14 +465,24 @@ int py_apm_load_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
+static wchar_t **handle_py_argv(char **args, int argc) {
+	wchar_t **res = calloc(sizeof(wchar_t *), argc);
+	if (res) {
+		for (int i = 0; i < argc; i++) {
+			res[i] = Py_DecodeLocale(args[i], NULL);
+		}
+	}
+	return res;
+}
+
 const struct slash_command slash_cmd_python;
 static int python_slash(struct slash *slash) {
 	int res =  0;
-    char * file = NULL;
+    char * string = NULL;
 
     optparse_t * parser = optparse_new_ex(slash_cmd_python.name, slash_cmd_python.args, slash_cmd_python.help);
     optparse_add_help(parser);
-    optparse_add_string(parser, 'f', "file", "FILENAME", &file, "Execute Python code in given file");
+    optparse_add_string(parser, 'c', "string", "STRING", &string, "Execute Python code in given string (much like the standard Python interpreter)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -488,27 +498,39 @@ static int python_slash(struct slash *slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-	if(file) {
-		FILE *fp = fopen(file, "rb");
+	wchar_t **argv = NULL;
+	if(string) {
+		argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
+		PySys_SetArgv(slash->argc - argi, argv);
+		res = PyRun_SimpleString(string);
+	} else if (++argi < slash->argc) {
+		FILE *fp = fopen(slash->argv[argi], "rb");
 		if(fp) {
-			res = PyRun_AnyFileEx(fp, file, 1);
+			argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
+			PySys_SetArgv(slash->argc - argi, argv);
+			res = PyRun_AnyFileEx(fp, slash->argv[argi], 1);
 
 		} else {
 			res = SLASH_EINVAL;
 		}
 	} else {
 		slash_release_std_in_out(slash);
+		PySys_SetArgv(0, NULL);
 		PyRun_SimpleString("import rlcompleter");
 		PyRun_SimpleString("import readline");
 		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 		slash_acquire_std_in_out(slash);
 	}
+	for (int i = 0; i < (slash->argc - argi); i++) {
+		PyMem_RawFree(argv[i]);
+	}
+	free(argv);
 	optparse_del(parser);
 	return res;
 }
 
-slash_command(python, python_slash, "[-f <filename>]", "Starts an interactive Python interpreter in the current CSH process\n"\
+slash_command(python, python_slash, "[(-c <python_string>|<filename>) [args...]]", "Starts an interactive Python interpreter in the current CSH process\n"\
 	"or execute the script in given file.\n"
 	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
 	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH.");
