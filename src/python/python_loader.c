@@ -29,8 +29,6 @@ extern void cleanup_str(char *const* obj);
 #define CLEANUP_DIR __attribute__((cleanup(_close_dir)))
 #define CLEANUP_STR __attribute__((cleanup(cleanup_str)))
 
-static bool py_interpreter_initialised = false;
-
 void cleanup_free(void *const* obj) {
     if (*obj == NULL) {
         return;
@@ -365,8 +363,7 @@ __attribute__((destructor(150))) static void finalize_python_interpreter(void) {
 }
 
 int py_init_interpreter(void) {
-    if (!py_interpreter_initialised) {
-        py_interpreter_initialised = true;
+    if (!Py_IsInitialized()) {
         /* Calling Py_Initialize() "has the side effect of locking the global interpreter lock.
             Once the function completes, you are responsible for releasing the lock."
             -- https://www.linuxjournal.com/article/3641 */
