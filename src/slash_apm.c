@@ -18,6 +18,9 @@
 #include <limits.h>
 #include <libgen.h>
 
+#include "python/python_loader.h"
+
+
 slash_command_group(apm, "apm");
 
 /**
@@ -368,6 +371,8 @@ static int apm_load_cmd(struct slash *slash) {
 
     int res = apm_load_search(&lib_search);
     optparse_del(parser);
+    py_init_interpreter();
+    res = py_apm_load_cmd(slash);
     return res;
 }
 

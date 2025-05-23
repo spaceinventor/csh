@@ -54,6 +54,10 @@ poke,<address> <data>,Poke
 program,<node> <slot> [filename],program
 prometheus start,-,Start prometheus webserver
 pull,[OPTIONS],Pull all metrics from given CSP node(s)
+python,-,"Starts an interactive Python interpreter in the current CSH process.This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting
+with CSP nodes.
+
+Use ""Control-D"" to exit the interpreter and return to CSH."
 rdp opt,-,Set RDP options to use in stream and file transfers
 reboot,[node],Reboot a node
 require version csh,<version-constraint> <error-action> [error-message],"Checks whether CSH fulfills the specified version requirements.
