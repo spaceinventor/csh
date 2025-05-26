@@ -367,12 +367,13 @@ int py_init_interpreter(void) {
         /* Calling Py_Initialize() "has the side effect of locking the global interpreter lock.
             Once the function completes, you are responsible for releasing the lock."
             -- https://www.linuxjournal.com/article/3641 */
+		extern PyMODINIT_FUNC PyInit_pycsh(void);
+		PyImport_AppendInittab("pycsh", PyInit_pycsh);
         Py_Initialize();
         printf("Python interpreter started\n");
         if (append_pyapm_paths()) {
             fprintf(stderr, "Failed to add Python APM paths\n");
         }
-
         // release GIL here
         main_thread_state = PyEval_SaveThread();
     }
@@ -515,6 +516,7 @@ static int python_slash(struct slash *slash) {
 		PySys_SetArgv(0, NULL);
 		PyRun_SimpleString("import rlcompleter");
 		PyRun_SimpleString("import readline");
+		PyRun_SimpleString("import pycsh");
 		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 		slash_acquire_std_in_out(slash);

@@ -100,6 +100,10 @@ csh_sources += [
 	'src/python/python_loader.c'
 ]
 
+# pycsh = subproject('pycsh')
+# pycsh_dep = pycsh.get_variable('pycsh_dep').as_link_whole()
+pycsh_dep = dependency('pycsh', fallback: ['pycsh', 'pycsh_dep']).as_link_whole()
+
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
 utils_lib_src = [
@@ -129,7 +133,8 @@ csh = executable('csh', csh_sources,
 		csp_dep,
 		param_dep,
 		curl_dep,
-		utils_lib_dep.as_link_whole()
+		utils_lib_dep.as_link_whole(),
+		pycsh_dep
 	],
 	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
