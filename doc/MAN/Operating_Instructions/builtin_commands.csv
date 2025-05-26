@@ -54,7 +54,9 @@ poke,<address> <data>,Poke
 program,<node> <slot> [filename],program
 prometheus start,-,Start prometheus webserver
 pull,[OPTIONS],Pull all metrics from given CSP node(s)
-python,-,"Starts an interactive Python interpreter in the current CSH process.This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting
+python,[(-c <python_string>|<filename>) [args...]],"Starts an interactive Python interpreter in the current CSH process
+or execute the script in given file.
+This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting
 with CSP nodes.
 
 Use ""Control-D"" to exit the interpreter and return to CSH."
