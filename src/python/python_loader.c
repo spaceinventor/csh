@@ -29,6 +29,23 @@ extern void cleanup_str(char *const* obj);
 #define CLEANUP_DIR __attribute__((cleanup(_close_dir)))
 #define CLEANUP_STR __attribute__((cleanup(cleanup_str)))
 
+#define XSTR(x) STR(x)
+#define STR(x) #x
+
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION_HEX: " XSTR(PY_VERSION_HEX)
+#pragma message "The value of PY_VERSION: " XSTR(PY_VERSION)
+#pragma message "The value of PY_VERSION: " XSTR(PY_VERSION)
+#pragma message "The value of PY_VERSION: " XSTR(PY_VERSION)
+#pragma message "The value of PY_VERSION: " XSTR(PY_VERSION)
+
 #if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 13
 iksffldsfkjhdfdszkj
 #define  _Py_IsFinalizing Py_IsFinalizing
