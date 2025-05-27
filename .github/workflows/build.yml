@@ -13,7 +13,9 @@ jobs:
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: libcurl4-openssl-dev libzmq3-dev libsocketcan-dev libpython3-dev 
-      - uses: actions/setup-python@v1
+      - uses: actions/setup-python@v2
+        with:
+            python-version: 3.12.3
       - name: Install gcovr
         run: pip3 install gcovr==5.0 meson==1.8.1
       - name: Build
