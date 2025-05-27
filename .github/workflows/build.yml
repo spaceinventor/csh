@@ -19,6 +19,6 @@ jobs:
       - name: Install gcovr
         run: pip3 install gcovr==5.0 meson==1.8.1
       - name: Build
-        run: ./configure && ninja -C builddir -v
+        run: ./configure -Db_coverage=true && ninja -C builddir -v
       - name: Run gcovr
         run: ninja -C builddir test coverage-text && tail -n3 builddir/meson-logs/coverage.txt
