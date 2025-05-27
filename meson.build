@@ -95,14 +95,20 @@ csh_sources = [
 	'src/param_commands_client.c'
 ]
 
-python_dep = dependency('python3', required: true)
-csh_sources += [
-	'src/python/python_loader.c'
-]
+python_dep = dependency('python3', version : '>=3.10', required: false)
 
-# pycsh = subproject('pycsh')
-# pycsh_dep = pycsh.get_variable('pycsh_dep').as_link_whole()
-pycsh_dep = dependency('pycsh', fallback: ['pycsh', 'pycsh_dep']).as_link_whole()
+if python_dep.found()
+	py = import('python').find_installation('python3')
+	python_ldflags = run_command('python'+py.language_version()+'-config', '--ldflags', '--embed', check: true).stdout().strip().split()
+	python_ldflags += ['-DHAVE_PYTHON']
+	pycsh_dep = dependency('pycsh', fallback: ['pycsh', 'pycsh_dep']).as_link_whole()
+	csh_sources += [
+		'src/python/python_loader.c'
+	]
+else
+	python_ldflags = []
+	pycsh_dep = []
+endif
 
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
@@ -123,8 +129,7 @@ utils_lib_dep = declare_dependency(
 )
 
 subdir('tests')
-py = import('python').find_installation('python3')
-python_ldflags = run_command('python'+py.language_version()+'-config', '--ldflags', '--embed', check: true).stdout().strip().split()
+
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
