@@ -17,7 +17,7 @@ jobs:
         with:
             python-version: 3.12.3
       - name: Install gcovr
-        run: pip3 install gcovr==5.0 meson==1.8.1
+        run: pip3 install gcovr==8.3 meson==1.8.1
       - name: Build
         run: ./configure -Db_coverage=true && ninja -C builddir -v
       - name: Run gcovr
