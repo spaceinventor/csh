@@ -29,6 +29,12 @@ extern void cleanup_str(char *const* obj);
 #define CLEANUP_DIR __attribute__((cleanup(_close_dir)))
 #define CLEANUP_STR __attribute__((cleanup(cleanup_str)))
 
+#if PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 13
+iksffldsfkjhdfdszkj
+#define  _Py_IsFinalizing Py_IsFinalizing
+#endif
+
+
 void cleanup_free(void *const* obj) {
     if (*obj == NULL) {
         return;
