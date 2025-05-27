@@ -1,5 +1,5 @@
 FROM ubuntu:24.04
 
 WORKDIR /root
-RUN apt-get update && apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev meson ninja-build libcap2-bin
+RUN apt-get update && apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev meson ninja-build libcap2-bin python3-dev
 
