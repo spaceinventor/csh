@@ -22,6 +22,7 @@
 #include <slash/optparse.h>
 #include <apm/csh_api.h>
 #include "csh_internals.h"
+#include "vmem/vmem_server.h"
 
 static int vmem_client_slash_download(struct slash *slash)
 {
@@ -188,6 +189,8 @@ static int vmem_client_slash_upload(struct slash *slash)
     unsigned int timeout = slash_dfl_timeout;
     unsigned int version = 1;
 	unsigned int offset = 0;
+	int auto_reconnect = 0;
+	unsigned int auto_sleep = 10000;
 
     optparse_t * parser = optparse_new("upload", "<file> <address>");
     optparse_add_help(parser);
@@ -195,6 +198,8 @@ static int vmem_client_slash_upload(struct slash *slash)
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
+	optparse_add_set(parser, 'A', "auto", 1, &auto_reconnect, "enable auto reconnect if upload timeout");
+    optparse_add_unsigned(parser, 's', "sleep_auto", "NUM", 0, &auto_sleep, "time between upload retries (default = 10000)");
 
 	rdp_opt_add(parser);
 
@@ -261,7 +266,37 @@ static int vmem_client_slash_upload(struct slash *slash)
 
 	printf("Size %u\n", size);
 
-	vmem_upload(node, timeout, address, data, size, version);
+	unsigned int bytes_uploaded = 0;
+	int retries = 0;
+	unsigned int window_size = 0;
+	csp_rdp_get_opt(&window_size, NULL, NULL, NULL, NULL, NULL);
+	const int window_bytes = (window_size + 1) * VMEM_SERVER_MTU;
+
+	while ((bytes_uploaded < size && auto_reconnect) || (retries == 0)) {
+
+		int sent_attempt = vmem_upload(node, timeout,
+				 address + bytes_uploaded, 
+				 data + bytes_uploaded,
+				 size - bytes_uploaded,
+				 version);
+
+		if(sent_attempt + bytes_uploaded == size){
+			printf("Total bytes uploaded: %u\n", bytes_uploaded + sent_attempt);
+			break;
+		}
+
+		if (sent_attempt > window_bytes) {
+			bytes_uploaded += sent_attempt - window_bytes;
+			printf("Current total bytes uploaded: %u\n", bytes_uploaded);
+		} 
+
+		if (slash_wait_interruptible(slash, auto_sleep) != SLASH_SUCCESS) {
+		    printf("User interrupt aborting auto-reconnect\n");
+		    break;
+		}
+		printf("Retires: %d\n", retries);
+		retries++;
+	}
 
 	free(data);
 	optparse_del(parser);
