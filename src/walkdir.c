@@ -34,8 +34,9 @@ void walkdir(char * path, size_t path_size, unsigned depth,
     while ((entry = readdir(p)) != NULL) {
 		// Save path length
 		size_t path_len = strlen(path);
-
-		strncat(path, "/", path_size - strlen(path));
+		if(path[path_len - 1] != '/') {
+			strncat(path, "/", path_size - path_len);
+		}
 		strncat(path, entry->d_name, path_size - strlen(path));
 
 		// entry->d_type is not set on some file systems, like sshfs mount of si
