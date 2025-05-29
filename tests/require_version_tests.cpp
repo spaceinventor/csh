@@ -74,7 +74,9 @@ TEST(require_version, require_version_tests) {
         ASSERT_EQ(version.major, 3);
         ASSERT_EQ(version.minor, 4);
         ASSERT_EQ(version.patch, 5);
-    
+
+        /* Allow short dirty tag, in case someone releases such a version :) */
+        ASSERT_TRUE(parse_version("2.7+", &version, false));
     }
 
     /* We could reuse the version from parse_version().
