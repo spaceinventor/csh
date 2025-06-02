@@ -93,6 +93,9 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
 
     // Construct the initialization function name: PyInit_<module_name>
     char * const filepath CLEANUP_STR = safe_strdup(_filepath);
+	if(filepath == NULL) {
+		return NULL ;
+	}
 	char *filename = strrchr(filepath, '/');
     if (!filename) {
         filename = filepath;
@@ -153,6 +156,9 @@ PyObject * pycsh_load_pymod(const char * const _filepath, const char * const ini
 	}
 
 	char * const filepath CLEANUP_STR = safe_strdup(_filepath);
+	if(filepath == NULL) {
+		return NULL;
+	}
 	char *filename = strrchr(filepath, '/');
 
 	/* Construct Python import string */
@@ -521,10 +527,12 @@ static int python_slash(struct slash *slash) {
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 		slash_acquire_std_in_out(slash);
 	}
-	for (int i = 0; i < (slash->argc - argi); i++) {
-		PyMem_RawFree(argv[i]);
+	if(argv) {
+		for (int i = 0; i < (slash->argc - argi); i++) {
+			PyMem_RawFree(argv[i]);
+		}		
+		free(argv);
 	}
-	free(argv);
 	optparse_del(parser);
 	return res;
 }
