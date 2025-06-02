@@ -360,7 +360,7 @@ static int vmem_client_slash_crc32(struct slash *slash) {
 
 	printf("  Calculate CRC32 from %u addr 0x%"PRIX64" with timeout %u, version %u\n", node, address, timeout, version);
 
-	uint32_t crc;
+	uint32_t crc = 0;
 	int res = vmem_client_calc_crc32(node, timeout, address, length, &crc, version);
 
 	if(file){
@@ -380,6 +380,9 @@ static int vmem_client_slash_crc32(struct slash *slash) {
 		if (res == -1) {
 			return SLASH_ENOMEM;
 		} else if (res == -2) {
+			printf("\033[31m\n");
+			printf("Timed out on crc32 response\n");
+			printf("\033[0m\n");
 			return SLASH_EIO;
 		}
 	}

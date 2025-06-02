@@ -1,6 +1,7 @@
 FROM ubuntu:20.04
 
 WORKDIR /root
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev python3-pip libcap2-bin libbsd-dev python3-dev
-RUN python3 -m pip install meson ninja
+ARG DEBIAN_FRONTEND=noninteractive 
+RUN apt-get update && apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev python3-pip libcap2-bin libbsd-dev python3-dev
+RUN python3 -m pip install meson==1.8.1 ninja
 RUN useradd -ms /bin/bash ubuntu

@@ -69,7 +69,7 @@ static int slash_require_version_csh_cmd(struct slash *slash) {
 
     version_t csh_version;
     if (false == parse_version(version_string, &csh_version, true)) {
-        fprintf(stderr, "CSH is tagged with a non semver complaint version '%s'\n", version_string);
+        fprintf(stderr, "CSH is tagged with a non semver compliant version '%s'\n", version_string);
         optparse_del(parser);
         /* err_ret may not be the best error code here,
             but its our best guess at what the script author intended. */

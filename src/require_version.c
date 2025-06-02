@@ -57,6 +57,9 @@ bool parse_version(const char *version_str, version_t *version_out, bool allow_s
 
             default: {  /* Valid digits but also other invalid characters. */
                 if (!isdigit(version_str[i])) {
+                    if (version_str[i] == '+' && version_str[i+1] == '\0') {
+                        break;  // Allow trailing dirty mark
+                    }
                     return false;  // Invalid character.
                 }
                 if (number_start == NULL) {
