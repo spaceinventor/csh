@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <limits.h>
 #include <libgen.h>
+#include <sys/queue.h>
 
 slash_command_group(apm, "apm");
 
@@ -409,15 +410,171 @@ static int apm_info_cmd(struct slash *slash) {
 }
 slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
 
-static int doc_cmd(struct slash *slash) {
+static char doc_folder[256] = "/usr/share/si-csh";
 
-    int res = system("xdg-open /usr/share/si-csh/CSH_MAN.pdf >/dev/null 2>/dev/null");
-    if(res) {
-        printf("Could not open CSH PDF manual\n");
-    } else {
-        printf("CSH manual is now open in PDF viewer, if available\n");
+void doc_found_cb(const char *a, const char *b, void *ctx) {
+    size_t len = strlen(b);
+    if(len > 4) {
+        if (b[len - 1] == 'f' && 
+            b[len - 2] == 'd' && 
+            b[len - 3] == 'p' && 
+            b[len - 4] == '.') {
+                printf("%s\n", a);
+            }
     }
+}
 
+const struct slash_command slash_cmd_manual;
+static int doc_cmd(struct slash *slash) {
+    optparse_t * parser = optparse_new_ex(slash_cmd_manual.name, slash_cmd_manual.args, slash_cmd_manual.help);
+    optparse_add_help(parser);
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+    if(argi != -1) {
+        if (slash->argc == 0) {
+            optparse_del(parser);
+            int sig;
+            printf("List of available manuals:\n");
+            walkdir(doc_folder, sizeof(doc_folder), 1, NULL, doc_found_cb, NULL, &sig);
+            return SLASH_SUCCESS;
+        }
+        char cmd_line[256];
+        snprintf(cmd_line, sizeof(cmd_line) - 1, "xdg-open /usr/share/si-csh/%s >/dev/null 2>/dev/null", slash->argv[1]);
+        int res = system(cmd_line);
+        if(res) {
+            printf("Could not open %s manual\n", slash->argv[1]);
+        } else {
+            printf("The %s manual is now open in PDF viewer, if available\n", slash->argv[1]);
+        }
+    }
     return SLASH_SUCCESS;
 }
-slash_command(manual, doc_cmd, "", "Show CSH documentation as PDF");
+
+SLIST_HEAD( manual_list, manual_entry );
+struct manual_entry {
+    char *pdf;
+    char *full_path;
+    SLIST_ENTRY(manual_entry) list;
+};
+
+void manual_cb(const char *a, const char *b, void *ctx) {
+    struct manual_list *manuals = (struct manual_list *)ctx;
+    size_t len = strlen(b);
+    if(len > 4) {
+        if (b[len - 1] == 'f' && 
+            b[len - 2] == 'd' && 
+            b[len - 3] == 'p' && 
+            b[len - 4] == '.') {
+            struct manual_entry *manual = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            if(manual) {
+                manual->pdf = strdup(b);
+                if(manual->pdf) {
+                    manual->full_path = strdup(a);
+                    if(manual->full_path) {
+                        SLIST_INSERT_HEAD(manuals, manual, list);
+                    } else {
+                        free(manual->pdf);
+                        free(manual);
+                    }
+                } else {
+                    free(manual);
+                }
+            }
+        }
+    }
+}
+
+static void manual_cmd_completer(struct slash *slash, char *arg) {
+	int matches = 0;
+    int sig;
+    size_t len;
+    int match;
+    struct manual_list all_manuals;
+    struct manual_list completion_manuals;
+    struct manual_entry *cur_manual;
+    struct manual_entry *prev_manual = NULL;
+    struct manual_entry *completion = NULL;
+    SLIST_INIT( &all_manuals );
+    SLIST_INIT( &completion_manuals );
+    int len_to_compare_to = strlen(arg);
+    walkdir(doc_folder, sizeof(doc_folder), 1, NULL, manual_cb, &all_manuals, &sig);
+    int cur_prefix;
+    int prefix_len = INT_MAX;
+    SLIST_FOREACH(cur_manual, &all_manuals, list) {
+        len = strlen(cur_manual->pdf);
+        match = strncmp(arg, cur_manual->pdf, slash_min(len_to_compare_to, (int)len));
+        /* Do we have an exact match on the buffer ?*/
+        if (match == 0) {
+            completion = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            if(completion) {
+                completion->pdf = strdup(cur_manual->pdf);
+                if(completion->pdf) {
+                    completion->full_path = strdup(cur_manual->full_path);
+                    if(completion->full_path) {
+                        matches++;
+                        SLIST_INSERT_HEAD(&completion_manuals, completion, list);
+                    } else {
+                        free(completion->pdf);
+                        free(completion);
+                        completion = NULL;
+                    }
+                } else {
+                    free(completion);
+                    completion = NULL;
+                }
+            }
+        }
+    }
+    if(matches > 1) {
+        slash_printf(slash, "\n");
+    }
+
+    SLIST_FOREACH(cur_manual, &completion_manuals, list) {
+
+        /* Compute the length of prefix common to all completions */
+        if (prev_manual != NULL) {
+            cur_prefix = slash_prefix_length(prev_manual->pdf, cur_manual->pdf);
+            if(cur_prefix < prefix_len) {
+                prefix_len = cur_prefix;
+                completion = cur_manual;
+            }
+        }
+        prev_manual = cur_manual;
+        if(matches > 1) {
+            printf("%s\n", cur_manual->pdf);
+        }
+    }
+    if (matches == 1) {
+        /* Reassign cmd_len to the current completion as it may have changed during the loop */
+        len = strlen(completion->pdf);
+        /* The buffer uniquely completes to a longer command */
+        strncpy(slash->buffer + strlen(slash->buffer) - strlen(arg), completion->pdf, slash->line_size);
+        slash->cursor = slash->length = strlen(slash->buffer);
+    } else if(matches > 1) {
+        /* Fill the buffer with as much characters as possible:
+         * if what the user typed in doesn't end with a space, we might
+         * as well put all the common prefix in the buffer
+         */
+        strncpy(slash->buffer + (arg - slash->buffer), completion->pdf, prefix_len);
+        slash->cursor = slash->length = strlen(slash->buffer);
+    } else {
+        slash_bell(slash);
+    }
+    /* Free up the completion lists we built up earlier */
+    while (!SLIST_EMPTY(&completion_manuals))
+    {
+        completion = SLIST_FIRST(&completion_manuals);
+        SLIST_REMOVE(&completion_manuals, completion, manual_entry, list);
+        free(completion->pdf);
+        free(completion);
+    }
+    while (!SLIST_EMPTY(&all_manuals))
+    {
+        completion = SLIST_FIRST(&all_manuals);
+        SLIST_REMOVE(&all_manuals, completion, manual_entry, list);
+        free(completion->pdf);
+        free(completion);
+    }
+
+}
+
+slash_command_completer(manual, doc_cmd, manual_cmd_completer, "[manual pdf]", "Show CSH documentation, use with no parameter to get the list of available manuals.");
