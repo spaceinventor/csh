@@ -11,6 +11,7 @@
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include "python_loader.h"
+#include <pycsh/utils.h>
 
 
 #define WALKDIR_MAX_PATH_SIZE 256
@@ -19,33 +20,9 @@
 
 PyThreadState *main_thread_state = NULL;
 
-extern void cleanup_pyobject(PyObject **obj);
-extern void _close_dir(DIR *const* dir);
-extern void state_release_GIL(PyThreadState ** state);
-extern void cleanup_free(void *const* obj);
-extern void cleanup_str(char *const* obj);
-
 #define AUTO_DECREF __attribute__((cleanup(cleanup_pyobject)))
 #define CLEANUP_DIR __attribute__((cleanup(_close_dir)))
 #define CLEANUP_STR __attribute__((cleanup(cleanup_str)))
-
-void cleanup_free(void *const* obj) {
-    if (*obj == NULL) {
-        return;
-	}
-    free(*obj);
-	/* Setting *obj=NULL should never have a visible effect when using __attribute__((cleanup()).
-		But accepting a *const* allows for more use cases. */
-    //*obj = NULL;  // 
-}
-
-__attribute__((malloc))
-char *safe_strdup(const char *s) {
-    if (s == NULL) {
-        return NULL;
-    }
-    return strdup(s);
-}
 
 static void _dlclose_cleanup(void *const* handle) {
 	if (*handle == NULL || handle == NULL) {
@@ -53,35 +30,6 @@ static void _dlclose_cleanup(void *const* handle) {
 	}
 
 	dlclose(*handle);
-}
-
-void cleanup_str(char *const* obj) {
-    cleanup_free((void *const*)obj);
-}
-
-void _close_dir(DIR *const* dir) {
-	if (dir == NULL || *dir == NULL) {
-		return;
-	}
-	closedir(*dir);
-	//*dir = NULL;
-}
-void cleanup_GIL(PyGILState_STATE * gstate) {
-	//printf("AAA %d\n", PyGILState_Check());
-    //if (*gstate == PyGILState_UNLOCKED)
-    //    return
-    PyGILState_Release(*gstate);
-    //*gstate = NULL;
-}
-void cleanup_pyobject(PyObject **obj) {
-    Py_XDECREF(*obj);
-}
-
-void state_release_GIL(PyThreadState ** state) {
-	if (*state == NULL) {
-		return;  // We didn't have the GIL, so there's nothing to release.
-	}
-    *state = PyEval_SaveThread();
 }
 
 static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
@@ -349,10 +297,8 @@ __attribute__((destructor(150))) static void finalize_python_interpreter(void) {
 		even if the shared library (PyCSH) isn't loaded correctly.
 		Which will cause a segmentation fault when finalizing Python.
 		So we should make a guard clause for that. */
-	printf("Shutting down Python interpreter\n");
 	PyThreadState* tstate = PyGILState_GetThisThreadState();
 	if(tstate == NULL){
-		fprintf(stderr, "Python interpreter not started.\n");
 		return;
 	}
 	PyEval_RestoreThread(main_thread_state);  // Re-acquire the GIL so we can raise and exit \_(ツ)_/¯
@@ -376,7 +322,6 @@ int py_init_interpreter(void) {
 		extern PyMODINIT_FUNC PyInit_pycsh(void);
 		PyImport_AppendInittab("pycsh", PyInit_pycsh);
         Py_Initialize();
-        printf("Python interpreter started\n");
         if (append_pyapm_paths()) {
             fprintf(stderr, "Failed to add Python APM paths\n");
         }
