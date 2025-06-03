@@ -180,18 +180,19 @@ static void * param_sniffer(void * param) {
         mpack_reader_init_data(&reader, queue.buffer, queue.used);
         while(reader.data < reader.end) {
             int id, node, offset = -1;
-            long unsigned int timestamp = 0;
+            csp_timestamp_t timestamp = { .tv_sec = 0, .tv_nsec = 0 };
             param_deserialize_id(&reader, &id, &node, &timestamp, &offset, &queue);
             if (node == 0) {
                 node = packet->id.src;
             }
             /* If parameter timestamp is not inside the header, and the lower layer found a timestamp*/
-            if ((timestamp == 0) && (packet->timestamp_rx != 0)) {
-                timestamp = packet->timestamp_rx;
+            if ((timestamp.tv_sec == 0) && (packet->timestamp_rx != 0)) {
+                timestamp.tv_sec = packet->timestamp_rx;
+                timestamp.tv_nsec = 0;
             }
             param_t * param = param_list_find_id(node, id);
             if (param) {
-                param->timestamp->tv_sec = timestamp;	
+                *param->timestamp = timestamp;	
                 param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);

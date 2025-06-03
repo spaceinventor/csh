@@ -1135,8 +1135,9 @@ static int cmd_new(struct slash *slash) {
 	csp_clock_get_time(&time_now);
 	param_queue.used = 0;
 	param_queue.version = paramver;
-	param_queue.last_timestamp = 0;
-	param_queue.client_timestamp = time_now.tv_sec;
+	param_queue.last_timestamp.tv_sec = 0;
+	param_queue.last_timestamp.tv_nsec = 0;
+	param_queue.client_timestamp = time_now;
 
 	printf("Initialized new command: %s\n", name);
 
