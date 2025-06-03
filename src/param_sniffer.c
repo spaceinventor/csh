@@ -26,7 +26,7 @@ int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
 
     char tmp[1000] = {};
 
@@ -45,8 +45,8 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
     int vts = check_vts(*(param->node), param->id);
 
     uint64_t time_ms;
-    if (timestamp > 0) {
-        time_ms = timestamp * 1000;
+    if (timestamp->tv_sec > 0) {
+        time_ms = ((uint64_t) timestamp->tv_sec * 1000000 + timestamp->tv_nsec / 1000) / 1000;
     } else {
         struct timeval tv;
         gettimeofday(&tv, NULL);
@@ -190,8 +190,9 @@ static void * param_sniffer(void * param) {
                 timestamp = packet->timestamp_rx;
             }
             param_t * param = param_list_find_id(node, id);
-            if (param) {	
-                param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
+            if (param) {
+                param->timestamp->tv_sec = timestamp;	
+                param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);
                 mpack_discard(&reader);
