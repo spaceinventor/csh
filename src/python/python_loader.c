@@ -447,6 +447,13 @@ static int python_slash(struct slash *slash) {
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
+
+	/* Python 3.11 has deprecated `PySys_SetArgv()` (while keeping it in the stable API),
+		3.11 simultaneously introduces `PyConfig.argv` as the intended replacement.
+		We do not yet want to require 3.11, so we just silence the warnings instead. */
+	#pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 	wchar_t **argv = NULL;
 	if(string) {
 		argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
@@ -472,6 +479,9 @@ static int python_slash(struct slash *slash) {
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 		slash_acquire_std_in_out(slash);
 	}
+
+	#pragma GCC diagnostic pop  /* -Wdeprecated-declarations */
+
 	if(argv) {
 		for (int i = 0; i < (slash->argc - argi); i++) {
 			PyMem_RawFree(argv[i]);
