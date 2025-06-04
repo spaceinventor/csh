@@ -10,6 +10,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
           packages: libcurl4-openssl-dev libzmq3-dev libsocketcan-dev libpython3-dev 
