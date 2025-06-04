@@ -71,7 +71,7 @@ FILE * logfile;
 char * keyfile_name = NULL;
 char * keyarg = NULL;
 /* Buffer to hold the secret key. 41 is the length of a z85-encoded CURVE key plus 1 for the null terminator. */
-char sec_key[CURVE_KEYLEN] = {0};
+char sec_key[CURVE_KEYLEN + 1] = {0};
 
 /* Read one event off the monitor socket; return value and address
 by reference, if not null, and event number by value. Returns -1
