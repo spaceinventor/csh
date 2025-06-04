@@ -220,7 +220,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 	static bool epoch_notfound_warning = false; // Only print this warning once
 	while (reader.data < reader.end) {
 		int id, node, offset = -1;
-		long unsigned int timestamp = 0;
+		csp_timestamp_t timestamp = { .tv_sec = 0, .tv_nsec = 0 };
 		param_deserialize_id(&reader, &id, &node, &timestamp, &offset, &queue);
 		if (node == 0) {
 			node = packet->id.src;
@@ -228,7 +228,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 		param_t * param = param_list_find_id(node, id);
 		if (param) {
 			*param->timestamp = timestamp;
-			if (*param->timestamp == 0) {
+			if (param->timestamp->tv_sec == 0) {
 				printf("HK: Param timestamp is missing for %u:%s, logging is aborted\n", *(param->node), param->name);
 				break;
 			}
@@ -237,7 +237,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 			for (int i = 0; i < timesync_nodes.count; i++) {
 				if (timesync_nodes.node[i] == node && timesync_nodes.paramid[i] == param->id) {
 					mpack_tag_t tag = mpack_peek_tag(&reader);
-					local_epoch = tag.v.i - timestamp;
+					local_epoch = tag.v.i - timestamp.tv_sec;
 					hk_set_epoch(local_epoch, packet->id.src, true);
 					break;
 				}
@@ -251,8 +251,8 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 				continue;
 			}
 
-			*param->timestamp += local_epoch;
-			param_sniffer_log(NULL, &queue, param, offset, &reader, *param->timestamp);
+			param->timestamp->tv_sec += local_epoch;
+			param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
 		} else {
 			printf("HK: Found unknown param node %d id %d\n", node, id);
 			mpack_discard(&reader);

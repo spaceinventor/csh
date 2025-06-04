@@ -608,7 +608,7 @@ static int cmd_set(struct slash *slash) {
 		return SLASH_EINVAL;
 	}
 
-	*param->timestamp = 0; /* Reset parameter timestamp before adding to queue, to avoid serializing it. */
+	param->timestamp->tv_sec = 0; /* Reset parameter timestamp before adding to queue, to avoid serializing it. */
 	int expected_value_amount = 0;
 
 	// If param is of type data or string we only want to set on a single offset, that being -1.
@@ -902,7 +902,7 @@ static int cmd_add(struct slash *slash) {
 			return SLASH_EINVAL;
 		}
 		/* clear param timestamp so we dont set timestamp flag when serialized*/
-		*param->timestamp = 0;
+		param->timestamp->tv_sec = 0;
 
 		if (param_queue_add(&param_queue, param, offset, valuebuf) < 0)
 			printf("Queue full\n");
@@ -1135,8 +1135,9 @@ static int cmd_new(struct slash *slash) {
 	csp_clock_get_time(&time_now);
 	param_queue.used = 0;
 	param_queue.version = paramver;
-	param_queue.last_timestamp = 0;
-	param_queue.client_timestamp = time_now.tv_sec;
+	param_queue.last_timestamp.tv_sec = 0;
+	param_queue.last_timestamp.tv_nsec = 0;
+	param_queue.client_timestamp = time_now;
 
 	printf("Initialized new command: %s\n", name);
 
