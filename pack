@@ -3,19 +3,16 @@
 csh_si=$(realpath ../csh_si)
 csh_obc=$(realpath ../csh_obc)
 # Ubuntu 24.04, x86_64, aarch64
-docker build -f debian/Dockerfile_ubuntu-24.04 --platform linux/amd64 . -t si-ubuntu-24.04-builder
-docker build -f debian/Dockerfile_ubuntu-24.04 --platform linux/aarch64 . -t si-ubuntu-24.04-builder
+docker build -f debian/Dockerfile_ubuntu-24.04 --platform linux/amd64,linux/aarch64  . -t si-ubuntu-24.04-builder
 docker run --platform linux/amd64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it -t si-ubuntu-24.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 docker run --platform linux/aarch64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it -t si-ubuntu-24.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 
 # Ubuntu 22.04, x86_64, aarch64
-docker build -f debian/Dockerfile_ubuntu-22.04 --platform linux/amd64 . -t si-ubuntu-22.04-builder
-docker build -f debian/Dockerfile_ubuntu-22.04 --platform linux/aarch64 . -t si-ubuntu-22.04-builder
+docker build -f debian/Dockerfile_ubuntu-22.04 --platform linux/amd64,linux/aarch64 . -t si-ubuntu-22.04-builder
 docker run --platform linux/amd64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it -t si-ubuntu-22.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 docker run --platform linux/aarch64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it -t si-ubuntu-22.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 
 # Ubuntu 20.04, x86_64, aarch64
-docker build -f debian/Dockerfile_ubuntu-20.04 --platform linux/amd64 . -t si-ubuntu-20.04-builder
-docker build -f debian/Dockerfile_ubuntu-20.04 --platform linux/aarch64 . -t si-ubuntu-20.04-builder
+docker build -f debian/Dockerfile_ubuntu-20.04 --platform linux/amd64,linux/aarch64 . -t si-ubuntu-20.04-builder
 docker run --platform linux/amd64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it -t si-ubuntu-20.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
 docker run --platform linux/aarch64 -v ${PWD}/:/home/ubuntu/csh -v $csh_si:/home/ubuntu/csh_si -v $csh_obc:/home/ubuntu/csh_obc -it -t si-ubuntu-20.04-builder su -l -c "(cd csh ; fakeroot ./pack_dpkg)" ubuntu
