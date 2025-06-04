@@ -3,8 +3,15 @@
 IFS='-' read -ra a <<< `git describe --long --always --dirty`
 REVID="${a[0]}-${a[1]}"
 ubuntu_version=${ubuntu_version:-$(lsb_release -r -s)}
-debbuild_dir=$(realpath si-csh_$ubuntu_version_$REVID)
-architecture=${architecture:-amd64}
+architecture=$(uname -m)
+if [ "$architecture" == "x86_64" ]
+then
+    architecture=amd64
+else
+    architecture=arm64
+fi
+debbuild_dir=$(realpath si-csh_${ubuntu_version}_${architecture}_$REVID)
+
 rm -R $debbuild_dir
 mkdir -p $debbuild_dir/usr/bin
 mkdir -p $debbuild_dir/usr/lib/csh
@@ -12,40 +19,29 @@ mkdir -p $debbuild_dir/usr/share/si-csh
 
 # build csh_si
 cd ../csh_si
-prefix=/usr ./configure $crossfile
+prefix=/usr ./configure
 DESTDIR=$debbuild_dir ./install
 
 # build csh_obc
 cd -
 cd ../csh_obc
-prefix=/usr ./configure $crossfile
+prefix=/usr ./configure
 DESTDIR=$debbuild_dir ./install
 
 # build csh
 cd -
-./configure $crossfile
+./configure
 ./build
 
 if [ "$ubuntu_version" == "20.04" ]
 then
-    Depends="libcap2-bin (>=2.44), libcurl4 (>=7.68), libzmq5 (>=4.3.2), libc6 (>=2.31), libsocketcan2 (>=0.0.11), can-utils (>= 2018.02), fonts-powerline (>=2.7)"
+    Depends="libcap2-bin (>=2.44), libcurl4 (>=7.68), libzmq5 (>=4.3.2), libc6 (>=2.31), libsocketcan2 (>=0.0.11), can-utils (>= 2018.02), fonts-powerline (>=2.7), python3 (>=3.8)"
 elif [ "$ubuntu_version" == "22.04" ]
 then
-    Depends="libcap2-bin (>=2.44), libcurl4 (>=7.81.0), libzmq5 (>=4.3.4), libc6 (>=2.35), libsocketcan2 (>=0.0.12), can-utils (>= 2020.11.0), fonts-powerline (>= 2.8.2)"
+    Depends="libcap2-bin (>=2.44), libcurl4 (>=7.81.0), libzmq5 (>=4.3.4), libc6 (>=2.35), libsocketcan2 (>=0.0.12), can-utils (>= 2020.11.0), fonts-powerline (>= 2.8.2), python3 (>=3.10)"
 elif [ "$ubuntu_version" == "24.04" ]
 then
-    Depends="libcap2-bin (>=2.44), libzmq5 (>=4.3.5), libc6 (>=2.39), libsocketcan2 (>=0.0.12), can-utils (>= 2023.03), fonts-powerline (>= 2.8.3)"
-elif [ "$ubuntu_version" == "aarch64" ] # That's Debian "bookworm", we're probably building for Raspberry PI
-then
-    architecture=arm64
-    Depends="libcap2-bin (>=2.44), libcurl4 (>=7.68), libzmq5 (>=4.3.2), libc6 (>=2.31), libsocketcan2 (>=0.0.11), can-utils (>= 2018.02), fonts-powerline (>=2.7)"
-elif [ "$ubuntu_version" == "gnueabihf" ] # That's Debian "bookworm", we're probably building for Raspberry PI
-then
-    architecture=armhf
-    Depends="libcap2-bin (>=2.44), libcurl4 (>=7.68), libzmq5 (>=4.3.2), libc6 (>=2.31), libsocketcan2 (>=0.0.11), can-utils (>= 2018.02), fonts-powerline (>=2.7)"
-else
-    echo "Unsupported Ubuntu version: $ubuntu_version"
-    exit 1
+    Depends="libcap2-bin (>=2.44), libzmq5 (>=4.3.5), libc6 (>=2.39), libsocketcan2 (>=0.0.12), can-utils (>= 2023.03), fonts-powerline (>= 2.8.3), python3 (>=3.12)"
 fi
 
 cp builddir/csh $debbuild_dir/usr/bin
@@ -68,7 +64,7 @@ EOF
 cat  << EOF > $debbuild_dir/DEBIAN/postinst
 #!/bin/sh
 setcap cap_net_raw,cap_net_admin+ep /usr/bin/csh
-USER_FOLDER=\`echo /home/$SUDO_USER\`
+USER_FOLDER=\`echo /home/\$SUDO_USER\`
 if [ -f "\$USER_FOLDER/.local/bin/csh" ]
 then
     echo "Removing CSH from local installation"
@@ -92,5 +88,4 @@ EOF
 
 chmod +x $debbuild_dir/DEBIAN/postinst
 dpkg -b $debbuild_dir
-mv si-csh_${REVID}.deb si-csh_${ubuntu_version}_${REVID}.deb 
 rm -R $debbuild_dir

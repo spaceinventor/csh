@@ -6,24 +6,16 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
       - uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: libcurl4-openssl-dev libzmq3-dev libsocketcan-dev
-      - uses: actions/setup-python@v1
+          packages: libcurl4-openssl-dev libzmq3-dev libsocketcan-dev libpython3-dev 
       - name: Install gcovr
-        run: pip3 install gcovr
-      - uses: BSFishy/meson-build@v1.0.3
-        with:
-          action: build
-          options: --verbose
-          setup-options: -Db_coverage=true
-          directory: builddir
-          meson-version: 1.5.1
-          ninja-version: 1.11.1.1
-          gcovr-version: 5.0
+        run: pip3 install gcovr==8.3 meson==1.8.1
+      - name: Build
+        run: ./configure -Db_coverage=true && ninja -C builddir -v
       - name: Run gcovr
         run: ninja -C builddir test coverage-text && tail -n3 builddir/meson-logs/coverage.txt

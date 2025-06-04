@@ -11,6 +11,9 @@ we are changing the name of both the software and the repository to avoid any mi
 The process will be gradual to avoid too many broken links so the old repo will remain in place for a while still.
 But the software will be called `csh` (pronounced 'seashell') from now on.
 
+## Installing
+
+Preferrably, you should use the provided Ubuntu Packages from Github's [Release Pages](https://github.com/spaceinventor/csh/releases)
 
 ## Build
 
@@ -21,12 +24,6 @@ Requirements: libcurl4-openssl-dev build-essential, libsocketcan-dev, can-utils,
 ```
 sudo apt install libcurl4-openssl-dev git build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config fonts-powerline python3-pip libelf-dev libbsd-dev
 sudo pip3 install meson ninja
-```
-
-Sometimes needed:
-```
-link /usr/sbin/ninja /usr/local/lib/python3.5/dist-packages/ninja
-export PATH=~/.local/bin:$PATH
 ```
 
 Build:

@@ -197,7 +197,8 @@ next:
     char * json_str_buf = malloc(json_str_max);
     if(!json_str_buf){
         const char err_str[] = "\033[1;31mLOKI CURL: Out of memory! Log skipped\033[0m\n";
-        write(old_stdout, err_str, sizeof(err_str));
+        size_t written = write(old_stdout, err_str, sizeof(err_str));
+        (void)written;
         pthread_mutex_unlock(&buffer_mutex);
         return;
     }

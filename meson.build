@@ -29,25 +29,32 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 # As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
 # accept the Meson warnings given the flexibilty we gain
 add_project_arguments(['-I../include', '-Wall', '-Wextra', '-Wno-unused-parameter'], language: 'c')
+# add_project_arguments(['-fanalyzer'], language: 'c')
 
-apm_api_dep = dependency('apm', fallback: ['apm', 'apm_csh_dep'], required: false).partial_dependency(includes: true)
+curl_dep = dependency(
+	'libcurl', 
+	not_found_message: 'libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.'
+)
 
-curl_dep = dependency('libcurl', required: false)
-if not curl_dep.found()
-  error('libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.')
-endif
+zmq_dep = dependency(
+	'libzmq',
+	not_found_message: 'libzmq not found! Please install libzmq3-dev or the appropriate package for your system.'
+)
 
-zmq_dep = dependency('libzmq', required: false)
-if not zmq_dep.found()
-  error('libzmq not found! Please install libzmq3-dev or the appropriate package for your system.')
-endif
-
-# .as_link_whole() prevents the linker from discarding functions/symbols that appear unused.
-# Specifically; functions/symbols that are unused during static linking,
-# but that may be called after dynamic linking by APMs.
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+apm_api_dep = dependency(
+	'apm',
+	fallback: 
+	[
+		'apm', 
+		'apm_csh_dep'
+	],
+	required: true).partial_dependency(
+		links: false, 
+		includes: true
+	)
 
 csh_sources = [
 	'src/main.c',
@@ -67,7 +74,6 @@ csh_sources = [
 	'src/spaceboot_slash.c',
 	'src/nav.c',
 	'src/serial.c',
-	'src/known_hosts.c',
 	'src/hk_param_sniffer.c',
 	'src/lock.c',
 	'src/csp_init_cmd.c',
@@ -78,7 +84,6 @@ csh_sources = [
     'src/slash_env_var_cmds.c', 
     'src/slash_nodes_cmds.c', 
     'src/slash_run_environment.c', 
-    'src/require_version.c', 
     'src/require_version_cmd.c', 
 	'src/param_commands_slash.c',
 	'src/param_scheduler_slash.c',
@@ -90,18 +95,53 @@ csh_sources = [
 	'src/param_commands_client.c'
 ]
 
+python_dep = dependency('python3', version : '>=3.10', required: false)
+
+if python_dep.found()
+	py = import('python').find_installation('python3')
+	python_ldflags = run_command('python'+py.language_version()+'-config', '--ldflags', '--embed', check: true).stdout().strip().split()
+	add_project_arguments('-DHAVE_PYTHON', language: 'c')
+	pycsh_dep = dependency('pycsh', fallback: ['pycsh', 'pycsh_dep']).as_link_whole()
+	csh_sources += [
+		'src/python/python_loader.c'
+	]
+else
+	python_ldflags = []
+	pycsh_dep = []
+endif
+
 csh_sources += vcs_tag(input: files('src/version.c.in'), output: 'version.c', command: ['git', 'describe', '--always', '--dirty=+'])
 
-utils_lib_src = ['src/url_utils.c', 'src/environment.c', 'src/require_version.c', 'src/csh_defaults.c', 'src/slash_utils.c',]
+utils_lib_src = [
+	'src/url_utils.c',
+	'src/environment.c',
+	'src/require_version.c',
+	'src/csh_defaults.c',
+	'src/slash_utils.c',
+	'src/known_hosts.c'
+]
 utils_lib_inc = include_directories('src')
 utils_lib = static_library('csh_utils', utils_lib_src, include_directories: utils_lib_inc, dependencies: [apm_api_dep])
-utils_lib_dep = declare_dependency(include_directories: utils_lib_inc, link_with : utils_lib, dependencies: [apm_api_dep])
+utils_lib_dep = declare_dependency(
+	include_directories: utils_lib_inc,
+	link_with: utils_lib,
+	dependencies: [apm_api_dep]
+)
 
 subdir('tests')
 
 csh = executable('csh', csh_sources,
-	dependencies : [slash_dep, csp_dep, param_dep, curl_dep, utils_lib_dep],
-	link_args : ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
+	dependencies : [
+		python_dep,
+		apm_api_dep,
+		slash_dep,
+		csp_dep,
+		param_dep,
+		curl_dep,
+		utils_lib_dep.as_link_whole(),
+		pycsh_dep
+	],
+	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
 )
 

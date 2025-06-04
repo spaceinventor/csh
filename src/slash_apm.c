@@ -19,6 +19,10 @@
 #include <libgen.h>
 #include <sys/queue.h>
 
+#ifdef HAVE_PYTHON
+#include "python/python_loader.h"
+#endif
+
 slash_command_group(apm, "apm");
 
 /**
@@ -369,6 +373,10 @@ static int apm_load_cmd(struct slash *slash) {
 
     int res = apm_load_search(&lib_search);
     optparse_del(parser);
+#ifdef HAVE_PYTHON
+    py_init_interpreter();
+    res = py_apm_load_cmd(slash);
+#endif
     return res;
 }
 
