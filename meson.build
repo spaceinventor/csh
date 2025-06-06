@@ -101,7 +101,7 @@ if python_dep.found()
 	py = import('python').find_installation('python3')
 	python_ldflags = run_command('python'+py.language_version()+'-config', '--ldflags', '--embed', check: true).stdout().strip().split()
 	add_project_arguments('-DHAVE_PYTHON', language: 'c')
-	pycsh_dep = dependency('pycsh', fallback: ['pycsh', 'pycsh_dep']).as_link_whole()
+	pycsh_dep = dependency('pycsh_core', fallback: ['pycsh_core', 'pycsh_core_dep']).as_link_whole()
 	csh_sources += [
 		'src/python/python_loader.c'
 	]

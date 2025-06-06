@@ -13,6 +13,6 @@
 [submodule "lib/apm"]
 	path = lib/apm
 	url = https://github.com/spaceinventor/libapm_csh
-[submodule "lib/pycsh"]
-	path = lib/pycsh
-	url = https://github.com/spaceinventor/PyCSH.git
+[submodule "lib/pycsh_core"]
+	path = lib/pycsh_core
+	url = https://github.com/spaceinventor/pycsh_core.git
