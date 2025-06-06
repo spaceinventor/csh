@@ -43,7 +43,7 @@ list forget,[node],Forget remote parameters. Omit or set node to -1 to include a
 list save,-,Save parameters
 loki start,-,Start Loki log push thread
 ls,[path],list files
-manual,-,Show CSH documentation as PDF
+manual,[manual pdf],"Show CSH documentation, use with no parameter to get the list of available manuals."
 node,[node],Set global default node
 node add,-,-
 node list,-,Save or print known nodes

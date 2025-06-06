@@ -16,7 +16,7 @@ def check_gen_sidoc_version(version):
 def main():
     hostname = 'CSH'
     docdate = str(date.today())
-    libdoc_version = "0.1.15"
+    libdoc_version = "0.1.22"
     if not check_gen_sidoc_version(environ.get("LIBDOC_VERSION", libdoc_version)):
         cmd = f"python3 -m pip install -U git+https://github.com/spaceinventor/libdoc.git@{libdoc_version}"
         print(cmd)
