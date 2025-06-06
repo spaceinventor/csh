@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 WORKDIR /root
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev libcap2-bin python3-dev python3-pip
+RUN apt-get update && apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev libcap2-bin python3-dev python3-pip patchelf
 RUN useradd -ms /bin/bash ubuntu
 USER ubuntu
 RUN pip3 install --user meson==1.8.1 ninja
