@@ -19,6 +19,7 @@
 #include <libgen.h>
 #include <sys/queue.h>
 
+#include "slash_apm.h"
 #ifdef HAVE_PYTHON
 #include "python/python_loader.h"
 #endif
@@ -34,27 +35,11 @@ slash_command_group(apm, "apm");
     2 = int libmain(void)
 */
 static const int apm_init_version = APM_INIT_VERSION;
-typedef int (*libmain_t)(void);
-typedef void (*libinfo_t)(void);
-
-typedef struct apm_entry_s apm_entry_t;
-struct apm_entry_s {
-    void * handle;
-
-    char path[WALKDIR_MAX_PATH_SIZE];
-    const char * file;
-
-    char args[256];
-    libmain_t libmain_f;
-    libinfo_t libinfo_f;
-    int apm_init_version;
-    apm_entry_t * next;
-};
 
 static apm_entry_t * apm_queue = 0; 
 typedef void (*info_t) (void);
 
-static void apm_queue_add(apm_entry_t * e) {
+void apm_queue_add(apm_entry_t * e) {
 
     if (!e) {
         return;

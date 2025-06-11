@@ -4,17 +4,18 @@
 #include <pwd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <apm/csh_api.h>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include "python_loader.h"
 #include <pycsh/utils.h>
+#include "python_loader.h"
+#include "walkdir.h"
+#include "slash_apm.h"
 
-
-#define WALKDIR_MAX_PATH_SIZE 256
 #define PYAPMS_DIR "/.local/lib/csh/"
 #define DEFAULT_INIT_FUNCTION "apm_init"
 
@@ -400,9 +401,21 @@ int py_apm_load_cmd(struct slash *slash) {
 						continue;
 					}
 					lib_count++;
-
-					// TODO Kevin: Verbose argument?
-					printf("\033[32mLoaded: %s\033[0m\n", fullpath);
+					apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
+					if (!e) {
+						printf("Memory allocation error.\n");
+					} else {
+						e->apm_init_version = APM_INIT_VERSION;
+						strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
+						size_t i = strlen(e->path);
+						while ((i > 0) && (e->path[i-1] != '/')) {
+							i--;
+						}
+						e->file = &(e->path[i]);
+						// TODO Kevin: Verbose argument?
+						printf("\033[32mLoaded: %s\033[0m\n", fullpath);
+						apm_queue_add(e);
+					}
 				}
 			}
 		}
