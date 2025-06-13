@@ -270,32 +270,35 @@ static int vmem_client_slash_upload(struct slash *slash)
 	int retries = 0;
 	unsigned int window_size = 0;
 	csp_rdp_get_opt(&window_size, NULL, NULL, NULL, NULL, NULL);
-	const int window_bytes = (window_size + 1) * VMEM_SERVER_MTU;
+	const uint32_t window_bytes = (window_size + 1) * VMEM_SERVER_MTU;
 
 	while ((bytes_uploaded < size && auto_reconnect) || (retries == 0)) {
 
-		int sent_attempt = vmem_upload(node, timeout,
-				 address + bytes_uploaded, 
-				 data + bytes_uploaded,
-				 size - bytes_uploaded,
-				 version);
+		uint32_t lengthio = size - bytes_uploaded;
+		vmem_upload(node, timeout,
+			 address + bytes_uploaded, 
+			 data + bytes_uploaded,
+			 &lengthio,
+			 version, 3);
 
-		if(sent_attempt + bytes_uploaded == size){
-			printf("Total bytes uploaded: %u\n", bytes_uploaded + sent_attempt);
+		if(lengthio + bytes_uploaded == size){
+			printf("Total bytes uploaded: %u\n", bytes_uploaded + lengthio);
 			break;
 		}
 
-		if (sent_attempt > window_bytes) {
-			bytes_uploaded += sent_attempt - window_bytes;
+		/* We can't be sure the last tx window was send on timeout */
+		if (lengthio > window_bytes) {
+			bytes_uploaded += lengthio - window_bytes;
 			printf("Current total bytes uploaded: %u\n", bytes_uploaded);
 		} 
 
-		if (slash_wait_interruptible(slash, auto_sleep) != SLASH_SUCCESS) {
-		    printf("User interrupt aborting auto-reconnect\n");
-		    break;
+		if(retries++){
+			if (slash_wait_interruptible(slash, auto_sleep) != SLASH_SUCCESS) {
+			    printf("User interrupt aborting auto-reconnect\n");
+			    break;
+			}
+			printf("Retries: %d\n", retries);
 		}
-		printf("Retires: %d\n", retries);
-		retries++;
 	}
 
 	free(data);
