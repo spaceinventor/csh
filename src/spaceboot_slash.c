@@ -1,6 +1,7 @@
 
 #include "walkdir.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -147,18 +148,6 @@ static int image_get(char * filename, char ** data, int * len) {
 
 	return 0;
 }
-
-#if 0
-static void upload(int node, int address, char * data, int len) {
-
-	unsigned int timeout = 10000;
-	printf("  Upload %u bytes to node %u addr 0x%x\n", len, node, address);
-	vmem_upload(node, timeout, address, data, len, 1);
-	printf("  Waiting for flash driver to flush\n");
-	usleep(100000);
-}
-#endif
-
 typedef struct bin_file_ident_s {
 	bool valid;
 	char hostname[32+1];
@@ -275,19 +264,32 @@ static void file_callback(const char * path, const char * last_entry, void * cus
 	}
 }
 
-static int upload_and_verify(int node, int address, char * data, int len) {
+static int upload_and_verify(int node, int address, char * data, uint32_t len) {
 
 	unsigned int timeout = 10000;
+	uint32_t lenio = len;
 	printf("  Upload %u bytes to node %u addr 0x%x\n", len, node, address);
-	int res = vmem_upload(node, timeout, address, data, len, 1);
+	int res = vmem_upload(node, timeout, address, data, &lenio, 1, 2);
 	if(res < 0){
+		return SLASH_EINVAL;
+	}
+	if(lenio != len){
 		return SLASH_EINVAL;
 	}
 
 	char * datain = malloc(len);
-	vmem_download(node, timeout, address, len, datain, 1, 1);
+	res = vmem_download(node, timeout, address, len, datain, 1, 1);
+	if(res < 0){
+		printf("Connection could not be established\n");
+		return SLASH_EINVAL;
+	}
+	if((uint32_t)res != len){
+		printf("\033[31m\n");
+		printf("Download did not complete!\nComparing %d bytes instead of %d\n", res, len);
+		printf("\033[0m\n");
+	}
 
-	for (int i = 0; i < len; i++) {
+	for (int i = 0; i < res; i++) {
 		if (datain[i] == data[i])
 			continue;
 		printf("Diff at %x: %hhx != %hhx\n", address + i, data[i], datain[i]);
@@ -433,10 +435,10 @@ static int slash_csp_program(struct slash * slash) {
 		crc = csp_crc32_memory((const uint8_t *)data, len);
 		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
-		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
+		int res = vmem_upload(node, 10000, vmem.vaddr, data, (uint32_t*)&len, 1, 2);
 		uint32_t crc_node;
-		int res = vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 		if (res >= 0) {
+			vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 			if (crc_node == crc) {
 				printf("\033[32m\n");
 				printf("  Success\n");
@@ -591,10 +593,10 @@ static int slash_sps(struct slash * slash) {
 		crc = csp_crc32_memory((const uint8_t *)data, len);
 		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
-		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
+		int res = vmem_upload(node, 10000, vmem.vaddr, data, (uint32_t*)&len, 1, 2);
 		uint32_t crc_node;
-		int res = vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 		if (res >= 0) {
+			vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 			if (crc_node == crc) {
 				printf("\033[32m\n");
 				printf("  Success\n");
