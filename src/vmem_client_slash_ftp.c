@@ -143,7 +143,7 @@ static int vmem_client_slash_download(struct slash *slash)
 	/* Allocate memory for reply */
 	char * data = malloc(length - offset);
 
-	int count = vmem_download(node, timeout, address + offset, length - offset, data, version, use_rdp);
+	int count = vmem_download(node, timeout, address + offset, data, length - offset, use_rdp, version, 2);
 	if(count < 0){
 		printf("Connection failed\n");
 		fclose(fd);
@@ -190,7 +190,7 @@ static int vmem_client_slash_upload(struct slash *slash)
     unsigned int version = 1;
 	unsigned int offset = 0;
 	int auto_reconnect = 0;
-	unsigned int auto_sleep = 10000;
+	unsigned int auto_sleep_sec = 10;
 
     optparse_t * parser = optparse_new("upload", "<file> <address>");
     optparse_add_help(parser);
@@ -199,7 +199,7 @@ static int vmem_client_slash_upload(struct slash *slash)
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
 	optparse_add_set(parser, 'A', "auto", 1, &auto_reconnect, "enable auto reconnect if upload timeout");
-    optparse_add_unsigned(parser, 's', "sleep_auto", "NUM", 0, &auto_sleep, "time between upload retries (default = 10000)");
+    optparse_add_unsigned(parser, 's', "sleep_auto", "NUM", 0, &auto_sleep_sec, "time between upload retries (default = 10 sec)");
 
 	rdp_opt_add(parser);
 
@@ -266,34 +266,42 @@ static int vmem_client_slash_upload(struct slash *slash)
 
 	printf("Size %u\n", size);
 
-	unsigned int bytes_uploaded = 0;
+	unsigned int bytes_uploaded_total = 0;
 	int retries = 0;
 	unsigned int window_size = 0;
 	csp_rdp_get_opt(&window_size, NULL, NULL, NULL, NULL, NULL);
 	const uint32_t window_bytes = (window_size + 1) * VMEM_SERVER_MTU;
 
-	while ((bytes_uploaded < size && auto_reconnect) || (retries == 0)) {
+	while ((bytes_uploaded_total < size && auto_reconnect) || (retries == 0)) {
 
-		uint32_t lengthio = size - bytes_uploaded;
-		vmem_upload(node, timeout,
-			 address + bytes_uploaded, 
-			 data + bytes_uploaded,
-			 &lengthio,
-			 version, 3);
+		ssize_t bytes_uploaded = vmem_upload(
+			node,
+			timeout,
+			address + bytes_uploaded_total,
+			data + bytes_uploaded_total,
+			size - bytes_uploaded_total,
+			1,
+			version,
+			3);
 
-		if(lengthio + bytes_uploaded == size){
-			printf("Total bytes uploaded: %u\n", bytes_uploaded + lengthio);
+		if(bytes_uploaded < 0){
+			bytes_uploaded = 0;
+		}
+
+		if(bytes_uploaded + bytes_uploaded_total == size){
+			printf("Total bytes uploaded: %zd\n", bytes_uploaded_total + bytes_uploaded);
 			break;
 		}
 
 		/* We can't be sure the last tx window was send on timeout */
-		if (lengthio > window_bytes) {
-			bytes_uploaded += lengthio - window_bytes;
-			printf("Current total bytes uploaded: %u\n", bytes_uploaded);
-		} 
+		if (bytes_uploaded > window_bytes && auto_reconnect) {
+			bytes_uploaded_total += bytes_uploaded - window_bytes;
+			printf("Current total bytes uploaded: %u, %d%% done\n", bytes_uploaded_total, (int)((bytes_uploaded_total * 100) / size));
+		}
 
 		if(retries++){
-			if (slash_wait_interruptible(slash, auto_sleep) != SLASH_SUCCESS) {
+			printf("Retry in %d sec\n", auto_sleep_sec);
+			if (slash_wait_interruptible(slash, auto_sleep_sec * 1000) != SLASH_SUCCESS) {
 			    printf("User interrupt aborting auto-reconnect\n");
 			    break;
 			}
