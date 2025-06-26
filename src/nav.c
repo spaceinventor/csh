@@ -54,8 +54,36 @@ static int slash_cd(struct slash *slash) {
         return SLASH_EUSAGE;
     }
 
-    if (chdir(slash->argv[1]) < 0) {
-        return SLASH_EINVAL;
+    char *expanded_path = NULL;
+    char *home = getenv("HOME");
+    if(strlen(slash->argv[1])) {
+        if (slash->argv[1][0] == '~') {
+            expanded_path = calloc(1024, sizeof(char));
+            strcpy(expanded_path, home);
+            if(slash->argv[1][1]) {
+                strcat(expanded_path, &slash->argv[1][1]);
+            }
+            if (chdir(expanded_path) < 0) {
+                printf("Failed to cd into %s, current dir is: ", expanded_path);
+                free(expanded_path);
+                print_cwd();
+                return SLASH_EINVAL;
+            } else {
+                free(expanded_path);
+            }
+        } else {
+            if (chdir(slash->argv[1]) < 0) {
+                printf("Failed to cd into %s, current dir is: ", slash->argv[1]);
+                print_cwd();
+                return SLASH_EINVAL;
+            }            
+        }
+    } else {
+        if (chdir(home) < 0) {
+            printf("Failed to cd into %s, current dir is: ", home);
+            print_cwd();
+            return SLASH_EINVAL;
+        }                   
     }
 	return SLASH_SUCCESS;
 }
