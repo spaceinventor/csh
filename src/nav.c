@@ -1,4 +1,6 @@
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <slash/slash.h>
@@ -28,9 +30,23 @@ static int slash_ls(struct slash *slash) {
 
 	return SLASH_SUCCESS;
 }
-
 slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list files");
 
+static void print_cwd() {
+    char *cwd = get_current_dir_name();
+    printf("%s\n", cwd);
+    free(cwd);
+}
+
+static int slash_pwd(struct slash *slash) {
+
+    if (slash->argc != 0) {
+        return SLASH_EUSAGE;
+    }
+    print_cwd();
+	return SLASH_SUCCESS;
+}
+slash_command(pwd, slash_pwd, "", "Print current working directory");
 
 static int slash_cd(struct slash *slash) {
 
