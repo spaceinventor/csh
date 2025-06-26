@@ -309,7 +309,7 @@ static int slash_csp_program(struct slash * slash) {
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
     csh_add_node_option(parser, &node);
-    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO)");
+    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
     optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
@@ -352,8 +352,7 @@ static int slash_csp_program(struct slash * slash) {
 	if (filename) {
 		strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
 		bin_info.count = 0;
-	}
-	else {
+	} else {
 		printf("  Searching for valid binaries\n");
 		strcpy(wpath, ".");
 		bin_info.addr_min = vmem.vaddr;
@@ -464,7 +463,7 @@ static int slash_csp_program(struct slash * slash) {
 	return result;
 }
 
-slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program");
+slash_command(program, slash_csp_program, "<slot>", "Upload new firmware");
 
 
 static int slash_sps(struct slash * slash) {
@@ -472,10 +471,12 @@ static int slash_sps(struct slash * slash) {
 	unsigned int node = slash_dfl_node;
 	unsigned int reboot_delay = 1000;
 	int do_crc32 = 0;
+	char * filename = NULL;
 
     optparse_t * parser = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
     optparse_add_help(parser);
     csh_add_node_option(parser, &node);
+	optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
     optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
@@ -525,32 +526,39 @@ static int slash_sps(struct slash * slash) {
 		printf("    Size: %u\n", vmem.size);
 	}
 
-	printf("  Searching for valid binaries\n");
-	strcpy(wpath, ".");
-	bin_info.addr_min = vmem.vaddr;
-	bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
-	bin_info.count = 0;
-	walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info, &slash->signal);
-	if(slash->signal == SIGINT){
-		optparse_del(parser);
-		return SLASH_EINVAL;
-	}
-	if (bin_info.count) {
-		for (unsigned i = 0; i < bin_info.count; i++) {
-			if (bin_info.idents[i].valid) {
-				printf("  %u: %s (%s, %s, %s, 0x%08"PRIX32")\n", i, &bin_info.files[i][0], bin_info.idents[i].hostname, bin_info.idents[i].model, bin_info.idents[i].version_string, bin_info.idents[i].stext);
-			} else {
-				printf("  %u: %s\n", i, &bin_info.files[i][0]);
-			}
-		}
-	}
-	else {
-		printf("\033[31m\n");
-		printf("  Found no valid binary for the selected slot.\n");
-		printf("\033[0m\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
-	}
+    if (filename) {
+        strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
+        bin_info.count = 0;
+    } else {
+
+        printf("  Searching for valid binaries\n");
+        strcpy(wpath, ".");
+        bin_info.addr_min = vmem.vaddr;
+        bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
+        bin_info.count = 0;
+        walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info, &slash->signal);
+        if(slash->signal == SIGINT){
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+        if (bin_info.count) {
+            for (unsigned i = 0; i < bin_info.count; i++) {
+                if (bin_info.idents[i].valid) {
+                    printf("  %u: %s (%s, %s, %s, 0x%08"PRIX32")\n", i, &bin_info.files[i][0], bin_info.idents[i].hostname, bin_info.idents[i].model, bin_info.idents[i].version_string, bin_info.idents[i].stext);
+                } else {
+                    printf("  %u: %s\n", i, &bin_info.files[i][0]);
+                }
+            }
+        }
+        else {
+            printf("\033[31m\n");
+            printf("  Found no valid binary for the selected slot.\n");
+            printf("\033[0m\n");
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+    }
 
 	int index = 0;
 	if (bin_info.count > 1) {
