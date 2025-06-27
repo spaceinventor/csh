@@ -22,8 +22,8 @@ Preferrably, you should use the provided Ubuntu Packages from Github's [Release 
 Requirements: libcurl4-openssl-dev build-essential, libsocketcan-dev, can-utils, libzmq3-dev, libyaml-dev, meson, ninja, pkg-config, fonts-powerline, python3-pip, libelf-dev, libbsd-dev
 
 ```
-sudo apt install libcurl4-openssl-dev git build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config fonts-powerline python3-pip libelf-dev libbsd-dev
-sudo pip3 install meson ninja
+sudo apt install libcurl4-openssl-dev git build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config fonts-powerline pipx libelf-dev libbsd-dev
+pipx install meson
 ```
 
 Build:
