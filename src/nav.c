@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <slash/slash.h>
 #include <slash/completer.h>
 
@@ -58,7 +59,7 @@ static int slash_cd(struct slash *slash) {
     char *home = getenv("HOME");
     if(strlen(slash->argv[1])) {
         if (slash->argv[1][0] == '~') {
-            expanded_path = calloc(1024, sizeof(char));
+            expanded_path = calloc(PATH_MAX, sizeof(char));
             strcpy(expanded_path, home);
             if(slash->argv[1][1]) {
                 strcat(expanded_path, &slash->argv[1][1]);
