@@ -24,6 +24,14 @@
 
 #define CURVE_KEYLEN 41
 
+static bool csp_router_started = false;
+bool csp_router_is_running() {
+    return csp_router_started;
+}
+void csp_router_set_running(bool is_running) {
+    csp_router_started = is_running;
+}
+
 void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
@@ -36,6 +44,9 @@ void * vmem_server_task(void * param) {
 }
 
 static int csp_init_cmd(struct slash *slash) {
+    if (true == csp_router_is_running()) {
+    	return SLASH_SUCCESS;
+    }
 
     char * hostname = NULL;
     char * model = NULL;
@@ -92,10 +103,10 @@ static int csp_init_cmd(struct slash *slash) {
 	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
 
 	static pthread_t router_handle;
-	pthread_create(&router_handle, NULL, &router_task, NULL);
-
+    csp_router_set_running(true);
+    pthread_create(&router_handle, NULL, &router_task, NULL);
 	static pthread_t vmem_server_handle;
-	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
+    pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
 
     csp_iflist_check_dfl();
 
