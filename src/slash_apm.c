@@ -397,7 +397,7 @@ static int apm_info_cmd(struct slash *slash) {
             printf("\n");
         }
     }
-
+    optparse_del(parser);
     return SLASH_SUCCESS;
 
 }
