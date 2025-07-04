@@ -28,7 +28,7 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 # they want.
 # As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
 # accept the Meson warnings given the flexibilty we gain
-add_project_arguments(['-I../include', '-Wall', '-Wextra', '-Wno-unused-parameter'], language: 'c')
+add_project_arguments(['-Wall', '-Wextra', '-Wno-unused-parameter'], language: 'c')
 # add_project_arguments(['-fanalyzer'], language: 'c')
 
 curl_dep = dependency(
@@ -128,7 +128,9 @@ utils_lib_dep = declare_dependency(
 	dependencies: [apm_api_dep]
 )
 
-subdir('tests')
+if meson.is_subproject() == false
+	subdir('tests')
+endif
 
 csh = executable('csh', csh_sources,
 	dependencies : [
@@ -141,6 +143,7 @@ csh = executable('csh', csh_sources,
 		utils_lib_dep.as_link_whole(),
 		pycsh_dep
 	],
+	include_directories: include_directories('include'),
 	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
 	install : true,
 )
