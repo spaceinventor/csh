@@ -360,7 +360,7 @@ static void param_slash_parse(char * arg, int node, param_t **param, int *offset
 	return;
 }
 
-static void param_completer(struct slash *slash, char * token) {
+void param_completer(struct slash *slash, char * token) {
 
 	int matches = 0;
 	size_t prefixlen = -1;
