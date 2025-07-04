@@ -322,7 +322,7 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 
 	char * interface = slash->argv[argi];
 
-	struct csp_cmp_message message;
+	struct csp_cmp_message message = { 0 };
 
 	strncpy(message.if_stats.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
 
