@@ -45,10 +45,10 @@ csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_lin
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
-	'apm',
+	'apm_csh',
 	fallback: 
 	[
-		'apm', 
+		'apm_csh', 
 		'apm_csh_dep'
 	],
 	required: true).partial_dependency(

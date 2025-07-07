@@ -11,7 +11,7 @@
   url = https://github.com/spaceinventor/slash
   branch = master
 [submodule "lib/apm"]
-	path = lib/apm
+	path = lib/pam_csh
 	url = https://github.com/spaceinventor/libapm_csh
 [submodule "lib/pycsh_core"]
 	path = lib/pycsh_core
