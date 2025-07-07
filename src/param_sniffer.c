@@ -12,6 +12,7 @@
 #include <param/param_queue.h>
 #include <mpack/mpack.h>
 #include <csp/csp.h>
+#include <csp/csp_hooks.h>
 #include <csp/csp_crc32.h>
 
 #include "hk_param_sniffer.h"
