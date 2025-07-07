@@ -461,6 +461,8 @@ static int python_slash(struct slash *slash) {
 		return SLASH_EINVAL;
 	}
 
+	PyRun_SimpleString("import pycsh");
+
 	/* Python 3.11 has deprecated `PySys_SetArgv()` (while keeping it in the stable API),
 		3.11 simultaneously introduces `PyConfig.argv` as the intended replacement.
 		We do not yet want to require 3.11, so we just silence the warnings instead. */
@@ -487,7 +489,6 @@ static int python_slash(struct slash *slash) {
 		PySys_SetArgv(0, NULL);
 		PyRun_SimpleString("import rlcompleter");
 		PyRun_SimpleString("import readline");
-		PyRun_SimpleString("import pycsh");
 		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 		slash_acquire_std_in_out(slash);
