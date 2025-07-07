@@ -176,6 +176,11 @@ static void * param_sniffer(void * param) {
         param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
         queue.last_node = packet->id.src;
 
+        csp_timestamp_t time_now;
+        csp_clock_get_time(&time_now);
+        queue.last_timestamp = time_now;
+        queue.client_timestamp = time_now;
+
         mpack_reader_t reader;
         mpack_reader_init_data(&reader, queue.buffer, queue.used);
         while(reader.data < reader.end) {
@@ -192,8 +197,7 @@ static void * param_sniffer(void * param) {
             }
             param_t * param = param_list_find_id(node, id);
             if (param) {
-                *param->timestamp = timestamp;	
-                param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
+                param_sniffer_log(NULL, &queue, param, offset, &reader, &timestamp);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);
                 mpack_discard(&reader);
