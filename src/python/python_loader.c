@@ -262,7 +262,21 @@ static int append_pyapm_paths(void) {
         }
     }
 
-    // Append CWD to sys.path
+    // Append /usr/lib/csh to sys.path
+    const char* usr_lib_csh = "/usr/lib/csh";
+    PyObject* usr_lib_csh_path AUTO_DECREF = PyUnicode_FromString(usr_lib_csh);
+    if (usr_lib_csh_path == NULL) {
+        printf("Failed to create Python object for /usr/lib/csh\n");
+    } else {
+        PyObject* full_path AUTO_DECREF = PyUnicode_FromFormat("%s", usr_lib_csh);
+        if (full_path == NULL) {
+            printf("Failed to create Python object for /usr/lib/csh\n");
+        } else {
+			PyList_Insert(sys_path, 0, full_path);
+        }
+    }
+
+	// Append CWD to sys.path
     PyObject* cwd_path AUTO_DECREF = PyUnicode_FromString(".");
     if (cwd_path == NULL) {
         printf("Failed to create Python object for current working directory\n");
