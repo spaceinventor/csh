@@ -235,7 +235,21 @@ static int append_pyapm_paths(void) {
         return -2;
     }
 
-    // Append $HOME to sys.path
+    // Append /usr/lib/csh to sys.path
+    const char* usr_lib_csh = "/usr/lib/csh";
+    PyObject* usr_lib_csh_path AUTO_DECREF = PyUnicode_FromString(usr_lib_csh);
+    if (usr_lib_csh_path == NULL) {
+        printf("Failed to create Python object for /usr/lib/csh\n");
+    } else {
+        PyObject* full_path AUTO_DECREF = PyUnicode_FromFormat("%s", usr_lib_csh);
+        if (full_path == NULL) {
+            printf("Failed to create Python object for /usr/lib/csh\n");
+        } else {
+			PyList_Insert(sys_path, 0, full_path);
+        }
+    }
+
+	// Append $HOME to sys.path
     const char* home = getenv("HOME");
     if (home == NULL) {
         printf("HOME environment variable not set\n");
@@ -262,21 +276,7 @@ static int append_pyapm_paths(void) {
         }
     }
 
-    // Append /usr/lib/csh to sys.path
-    const char* usr_lib_csh = "/usr/lib/csh";
-    PyObject* usr_lib_csh_path AUTO_DECREF = PyUnicode_FromString(usr_lib_csh);
-    if (usr_lib_csh_path == NULL) {
-        printf("Failed to create Python object for /usr/lib/csh\n");
-    } else {
-        PyObject* full_path AUTO_DECREF = PyUnicode_FromFormat("%s", usr_lib_csh);
-        if (full_path == NULL) {
-            printf("Failed to create Python object for /usr/lib/csh\n");
-        } else {
-			PyList_Insert(sys_path, 0, full_path);
-        }
-    }
-
-	// Append CWD to sys.path
+    // Append CWD to sys.path
     PyObject* cwd_path AUTO_DECREF = PyUnicode_FromString(".");
     if (cwd_path == NULL) {
         printf("Failed to create Python object for current working directory\n");
@@ -346,6 +346,65 @@ int py_init_interpreter(void) {
 	return 0;
 }
 
+static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *path, char *search_str)) {
+	size_t pathlist_len = strlen(pathlist);
+	char *runner = pathlist;
+	char *start = pathlist;
+	const char *end = pathlist + pathlist_len;
+	while (runner++ < end) {
+		if(*runner == ';') {
+			*runner = '\0';
+			cb(start, search_str);
+			start = ++runner;
+		} else if(*runner == '\0') {
+			cb(start, search_str);
+			start = ++runner;
+		}
+	}
+}
+
+static void load_py(char *path, char *search_str) {
+	struct dirent *entry;
+	DIR *dir CLEANUP_DIR = opendir(path);
+	if (dir == NULL) {
+		perror("opendir");
+	} else {
+		while ((entry = readdir(dir)) != NULL)  {
+
+			/* Verify file has search string */
+			if (search_str && !strstr(entry->d_name, search_str)) {
+				continue;
+			}
+			if(strstr(entry->d_name, ".py")) {
+				int fullpath_len = strnlen(path, WALKDIR_MAX_PATH_SIZE) + strnlen(entry->d_name, WALKDIR_MAX_PATH_SIZE);
+				char fullpath[fullpath_len+1];
+				strncpy(fullpath, path, fullpath_len);
+				strncat(fullpath, entry->d_name, fullpath_len-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+				PyObject * pymod AUTO_DECREF = pycsh_load_pymod(fullpath, DEFAULT_INIT_FUNCTION, 1);
+				if (pymod == NULL) {
+					PyErr_Print();
+					continue;
+				}
+				apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
+				if (!e) {
+					printf("Memory allocation error.\n");
+				} else {
+					e->apm_init_version = APM_INIT_VERSION;
+					strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
+					size_t i = strlen(e->path);
+					while ((i > 0) && (e->path[i-1] != '/')) {
+						i--;
+					}
+					e->file = &(e->path[i]);
+					// TODO Kevin: Verbose argument?
+					printf("\033[32mLoaded: %s\033[0m\n", fullpath);
+					apm_queue_add(e);
+				}
+			}
+		}
+	}
+}
+
 int py_apm_load_cmd(struct slash *slash) {
 
     char * path = NULL;
@@ -377,62 +436,18 @@ int py_apm_load_cmd(struct slash *slash) {
 		if(path) {
 	        strcpy(path, home_dir);
     	    strcat(path, PYAPMS_DIR);
+	        strcat(path, ";/usr/lib/csh/");
 			free_path = true;
 		}
     }
 	if(path) {
-		// Function to search for python files in specified path
-		int lib_count = 0;
-		{
-			DIR *dir CLEANUP_DIR = opendir(path);
-			if (dir == NULL) {
-				perror("opendir");
-				return SLASH_EINVAL;
-			}
-
-			PyEval_RestoreThread(main_thread_state);
-			PyThreadState *state __attribute__((cleanup(state_release_GIL))) = main_thread_state;
-			if (main_thread_state == NULL) {
-				fprintf(stderr, "main_thread_state is NULL\n");
-				return SLASH_EINVAL;
-			}
-			
-			struct dirent *entry;
-			while ((entry = readdir(dir)) != NULL)  {
-
-				/* Verify file has search string */
-				if (search_str && !strstr(entry->d_name, search_str)) {
-					continue;
-				}
-				if(strstr(entry->d_name, ".py")) {
-					int fullpath_len = strnlen(path, WALKDIR_MAX_PATH_SIZE) + strnlen(entry->d_name, WALKDIR_MAX_PATH_SIZE);
-					char fullpath[fullpath_len+1];
-					strncpy(fullpath, path, fullpath_len);
-					strncat(fullpath, entry->d_name, fullpath_len-strnlen(path, WALKDIR_MAX_PATH_SIZE));
-					PyObject * pymod AUTO_DECREF = pycsh_load_pymod(fullpath, DEFAULT_INIT_FUNCTION, 1);
-					if (pymod == NULL) {
-						PyErr_Print();
-						continue;
-					}
-					lib_count++;
-					apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
-					if (!e) {
-						printf("Memory allocation error.\n");
-					} else {
-						e->apm_init_version = APM_INIT_VERSION;
-						strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
-						size_t i = strlen(e->path);
-						while ((i > 0) && (e->path[i-1] != '/')) {
-							i--;
-						}
-						e->file = &(e->path[i]);
-						// TODO Kevin: Verbose argument?
-						printf("\033[32mLoaded: %s\033[0m\n", fullpath);
-						apm_queue_add(e);
-					}
-				}
-			}
+		PyEval_RestoreThread(main_thread_state);
+		PyThreadState *state __attribute__((cleanup(state_release_GIL))) = main_thread_state;
+		if (main_thread_state == NULL) {
+			fprintf(stderr, "main_thread_state is NULL\n");
+			return SLASH_EINVAL;
 		}
+		walk_path_list(path, search_str, load_py);
 	}
 	if(free_path) {
 		free(path);
