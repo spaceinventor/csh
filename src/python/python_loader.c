@@ -11,6 +11,7 @@
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
+#include <slash/completer.h>
 #include <pycsh/utils.h>
 #include "python_loader.h"
 #include "walkdir.h"
@@ -535,7 +536,7 @@ static int python_slash(struct slash *slash) {
 	return res;
 }
 
-slash_command(python, python_slash, "[(-c <python_string>|<filename>) [args...]]", "Starts an interactive Python interpreter in the current CSH process\n"\
+slash_command_completer(python, python_slash, slash_path_completer, "[(-c <python_string>|<filename>) [args...]]", "Starts an interactive Python interpreter in the current CSH process\n"\
 	"or execute the script in given file.\n"
 	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
 	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH.");
