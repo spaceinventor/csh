@@ -1,3 +1,7 @@
+#ifdef HAVE_PYTHON
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -192,6 +196,14 @@ static void csh_cleanup(void) {
 }
 
 static void sigint_handler(int signum) {
+#ifdef HAVE_PYTHON
+	extern PyThreadState *main_thread_state;
+	if(main_thread_state) {
+		PyGILState_STATE gstate = PyGILState_Ensure();
+		PyErr_SetString(PyExc_KeyboardInterrupt, "");
+		PyGILState_Release(gstate);	
+	}
+#endif
 	slash_sigint(slash, signum);
 	vmem_client_abort();
 }
