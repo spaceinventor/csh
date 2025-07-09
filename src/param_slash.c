@@ -305,6 +305,7 @@ static int param_offsets_parse_from_str(char * arg, int array_size, int *offset_
 
 static int parse_param_offset_string(char * arg_in,  int node, param_t **param, char ** arg_out) {
 	if (param_get_offset_string(arg_in, arg_out) < 0) {
+		fprintf(stderr, "Error when parsing offset string.\n");
 		return -1;
 	}
 
@@ -313,7 +314,7 @@ static int parse_param_offset_string(char * arg_in,  int node, param_t **param, 
 			fprintf(stderr, "%s not found.\n", arg_in);
 		}
 
-		return -1;
+		return -2;
 	}
 
 	return 0;
@@ -597,7 +598,6 @@ static int cmd_set(struct slash *slash) {
 
 	// Get param name and offsets as a char array, if any offsets exist.
 	if (parse_param_offset_string(name, node, &param, &offset_token) < 0) {
-		fprintf(stderr, "Error when parsing offset string.\n");
 		optparse_del(parser);
 		return SLASH_EINVAL;
 	}
