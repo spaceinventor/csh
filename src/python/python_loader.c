@@ -22,9 +22,46 @@
 
 PyThreadState *main_thread_state = NULL;
 
-#define AUTO_DECREF __attribute__((cleanup(cleanup_pyobject)))
-#define CLEANUP_DIR __attribute__((cleanup(_close_dir)))
-#define CLEANUP_STR __attribute__((cleanup(cleanup_str)))
+/**
+ * @brief Clear any KeyboardInterrupts which were raised between slash command execution.
+ * 
+ * i.e, on an empty prompt.
+ */
+void on_python_slash_execute_pre_hook(const char *line) {
+
+	if (!Py_IsInitialized()) {
+		// If Python is not initialized, we cannot do anything.
+		return;
+	}
+	
+	PyGILState_STATE CLEANUP_GIL gstate = PyGILState_Ensure();
+	if (PyErr_Occurred()) {
+		assert(PyErr_ExceptionMatches(PyExc_KeyboardInterrupt));
+		PyErr_Clear();
+	}
+}
+
+/**
+ * Handle/Print any exceptions which were raised during slash command execution.
+ * With Python being embedded in CSH, there is no outer logic to handle exceptions.
+ */
+void on_python_slash_execute_post_hook(const char *line, struct slash_command *command) {
+
+	if (!Py_IsInitialized()) {
+		// If Python is not initialized, we cannot do anything.
+		return;
+	}
+	
+	PyGILState_STATE CLEANUP_GIL gstate = PyGILState_Ensure();
+	if (PyErr_Occurred()) {
+		if (PyErr_ExceptionMatches(PyExc_KeyboardInterrupt)) {
+			/* This is a post-hook. There is nothing to interrupt, so simply clear the error. */
+			PyErr_Clear();
+		} else {
+			PyErr_Print();
+		}
+	}
+}
 
 static void _dlclose_cleanup(void *const* handle) {
 	if (*handle == NULL || handle == NULL) {
@@ -331,19 +368,23 @@ __attribute__((destructor(150))) static void finalize_python_interpreter(void) {
 }
 
 int py_init_interpreter(void) {
-    if (!Py_IsInitialized()) {
-        /* Calling Py_Initialize() "has the side effect of locking the global interpreter lock.
-            Once the function completes, you are responsible for releasing the lock."
-            -- https://www.linuxjournal.com/article/3641 */
-		extern PyMODINIT_FUNC PyInit_pycsh(void);
-		PyImport_AppendInittab("pycsh", PyInit_pycsh);
-        Py_Initialize();
-        if (append_pyapm_paths()) {
-            fprintf(stderr, "Failed to add Python APM paths\n");
-        }
-        // release GIL here
-        main_thread_state = PyEval_SaveThread();
+
+    if (Py_IsInitialized()) {
+        return 0;
     }
+
+    /* Calling Py_Initialize() "has the side effect of locking the global interpreter lock.
+        Once the function completes, you are responsible for releasing the lock."
+        -- https://www.linuxjournal.com/article/3641 */
+    extern PyMODINIT_FUNC PyInit_pycsh(void);
+    PyImport_AppendInittab("pycsh", PyInit_pycsh);
+    Py_Initialize();
+    if (append_pyapm_paths()) {
+        fprintf(stderr, "Failed to add Python APM paths\n");
+    }
+    // release GIL here
+    main_thread_state = PyEval_SaveThread();
+
 	return 0;
 }
 

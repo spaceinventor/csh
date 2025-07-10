@@ -61,6 +61,7 @@ csh_sources = [
 	'src/slash_apm.c',
 	'src/slash_csp.c',
 	'src/slash_eth.c',
+	'src/slash_hooks.c',
 	'src/csp_debug_param.c',
 	'src/base16.c',
 	'src/param_sniffer.c',

@@ -265,7 +265,7 @@ static void *read_pipe(void *arg) {
 }
 
 /* Log commands to a Loki instance if enabled */
-void slash_on_execute_hook(const char *line) {
+void on_loki_slash_execute_hook(const char *line) {
 	if(loki_running){
 		int ex_len = strlen(line);
 		char * dup = malloc(ex_len + 2);

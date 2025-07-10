@@ -197,12 +197,14 @@ static void csh_cleanup(void) {
 
 static void sigint_handler(int signum) {
 #ifdef HAVE_PYTHON
-	extern PyThreadState *main_thread_state;
-	if(main_thread_state) {
+	if (_PyThreadState_UncheckedGet()) {  // <-- In public API as `PyThreadState_GetUnchecked()` since Python 3.13
+		extern PyThreadState *main_thread_state;
+		assert(main_thread_state);
 		PyGILState_STATE gstate = PyGILState_Ensure();
-		PyErr_SetString(PyExc_KeyboardInterrupt, "");
-		PyGILState_Release(gstate);	
+		PyErr_SetString(PyExc_KeyboardInterrupt, "KeyboardInterrupt");
+		PyGILState_Release(gstate);
 	}
+
 #endif
 	slash_sigint(slash, signum);
 	vmem_client_abort();
