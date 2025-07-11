@@ -145,7 +145,8 @@ csh = executable('csh', csh_sources,
 		pycsh_dep
 	],
 	include_directories: include_directories('include'),
-	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl'],  # -ldl is needed on ARM/raspbarian
+	# Posix Message Queues (see libossi) are accessible through the "rt" library, so add it
+	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl', '-lrt'],
 	install : true,
 )
 
