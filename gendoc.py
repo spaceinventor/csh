@@ -12,7 +12,7 @@ def check_gen_sidoc_version(version):
         required_version = int(''.join([x for x in version if x.isdigit()]))
         current_version = int(''.join([x for x in p.stdout.decode() if x.isdigit()]))
         return p.returncode == 0 and required_version >= current_version
-    except CalledProcessError:
+    except Exception:
         return False
 
 def main():
