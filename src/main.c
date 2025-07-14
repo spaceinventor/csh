@@ -11,6 +11,7 @@
 #include <time.h>
 #include <signal.h>
 
+#include "python/python_loader.h"
 #include <slash/slash.h>
 #include <apm/csh_api.h>
 #include <csp/csp.h>
@@ -195,14 +196,11 @@ static void csh_cleanup(void) {
 	curl_global_cleanup();
 }
 
+sighandler_t old_handler = NULL;
 static void sigint_handler(int signum) {
 #ifdef HAVE_PYTHON
-	if (_PyThreadState_UncheckedGet()) {  // <-- In public API as `PyThreadState_GetUnchecked()` since Python 3.13
-		extern PyThreadState *main_thread_state;
-		assert(main_thread_state);
-		PyGILState_STATE gstate = PyGILState_Ensure();
-		PyErr_SetString(PyExc_KeyboardInterrupt, "KeyboardInterrupt");
-		PyGILState_Release(gstate);
+	if (exception_allowed && old_handler) {
+		old_handler(signum);  // Very likely to the python signal handler for KeyboardInterrupt
 	}
 
 #endif
@@ -356,6 +354,10 @@ int main(int argc, char **argv) {
 		csh_putvar(INIT_DIR, pathbuf);
 	}
 
+#ifdef HAVE_PYTHON
+	py_init_interpreter();
+#endif
+
 	/* Explicit init file given, or default file exists */
 	if ((strlen(dirname) == 0 && strlen(initfile) > 0) || access(buildpath, F_OK) == 0) {
 		printf("\033[34m  Init file: %s\033[0m\n", buildpath);
@@ -366,7 +368,8 @@ int main(int argc, char **argv) {
 
 		atexit(csh_cleanup);
 
-		if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+		old_handler = signal(SIGINT, sigint_handler);
+		if (old_handler == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
 		}

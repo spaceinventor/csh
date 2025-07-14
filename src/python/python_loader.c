@@ -4,6 +4,7 @@
 #include <pwd.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <apm/csh_api.h>
 
 #define PY_SSIZE_T_CLEAN
@@ -22,6 +23,8 @@
 
 PyThreadState *main_thread_state = NULL;
 
+bool exception_allowed = false;
+
 /**
  * @brief Clear any KeyboardInterrupts which were raised between slash command execution.
  * 
@@ -39,6 +42,8 @@ void on_python_slash_execute_pre_hook(const char *line) {
 		assert(PyErr_ExceptionMatches(PyExc_KeyboardInterrupt));
 		PyErr_Clear();
 	}
+
+	exception_allowed = true;
 }
 
 /**
@@ -61,6 +66,8 @@ void on_python_slash_execute_post_hook(const char *line, struct slash_command *c
 			PyErr_Print();
 		}
 	}
+
+	exception_allowed = false;
 }
 
 static void _dlclose_cleanup(void *const* handle) {
@@ -367,10 +374,10 @@ __attribute__((destructor(150))) static void finalize_python_interpreter(void) {
     }
 }
 
-int py_init_interpreter(void) {
+void py_init_interpreter(void) {
 
     if (Py_IsInitialized()) {
-        return 0;
+        return;
     }
 
     /* Calling Py_Initialize() "has the side effect of locking the global interpreter lock.
@@ -385,7 +392,7 @@ int py_init_interpreter(void) {
     // release GIL here
     main_thread_state = PyEval_SaveThread();
 
-	return 0;
+	return;
 }
 
 static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *path, char *search_str)) {
@@ -523,7 +530,6 @@ static int python_slash(struct slash *slash) {
 	    return SLASH_EINVAL;
     }
 
-	py_init_interpreter();
 	PyEval_RestoreThread(main_thread_state);
 	PyThreadState *state __attribute__((cleanup(state_release_GIL))) = main_thread_state;
 	if (main_thread_state == NULL) {
