@@ -54,7 +54,7 @@ static int cmd_schedule_push(struct slash *slash) {
 	unsigned int sch_time = atoi(slash->argv[argi]);
 	long sch_time_long = (long) sch_time;
 	struct tm * sch_datetime = gmtime(&sch_time_long);
-	
+
 	time_t current_time = time(NULL);
 	char timestr[32] ={0};
 	strftime(timestr, sizeof(timestr)-1, "%F T%TZ%z", sch_datetime);
@@ -78,7 +78,7 @@ static int cmd_schedule_push(struct slash *slash) {
 	} else {
 		printf("Pushing schedule for time: %s (%u)\n", timestr, sch_time);
 	}
-	
+
 	if (param_schedule_push(&param_queue, 1, server, host, sch_time, latency_buffer, timeout) < 0) {
 		printf("No response\n");
         optparse_del(parser);
@@ -207,7 +207,7 @@ static int cmd_schedule_reset(struct slash *slash) {
     unsigned int server = slash_dfl_node;
 	unsigned int timeout = slash_dfl_timeout;
 
-    optparse_t * parser = optparse_new("schedule list", "");
+    optparse_t * parser = optparse_new("schedule reset", "");
     optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
 	optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);
@@ -286,7 +286,7 @@ static int cmd_schedule_command(struct slash *slash) {
 
 	long sch_time_long = (long) sch_time;
 	struct tm * sch_datetime = gmtime(&sch_time_long);
-	
+
 	time_t current_time = time(NULL);
 	char timestr[32] ={0};
 	strftime(timestr, sizeof(timestr)-1, "%F T%TZ%z", sch_datetime);

@@ -964,7 +964,7 @@ static int cmd_run(struct slash *slash) {
 	int ack_with_pull = true;
 	int prio = CSP_PRIO_NORM;
 
-	optparse_t * parser = optparse_new("run", "");
+	optparse_t * parser = optparse_new("cmd run", "");
 	optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
 	optparse_add_custom(parser, 's', "server", "NUM", "server to push parameters to (default = <env>))", get_host_by_addr_or_name, &server);

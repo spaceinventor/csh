@@ -62,7 +62,7 @@ void hk_set_utcparam(unsigned int node, unsigned int paramid) {
 
 static int hk_utcparam(struct slash * slash) {
 
-	optparse_t * parser = optparse_new("hk utcparam [node:]param_name", "Reference to parameter containing UNIX time for automatic timesync. Type supported: uint32");
+	optparse_t * parser = optparse_new_ex("hk utcparam", "[node:]param_name", "Reference to parameter containing UNIX time for automatic timesync. Type supported: uint32");
 	optparse_add_help(parser);
 	int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
 
@@ -155,7 +155,7 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 static int hk_timeoffset(struct slash * slash) {
 
 	unsigned int node = slash_dfl_node;
-	optparse_t * parser = optparse_new("hk timeoffset [epoch]", "Satellite epoch time in seconds relative to Jan 1th 1970");
+	optparse_t * parser = optparse_new_ex("hk timeoffset", "[epoch]", "Satellite epoch time in seconds relative to Jan 1th 1970");
 	csh_add_node_option(parser, &node);
 	optparse_add_help(parser);
 	int argi = optparse_parse(parser, slash->argc - 1, (const char **)slash->argv + 1);
