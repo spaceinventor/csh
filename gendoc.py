@@ -10,7 +10,7 @@ def check_gen_sidoc_version(version):
         # Poor man's version comparison
         required_version = int(''.join([x for x in version if x.isdigit()]))
         current_version = int(''.join([x for x in p.stdout.decode() if x.isdigit()]))
-        return p.returncode == 0 and required_version >= current_version
+        return p.returncode == 0 and current_version >= required_version
     except Exception:
         return False
 
