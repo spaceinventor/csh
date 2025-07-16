@@ -261,6 +261,9 @@ static void *read_pipe(void *arg) {
             memset(readbuffer, 0, n);
         }
     }
+    close(pipe_fd[0]);
+    dup2(old_stdout, 1);
+    close(old_stdout);
     return NULL;
 }
 
