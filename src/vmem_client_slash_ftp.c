@@ -422,12 +422,12 @@ static int vmem_client_rdp_options(struct slash *slash) {
 }
 slash_command_sub(rdp, opt, vmem_client_rdp_options, NULL, "Set RDP options to use in stream and file transfers");
 
-unsigned int rdp_tmp_window;
-unsigned int rdp_tmp_conn_timeout;
-unsigned int rdp_tmp_packet_timeout;
-unsigned int rdp_tmp_delayed_acks;
-unsigned int rdp_tmp_ack_timeout;
-unsigned int rdp_tmp_ack_count;
+extern unsigned int rdp_tmp_window;
+extern unsigned int rdp_tmp_conn_timeout;
+extern unsigned int rdp_tmp_packet_timeout;
+extern unsigned int rdp_tmp_delayed_acks;
+extern unsigned int rdp_tmp_ack_timeout;
+extern unsigned int rdp_tmp_ack_count;
 
 void rdp_opt_add(optparse_t * parser) {
 
@@ -445,15 +445,3 @@ void rdp_opt_add(optparse_t * parser) {
 	optparse_add_unsigned(parser, 'a', "ack_count", "NUM", 0, &rdp_tmp_ack_count, "rdp ack for each (default = 2 packets)");
 }
 
-void rdp_opt_set() {
-
-	csp_rdp_set_opt(rdp_tmp_window, rdp_tmp_conn_timeout, rdp_tmp_packet_timeout, rdp_tmp_delayed_acks, rdp_tmp_ack_timeout, rdp_tmp_ack_count);
-
-	printf("Using RDP options window: %u, conn_timeout: %u, packet_timeout: %u, ack_timeout: %u, ack_count: %u\n",
-        rdp_tmp_window, rdp_tmp_conn_timeout, rdp_tmp_packet_timeout, rdp_tmp_ack_timeout, rdp_tmp_ack_count);
-}
-
-void rdp_opt_reset() {
-
-	csp_rdp_set_opt(rdp_dfl_window, rdp_dfl_conn_timeout, rdp_dfl_packet_timeout, rdp_dfl_delayed_acks, rdp_dfl_ack_timeout, rdp_dfl_ack_count);
-}
