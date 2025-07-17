@@ -254,7 +254,7 @@ bool is_valid_binary(const char * path, struct bin_info_t * binf, bin_file_ident
 	return ident_found;
 }
 
-static bool dir_callback(const char * path, const char * last_entry, void * custom) 
+static bool dir_callback(const char * path, const char * last_entry, void * custom)
 {
 	return true;
 }
@@ -311,7 +311,7 @@ static int slash_csp_program(struct slash * slash) {
     csh_add_node_option(parser, &node);
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
-    optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
+    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
 	rdp_opt_add(parser);
 
@@ -321,11 +321,10 @@ static int slash_csp_program(struct slash * slash) {
 	    return SLASH_EINVAL;
     }
 
-	rdp_opt_set();
-
 	/* Expect slot */
 	if (++argi >= slash->argc) {
 		printf("missing slot number\n");
+		rdp_opt_reset();
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
@@ -341,6 +340,7 @@ static int slash_csp_program(struct slash * slash) {
 	vmem_client_find(node, slash_dfl_timeout, (void*)&vmem, 1, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
+		rdp_opt_reset();
         optparse_del(parser);
 		return SLASH_EINVAL;
 	} else {
@@ -361,6 +361,7 @@ static int slash_csp_program(struct slash * slash) {
 		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info, &slash->signal);
 		if(slash->signal == SIGINT){
             optparse_del(parser);
+			rdp_opt_reset();
 			return SLASH_EINVAL;
 		}
 		if (bin_info.count) {
@@ -378,6 +379,7 @@ static int slash_csp_program(struct slash * slash) {
 			printf("\033[0m\n");
 
             optparse_del(parser);
+			rdp_opt_reset();
 			return SLASH_EINVAL;
 		}
 	}
@@ -389,11 +391,12 @@ static int slash_csp_program(struct slash * slash) {
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
             optparse_del(parser);
+			rdp_opt_reset();
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
 	}
-	
+
 	char * path = bin_info.files[index];
 
     printf("\033[31m\n");
@@ -401,6 +404,7 @@ static int slash_csp_program(struct slash * slash) {
     printf("\033[0m\n");
     if (ping(node) == 0) {
         optparse_del(parser);
+		rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -412,6 +416,7 @@ static int slash_csp_program(struct slash * slash) {
 		if (strcmp(c, "yes") != 0) {
 			printf("Abort\n");
 			optparse_del(parser);
+			rdp_opt_reset();
 			return SLASH_EUSAGE;
 		}
 	}
@@ -420,6 +425,7 @@ static int slash_csp_program(struct slash * slash) {
 	int len;
 	if (image_get(path, &data, &len) < 0) {
         optparse_del(parser);
+		rdp_opt_reset();
 		return SLASH_EIO;
 	}
 
@@ -478,7 +484,7 @@ static int slash_sps(struct slash * slash) {
     csh_add_node_option(parser, &node);
 	optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
-    optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
+    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
 	rdp_opt_add(parser);
 
@@ -571,7 +577,7 @@ static int slash_sps(struct slash * slash) {
 		}
 		index = atoi(c);
 	}
-	
+
 	char * path = bin_info.files[index];
 
     printf("\033[31m\n");
@@ -589,7 +595,7 @@ static int slash_sps(struct slash * slash) {
         optparse_del(parser);
 		return SLASH_EIO;
 	}
-	
+
     optparse_del(parser);
 
 	int result = SLASH_SUCCESS;
