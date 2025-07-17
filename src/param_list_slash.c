@@ -244,9 +244,14 @@ static int list_save_cmd(struct slash *slash) {
        return SLASH_EINVAL;
     }
 
-    param_list_save(filename, node, skip_node);
+    char * globstr = NULL;
+    if (++argi < slash->argc) {
+        globstr = slash->argv[argi];
+    }
+
+    param_list_save_wildcard(filename, node, skip_node, globstr);
 
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(list, save, list_save_cmd, "", "Save parameters");
+slash_command_sub_completer(list, save, list_save_cmd, param_completer, "", "Save parameters");
