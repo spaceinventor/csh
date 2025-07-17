@@ -490,6 +490,7 @@ static int slash_sps(struct slash * slash) {
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
+        rdp_opt_reset();
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
@@ -500,6 +501,7 @@ static int slash_sps(struct slash * slash) {
 	if (++argi >= slash->argc) {
 		printf("missing from number\n");
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
 
@@ -509,6 +511,7 @@ static int slash_sps(struct slash * slash) {
 	if (++argi >= slash->argc) {
 		printf("missing to number\n");
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
 
@@ -525,6 +528,7 @@ static int slash_sps(struct slash * slash) {
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	} else {
 		printf("  Found vmem\n");
@@ -545,6 +549,7 @@ static int slash_sps(struct slash * slash) {
         walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info, &slash->signal);
         if(slash->signal == SIGINT){
             optparse_del(parser);
+            rdp_opt_reset();
             return SLASH_EINVAL;
         }
         if (bin_info.count) {
@@ -561,6 +566,7 @@ static int slash_sps(struct slash * slash) {
             printf("  Found no valid binary for the selected slot.\n");
             printf("\033[0m\n");
             optparse_del(parser);
+            rdp_opt_reset();
             return SLASH_EINVAL;
         }
 
@@ -573,6 +579,7 @@ static int slash_sps(struct slash * slash) {
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
             optparse_del(parser);
+            rdp_opt_reset();
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
@@ -585,6 +592,7 @@ static int slash_sps(struct slash * slash) {
     printf("\033[0m\n");
     if (ping(node) == 0) {
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -593,6 +601,7 @@ static int slash_sps(struct slash * slash) {
 	int len;
 	if (image_get(path, &data, &len) < 0) {
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EIO;
 	}
 
