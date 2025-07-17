@@ -556,6 +556,15 @@ static int python_slash(struct slash *slash) {
 		if(fp) {
 			argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
 			PySys_SetArgv(slash->argc - argi, argv);
+
+			{   /* `PyRun_AnyFileEx()` doesn't define `__file__`, so we do it ourselves. */
+				PyObject *main_mod = PyImport_AddModule("__main__");
+				PyObject *main_dict = PyModule_GetDict(main_mod);
+				PyObject *file_str = PyUnicode_FromString(slash->argv[argi]);
+				PyDict_SetItemString(main_dict, "__file__", file_str);
+				Py_DECREF(file_str);
+			}
+
 			res = PyRun_AnyFileEx(fp, slash->argv[argi], 1);
 
 		} else {
