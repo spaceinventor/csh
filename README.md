@@ -34,44 +34,6 @@ cd csh
 ./install
 ```
 
-## Cross compile on a Linux PC for a RaspberryPI
-
-Prerequisistes:
-
-* you will need to install the ARM gcc package that matches the one used on the targetted RaspberryPI
-  * `gcc-12-arm-linux-gnueabihf` for the Debian bookworm based Raspberry Linux'es (32-bit)
-  * `gcc-aarch64-linux-gnu`  for the Debian bookworm based Raspberry Linux'es (64-bit)
-* you need a fairly recent version of Docker as well as the `qemu-user-static` package installed on the build PC
-
-### Steps
-
-Overview:
-
-1. build a `sysroot` containing whatever dependencies are needed to build CSH (as of now, this amounts to the `libcurl4-openssl-dev` and`libzmq3-dev` packages)
-2. Configure a Rapsberry-Meson build directory
-3. Build
-
-Details:
-
-1. There are Dockerfiles in `cross/raspberrypi/Dockerfile` that do that for you:
-  * run `docker build --platform linux/arm/v7 -t sysroot-build-gnueabihf -f Dockerfile_gnueabihf .` to build the image (ARM 32-bit)
-  * run `docker build --platform linux/aarch64 -t sysroot-build-aarch64 -f Dockerfile_aarch64 .` to build the image (ARM 64-bit)
-
-
-```
-docker run -v /<path>/to/csh/sysroot-gnueabihf:/sysroot -e LIST_OF_PACKAGES="libsocketcan-dev libcurl4-openssl-dev libzmq3-dev" --platform linux/arm/v7 -it sysroot-build-gnueabihf
-```
-or
-
-```
-docker run -v /<path>/to/csh/sysroot-aarch64:/sysroot -e LIST_OF_PACKAGES="libsocketcan-dev libcurl4-openssl-dev libzmq3-dev" --platform linux/aarch64 -it sysroot-build-aarch64
-```
-
-to create a usable, shared sysroot located in this example here `/<path>/to/csh/sysroot`
-
-2. run `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_aarch64.txt build-aarch64` or `meson setup --cross-file cross/raspberrypi/cross_raspberrypi_gnueabihf.txt build-gnueabihf`
-3. run `ninja -C build-aarch64` or `ninja -C build-gnueabihf`
-
 ## Run
 
 To setup CAN sudo is required:
