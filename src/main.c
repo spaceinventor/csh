@@ -1,8 +1,8 @@
+#define  _GNU_SOURCE
 #ifdef HAVE_PYTHON
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #endif
-#define  _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
