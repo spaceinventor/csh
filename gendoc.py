@@ -19,10 +19,7 @@ def main():
     docdate = str(date.today())
     libdoc_version = "0.1.22"
     if not check_gen_sidoc_version(environ.get("LIBDOC_VERSION", libdoc_version)):
-        if environ.get('SI_ORG_BUILD_USER_TOKEN', None):
-            cmd = f"python3 -m pip install -U git+https://${environ.get('SI_ORG_BUILD_USER_TOKEN')}@github.com/spaceinventor/libdoc.git@{libdoc_version}"
-        else:
-            cmd = f"python3 -m pip install -U git+https://github.com/spaceinventor/libdoc.git@{libdoc_version}"
+        cmd = f"python3 -m pip install -U git+https://github.com/spaceinventor/libdoc.git@{libdoc_version}"
         print(cmd)
         system(cmd)
     cmd_line = f"python3 -m libdoc -d {docdate} -t MAN -n 001 {hostname} -o build-doc/{hostname}_MAN.pdf doc/index_man.rst"
