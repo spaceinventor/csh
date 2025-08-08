@@ -568,6 +568,7 @@ static int python_slash(struct slash *slash) {
 			res = PyRun_AnyFileEx(fp, slash->argv[argi], 1);
 
 		} else {
+			fprintf(stderr, "Failed to open file: '%s'\n", slash->argv[argi]);
 			res = SLASH_EINVAL;
 		}
 	} else {
@@ -592,7 +593,10 @@ static int python_slash(struct slash *slash) {
 	return res;
 }
 
-slash_command_completer(python, python_slash, slash_path_completer, "[(-c <python_string>|<filename>) [args...]]", "Starts an interactive Python interpreter in the current CSH process\n"\
-	"or execute the script in given file.\n"
+#define _PYTHON_ARGS "[(-c <python_string>|<filename>) [args...]]"
+#define _PYTHON_HELP "Starts an interactive Python interpreter in the current CSH process\n"\
+	"or execute the script in given file.\n"\
 	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
-	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH.");
+	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH."
+slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);
+slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);  // Alias
