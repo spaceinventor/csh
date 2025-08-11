@@ -407,7 +407,7 @@ int main(int argc, char ** argv) {
             }
             fclose(file);
         } else {
-            strncpy(sec_key, keyarg, CURVE_KEYLEN);
+            strncpy(sec_key, keyarg, CURVE_KEYLEN-1);
         }
 
         int as_server = 1;
