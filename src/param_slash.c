@@ -1005,6 +1005,7 @@ static int cmd_run(struct slash *slash) {
 }
 slash_command_sub(cmd, run, cmd_run, "", NULL);
 
+const struct slash_command slash_cmd_pull;
 static int cmd_pull(struct slash *slash) {
 
 	unsigned int timeout = slash_dfl_timeout;
@@ -1015,13 +1016,13 @@ static int cmd_pull(struct slash *slash) {
 	int paramver = 2;
 	int prio = CSP_PRIO_NORM;
 
-	optparse_t * parser = optparse_new("pull", "");
+	optparse_t * parser = optparse_new_ex(slash_cmd_pull.name, slash_cmd_pull.args, slash_cmd_pull.help);
 	optparse_add_help(parser);
 	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout in milliseconds (default = <env>)");
 	optparse_add_unsigned(parser, 's', "server", "NUM", 0, &server, "server to pull parameters from (default = <env>))");
 	optparse_add_string(parser, 'm', "imask", "MASK", &include_mask_str, "Include mask (param letters)");
 	optparse_add_string(parser, 'e', "emask", "MASK", &exclude_mask_str, "Exclude mask (param letters)");
-	optparse_add_string(parser, 'n', "nodes", "NODES", &nodes_str, "Comma separated list of nodes to pull parameters from");
+	optparse_add_string(parser, 'n', "nodes", "NODES", &nodes_str, "Comma separated list of node ids or names to pull parameters from");
 	optparse_add_int(parser, 'v', "paramver", "NUM", 0, &paramver, "parameter system version (default = 2)");
 	optparse_add_int(parser, 'p', "prio", "NUM", 0, &prio, "CSP priority (0 = CRITICAL, 1 = HIGH, 2 = NORM (default), 3 = LOW)");
 
@@ -1041,10 +1042,10 @@ static int cmd_pull(struct slash *slash) {
 
 	int result = SLASH_SUCCESS;
 	uint8_t num_nodes = 0;
-	uint16_t *nodes;
+	int *nodes;
 	if(NULL == nodes_str) {
 		num_nodes++;
-		nodes = calloc(num_nodes, sizeof(uint16_t));
+		nodes = calloc(num_nodes, sizeof(int));
 		if(!nodes) {
 			optparse_del(parser);
 			return SLASH_ENOMEM;
@@ -1063,12 +1064,11 @@ static int cmd_pull(struct slash *slash) {
 			cur_node++;
 		}
 		num_nodes++;
-		nodes = calloc(num_nodes, sizeof(uint16_t));
-		uint16_t node_id = 0;
+		nodes = calloc(num_nodes, sizeof(int));
+		int node_id = 0;
 		cur_node = start;
 		while(cur_node < end) {
-			node_id = atoi(cur_node);
-			if(node_id != 0) {
+			if(0 != get_host_by_addr_or_name(&node_id, cur_node)) {
 				nodes[idx++] = node_id;
 			}
 			while(*(++cur_node) != 0);
@@ -1087,7 +1087,7 @@ static int cmd_pull(struct slash *slash) {
 	optparse_del(parser);
 	return result;
 }
-slash_command(pull, cmd_pull, "[OPTIONS]", "Pull all metrics from given CSP node(s)");
+slash_command(pull, cmd_pull, "", "Pull all metrics from given CSP node(s)");
 
 static int cmd_new(struct slash *slash) {
 

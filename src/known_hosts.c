@@ -212,7 +212,14 @@ int known_hosts_get_node(const char * find_name) {
 
 
 int get_host_by_addr_or_name(void *res_ptr, const char *arg) {
-    long node = (long)known_hosts_get_node(arg);	
+    char *number_start = (char *)arg;
+    char *end = NULL;
+    long node = strtol(number_start, &end, 10);
+    if (node != INT32_MAX && node < 16384 && *end == '\0') {  
+        *(int*)res_ptr = (int)node;
+        return 2;  /* Found number */
+    }
+    node = (long)known_hosts_get_node(arg);	
     
     /* Found node */
     if (0 <= node) {
@@ -220,13 +227,6 @@ int get_host_by_addr_or_name(void *res_ptr, const char *arg) {
         return 1;  /* Found hostname */
     }
 
-    char *number_start = (char *)arg;
-    char *end = NULL;
-    node = strtol(number_start, &end, 10);
-    if (node != INT32_MAX && node < 16384 && *end == '\0') {  
-        *(int*)res_ptr = (int)node;
-        return 2;  /* Found number */
-    }
 
 	return 0;  /* Failed */
 }
