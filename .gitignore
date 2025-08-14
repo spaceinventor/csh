@@ -1,5 +1,6 @@
 .settings
 *.bin
+*.deb
 *.elf
 *.hex
 *.lss
@@ -10,13 +11,14 @@
 .lock*
 .waf-*
 *.swp
-build
 builddir
+build-doc
 *.cfg
 *.lzo
-*.csv
 *.vmem
 *.log
 .cache
 .codechecker
-sysroot
+sysroot*/
+lib/googletest-1.14.0
+lib/packagecache

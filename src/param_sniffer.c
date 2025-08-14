@@ -12,6 +12,7 @@
 #include <param/param_queue.h>
 #include <mpack/mpack.h>
 #include <csp/csp.h>
+#include <csp/csp_hooks.h>
 #include <csp/csp_crc32.h>
 
 #include "hk_param_sniffer.h"
@@ -26,7 +27,7 @@ int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, long unsigned int timestamp) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
 
     char tmp[1000] = {};
 
@@ -42,11 +43,11 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
     }
 
     double vts_arr[4];
-    int vts = check_vts(param->node, param->id);
+    int vts = check_vts(*(param->node), param->id);
 
     uint64_t time_ms;
-    if (timestamp > 0) {
-        time_ms = timestamp * 1000;
+    if (timestamp->tv_sec > 0) {
+        time_ms = ((uint64_t) timestamp->tv_sec * 1000000 + timestamp->tv_nsec / 1000) / 1000;
     } else {
         struct timeval tv;
         gettimeofday(&tv, NULL);
@@ -62,26 +63,26 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
             case PARAM_TYPE_XINT16:
             case PARAM_TYPE_UINT32:
             case PARAM_TYPE_XINT32:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, param->node, i, mpack_expect_uint(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_uint(reader), time_ms);
                 break;
             case PARAM_TYPE_UINT64:
             case PARAM_TYPE_XINT64:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_u64(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_u64(reader), time_ms);
                 break;
             case PARAM_TYPE_INT8:
             case PARAM_TYPE_INT16:
             case PARAM_TYPE_INT32:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, param->node, i, mpack_expect_int(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_int(reader), time_ms);
                 break;
             case PARAM_TYPE_INT64:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, param->node, i, mpack_expect_i64(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_i64(reader), time_ms);
                 break;
             case PARAM_TYPE_FLOAT:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, param->node, i, mpack_expect_float(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_float(reader), time_ms);
                 break;
             case PARAM_TYPE_DOUBLE: {
                 double tmp_dbl = mpack_expect_double(reader);
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %.12e %"PRIu64"\n", param->name, param->node, i, tmp_dbl, time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %.12e %"PRIu64"\n", param->name, *(param->node), i, tmp_dbl, time_ms);
                 if(vts){
                     vts_arr[i] = tmp_dbl;
                 }
@@ -132,7 +133,7 @@ int param_sniffer_crc(csp_packet_t * packet) {
         /* Verify CRC32 (does not include header for backwards compatability with csp1.x) */
         if (csp_crc32_verify(packet) != 0) {
             /* Checksum failed */
-            printf("CRC32 verification error! Discarding packet\n");
+            printf("CRC32 verification error in param sniffer! Discarding packet\n");
             return -1;
         }
     }
@@ -176,25 +177,32 @@ static void * param_sniffer(void * param) {
         param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
         queue.last_node = packet->id.src;
 
+        csp_timestamp_t time_now;
+        csp_clock_get_time(&time_now);
+        queue.last_timestamp = time_now;
+        queue.client_timestamp = time_now;
+
         mpack_reader_t reader;
         mpack_reader_init_data(&reader, queue.buffer, queue.used);
         while(reader.data < reader.end) {
             int id, node, offset = -1;
-            long unsigned int timestamp = 0;
+            csp_timestamp_t timestamp = { .tv_sec = 0, .tv_nsec = 0 };
             param_deserialize_id(&reader, &id, &node, &timestamp, &offset, &queue);
             if (node == 0) {
                 node = packet->id.src;
             }
             /* If parameter timestamp is not inside the header, and the lower layer found a timestamp*/
-            if ((timestamp == 0) && (packet->timestamp_rx != 0)) {
-                timestamp = packet->timestamp_rx;
+            if ((timestamp.tv_sec == 0) && (packet->timestamp_rx != 0)) {
+                timestamp.tv_sec = packet->timestamp_rx;
+                timestamp.tv_nsec = 0;
             }
             param_t * param = param_list_find_id(node, id);
-            if (param) {	
-                param_sniffer_log(NULL, &queue, param, offset, &reader, timestamp);
+            if (param) {
+                param_sniffer_log(NULL, &queue, param, offset, &reader, &timestamp);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);
-                break;
+                mpack_discard(&reader);
+                continue;
             }
         }
         csp_buffer_free(packet);

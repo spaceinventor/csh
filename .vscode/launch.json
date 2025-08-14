@@ -9,6 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/builddir/csh",
+            "args": ["-i", "init.csh"],
             "cwd": "${workspaceRoot}",
             "preLaunchTask": "build debug meson",
         }

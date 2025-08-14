@@ -37,9 +37,7 @@
 #include <linux/netdevice.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
-#include <slash/dflopt.h>
 #include "base16.h"
-#include "known_hosts.h"
 
 slash_command_group(eth, "Ethernet");
 

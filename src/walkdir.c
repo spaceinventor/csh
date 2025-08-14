@@ -12,11 +12,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 void walkdir(char * path, size_t path_size, unsigned depth, 
  			  bool (*dir_cb)(const char *, const char *, void *), 
 			  void (*file_cb)(const char *, const char *, void *), 
-			  void * custom)
+			  void * custom, int * signal)
 {
     DIR * p = opendir(path);
 	if (p == 0) {
@@ -33,8 +34,9 @@ void walkdir(char * path, size_t path_size, unsigned depth,
     while ((entry = readdir(p)) != NULL) {
 		// Save path length
 		size_t path_len = strlen(path);
-
-		strncat(path, "/", path_size - strlen(path));
+		if(path[path_len - 1] != '/') {
+			strncat(path, "/", path_size - path_len);
+		}
 		strncat(path, entry->d_name, path_size - strlen(path));
 
 		// entry->d_type is not set on some file systems, like sshfs mount of si
@@ -46,7 +48,7 @@ void walkdir(char * path, size_t path_size, unsigned depth,
         if (((isdir && depth) || isfile) && (entry->d_name[0] != '.')) {
         	if (isdir) {
 				if (dir_cb && dir_cb(path, entry->d_name, custom)) {
-					walkdir(path, path_size, depth-1, dir_cb, file_cb, custom);
+					walkdir(path, path_size, depth-1, dir_cb, file_cb, custom, signal);
 				}
 			} 
 			else {
@@ -54,6 +56,9 @@ void walkdir(char * path, size_t path_size, unsigned depth,
 					file_cb(path, entry->d_name, custom);
 				}
 			}
+		}
+		if(signal && *signal == SIGINT){
+			break;
 		}
 
 		// Restore path length

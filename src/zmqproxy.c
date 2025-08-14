@@ -54,9 +54,9 @@ double delay_prob = 0.0;
 int enable_lossy = 0;
 int delay_ms = 0;
 int seed = 0;
-char * shortopts = "hagv:d:s:p:f:L:C:D:T:S:N:U:O:";
+char * shortopts = "hakgv:d:s:p:f:L:C:D:T:S:N:U:O:";
 #else
-char * shortopts = "hgv:a:d:s:p:f:";
+char * shortopts = "hgv:a:k:d:s:p:f:";
 #endif
 
 int debug = 0;
@@ -69,6 +69,7 @@ char * logfile_name = NULL;
 FILE * logfile;
 /* Private key file to enable encryption and auth */
 char * keyfile_name = NULL;
+char * keyarg = NULL;
 /* Buffer to hold the secret key. 41 is the length of a z85-encoded CURVE key plus 1 for the null terminator. */
 char sec_key[CURVE_KEYLEN] = {0};
 
@@ -79,8 +80,10 @@ static int get_monitor_event(void * monitor, int * value, char ** address) {
     // First frame in message contains event number and value
     zmq_msg_t msg;
     zmq_msg_init(&msg);
-    if (zmq_msg_recv(&msg, monitor, 0) == -1)
+    if (zmq_msg_recv(&msg, monitor, 0) == -1) {
+        zmq_msg_close(&msg);
         return -1;  // Interrupted, presumably
+    }
     assert(zmq_msg_more(&msg));
 
     uint8_t * data = (uint8_t *)zmq_msg_data(&msg);
@@ -88,19 +91,26 @@ static int get_monitor_event(void * monitor, int * value, char ** address) {
     if (value)
         *value = *(uint32_t *)(data + 2);
 
+    zmq_msg_close(&msg);
+
     // Second frame in message contains event address
     zmq_msg_init(&msg);
-    if (zmq_msg_recv(&msg, monitor, 0) == -1)
+    if (zmq_msg_recv(&msg, monitor, 0) == -1) {
+        zmq_msg_close(&msg);
         return -1;  // Interrupted, presumably
+    }
     assert(!zmq_msg_more(&msg));
 
     if (address) {
         uint8_t * data = (uint8_t *)zmq_msg_data(&msg);
         size_t size = zmq_msg_size(&msg);
         *address = (char *)malloc(size + 1);
-        memcpy(*address, data, size);
-        (*address)[size] = 0;
+        if(*address) {
+            memcpy(*address, data, size);
+            (*address)[size] = 0;
+        }
     }
+    zmq_msg_close(&msg);
     return event;
 }
 
@@ -205,7 +215,7 @@ static void * task_capture(void *arg) {
 	printf("Capture/logging task listening on %s\n", sub_str);
     /* Subscriber (RX) */
     void *subscriber = zmq_socket(ctx, ZMQ_SUB);
-    if(keyfile_name){
+    if(keyfile_name || keyarg){
         char pub_key[CURVE_KEYLEN] = {0};
         zmq_curve_public(pub_key, sec_key);
         zmq_setsockopt(subscriber, ZMQ_CURVE_SERVERKEY, pub_key, CURVE_KEYLEN);
@@ -297,10 +307,13 @@ int main(int argc, char ** argv) {
             case 'a':
                 keyfile_name = optarg;
                 break;
+            case 'k':
+                keyarg = optarg;
+                break;
             case 'g':{
                 char public_key[CURVE_KEYLEN], secret_key[CURVE_KEYLEN];
                 zmq_curve_keypair(public_key, secret_key);
-                printf("Secret key: %s\n", secret_key);
+                printf("%s\n", secret_key);
                 return 0;
             }
 #ifdef ZMQ_PROXY_LOSSY
@@ -341,6 +354,7 @@ int main(int argc, char ** argv) {
                 	   " -p PUB_STR\tpublisher  port: (default = tcp://0.0.0.0:7000)\n"
                 	   " -f LOGFILE\tLog to this file\n"
                 	   " -a AUTH\tPath to private key file to enable auth and encryption\n"
+                	   " -k KEY\tPrivate key as arg\n"
                 	   " -g GEN \tGenerate private key\n"
 #ifdef ZMQ_PROXY_LOSSY
                 	   " -L LOSS \tProxy with a packet loss probability ex. 0.1 == 10%%\n"
@@ -366,38 +380,44 @@ int main(int argc, char ** argv) {
     backend = zmq_socket(ctx, ZMQ_XPUB);
     assert(backend);
 
-    if(keyfile_name){
+    if(keyfile_name || keyarg){
 
-        FILE * file = fopen(keyfile_name, "r");
+        if(keyfile_name){
+            FILE * file = fopen(keyfile_name, "r");
 
-        /* Get server secret key from config file */
-        if(file == NULL){
-            printf("Could not open config\n");
-            return 1;
-        }
+            /* Get server secret key from config file */
+            if(file == NULL){
+                printf("Could not open config\n");
+                return 1;
+            }
 
-        fseek(file, 0, SEEK_END);
-        long file_size = ftell(file);
-        fseek(file, 0, SEEK_SET);
-        if(file_size != CURVE_KEYLEN){
-            printf("File length %lu, expected %u\n", file_size, CURVE_KEYLEN);
+            fseek(file, 0, SEEK_END);
+            long file_size = ftell(file);
+            fseek(file, 0, SEEK_SET);
+            if(file_size != CURVE_KEYLEN){
+                printf("File length %lu, expected %u\n", file_size, CURVE_KEYLEN);
+                fclose(file);
+                return 1;
+            }
+
+            if (fgets(sec_key, sizeof(sec_key), file) == NULL) {
+                printf("Failed to read secret key from file.\n");
+                fclose(file);
+                return 1;
+            }
             fclose(file);
-            return 1;
+        } else {
+            strncpy(sec_key, keyarg, CURVE_KEYLEN-1);
         }
-
-        if (fgets(sec_key, sizeof(sec_key), file) == NULL) {
-            printf("Failed to read secret key from file.\n");
-            fclose(file);
-            return 1;
-        }
-        fclose(file);
 
         int as_server = 1;
-        zmq_setsockopt(frontend, ZMQ_CURVE_SERVER, &as_server, sizeof(int));
-        zmq_setsockopt(frontend, ZMQ_CURVE_SECRETKEY, sec_key, CURVE_KEYLEN);
+        assert(zmq_setsockopt(frontend, ZMQ_CURVE_SERVER, &as_server, sizeof(int)) == 0);
+        assert(zmq_setsockopt(frontend, ZMQ_CURVE_SECRETKEY, sec_key, CURVE_KEYLEN) == 0);
 
-        zmq_setsockopt(backend, ZMQ_CURVE_SERVER, &as_server, sizeof(int));
-        zmq_setsockopt(backend, ZMQ_CURVE_SECRETKEY, sec_key, CURVE_KEYLEN);
+        assert(zmq_setsockopt(backend, ZMQ_CURVE_SERVER, &as_server, sizeof(int)) == 0);
+        assert(zmq_setsockopt(backend, ZMQ_CURVE_SECRETKEY, sec_key, CURVE_KEYLEN) == 0);
+
+        printf("Using CURVE encryption and authentication\n");
     }
 
     assert(zmq_bind (frontend, sub_str) == 0);

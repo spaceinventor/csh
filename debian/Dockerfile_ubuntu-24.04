@@ -1,0 +1,9 @@
+FROM ubuntu:24.04
+
+WORKDIR /root
+ARG DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y fakeroot lsb-release git can-utils fonts-powerline build-essential pkg-config libcurl4-openssl-dev libzmq3-dev libsocketcan-dev libcap2-bin python3-dev pipx
+USER ubuntu
+RUN pipx install meson==1.8.1 ninja
+USER root
+

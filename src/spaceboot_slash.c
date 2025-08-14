@@ -7,10 +7,11 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <string.h>
+#include <signal.h>
 
 #include <slash/slash.h>
-#include <slash/dflopt.h>
 #include <slash/optparse.h>
+#include <apm/csh_api.h>
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_client.h>
@@ -23,6 +24,8 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp/csp_crc32.h>
+
+#include "csh_internals.h"
 
 static int ping(int node) {
 
@@ -37,12 +40,23 @@ static int ping(int node) {
 
 static void reset_to_flash(int node, int flash, int times, int ms) {
 
-	param_t * boot_img[4];
+#define NUM_SLOTS 4
+
+	param_t * boot_img[NUM_SLOTS];
+	bool boot_img_exist[NUM_SLOTS];
+	int param_id[NUM_SLOTS] = {21, 20, 22, 23};
+	char param_name[NUM_SLOTS][10];
 	/* Setup remote parameters */
-	boot_img[0] = param_list_create_remote(21, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img0", NULL, NULL, -1);
-	boot_img[1] = param_list_create_remote(20, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img1", NULL, NULL, -1);
-	boot_img[2] = param_list_create_remote(22, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img2", NULL, NULL, -1);
-	boot_img[3] = param_list_create_remote(23, node, PARAM_TYPE_UINT8, PM_CONF, 0, "boot_img3", NULL, NULL, -1);
+	for (int i = 0; i < NUM_SLOTS; i++) {
+		boot_img[i] = param_list_find_id(node, param_id[i]);
+		if (boot_img[i]) {
+			boot_img_exist[i] = 1;
+		} else {
+			snprintf(param_name[i], sizeof(param_name[i]), "boot_img%u", i);
+			boot_img[i] = param_list_create_remote(param_id[i], node, PARAM_TYPE_UINT8, PM_CONF, 0, param_name[i], NULL, NULL, -1);
+			boot_img_exist[i] = param_list_add(boot_img[i]);
+		}
+	}
 
 	printf("  Switching to flash %d\n", flash);
 	printf("  Will run this image %d times\n", times);
@@ -52,12 +66,11 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 	param_queue_init(&queue, queue_buf, 50, 0, PARAM_QUEUE_TYPE_SET, 2);
 
 	uint8_t zero = 0;
-	param_queue_add(&queue, boot_img[0], 0, &zero);
-	param_queue_add(&queue, boot_img[1], 0, &zero);
-	param_queue_add(&queue, boot_img[2], 0, &zero);
-	param_queue_add(&queue, boot_img[3], 0, &zero);
+	for (int i = 0; i < NUM_SLOTS; i++) {
+		param_queue_add(&queue, boot_img[i], 0, &zero);
+	}
 	param_queue_add(&queue, boot_img[flash], 0, &times);
-	param_push_queue(&queue, 1, node, 1000, 0, false);
+	param_push_queue(&queue, CSP_PRIO_NORM, 1, node, 1000, 0, false);
 
 	printf("  Rebooting");
 	csp_reboot(node);
@@ -70,8 +83,9 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 	}
 	printf("\n");
 
-	for (int i = 0; i < 4; i++)
-		param_list_destroy(boot_img[i]);
+	for (int i = 0; i < NUM_SLOTS; i++) {
+		if (!boot_img_exist[i]) param_list_remove_specific(boot_img[i], false, true);
+	}
 
 	ping(node);
 }
@@ -85,7 +99,7 @@ static int slash_csp_switch(struct slash * slash) {
 
     optparse_t * parser = optparse_new("switch", "<slot>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 'c', "count", "NUM", 0, &times, "number of times to boot into this slow (deafult = 1)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
 
@@ -240,7 +254,7 @@ bool is_valid_binary(const char * path, struct bin_info_t * binf, bin_file_ident
 	return ident_found;
 }
 
-static bool dir_callback(const char * path, const char * last_entry, void * custom) 
+static bool dir_callback(const char * path, const char * last_entry, void * custom)
 {
 	return true;
 }
@@ -265,7 +279,10 @@ static int upload_and_verify(int node, int address, char * data, int len) {
 
 	unsigned int timeout = 10000;
 	printf("  Upload %u bytes to node %u addr 0x%x\n", len, node, address);
-	vmem_upload(node, timeout, address, data, len, 1);
+	int res = vmem_upload(node, timeout, address, data, len, 1);
+	if(res < 0){
+		return SLASH_EINVAL;
+	}
 
 	char * datain = malloc(len);
 	vmem_download(node, timeout, address, len, datain, 1, 1);
@@ -291,10 +308,10 @@ static int slash_csp_program(struct slash * slash) {
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
-    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (defaults to AUTO)");
+    csh_add_node_option(parser, &node);
+    optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
-    optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
+    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
 	rdp_opt_add(parser);
 
@@ -304,11 +321,10 @@ static int slash_csp_program(struct slash * slash) {
 	    return SLASH_EINVAL;
     }
 
-	rdp_opt_set();
-
 	/* Expect slot */
 	if (++argi >= slash->argc) {
 		printf("missing slot number\n");
+		rdp_opt_reset();
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
@@ -324,6 +340,7 @@ static int slash_csp_program(struct slash * slash) {
 	vmem_client_find(node, slash_dfl_timeout, (void*)&vmem, 1, vmem_name, strlen(vmem_name));
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
+		rdp_opt_reset();
         optparse_del(parser);
 		return SLASH_EINVAL;
 	} else {
@@ -335,14 +352,18 @@ static int slash_csp_program(struct slash * slash) {
 	if (filename) {
 		strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
 		bin_info.count = 0;
-	}
-	else {
+	} else {
 		printf("  Searching for valid binaries\n");
 		strcpy(wpath, ".");
 		bin_info.addr_min = vmem.vaddr;
 		bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
 		bin_info.count = 0;
-		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info);
+		walkdir(wpath, WALKDIR_MAX_PATH_SIZE - 10, 10, dir_callback, file_callback, &bin_info, &slash->signal);
+		if(slash->signal == SIGINT){
+            optparse_del(parser);
+			rdp_opt_reset();
+			return SLASH_EINVAL;
+		}
 		if (bin_info.count) {
  			for (unsigned i = 0; i < bin_info.count; i++) {
 				if (bin_info.idents[i].valid) {
@@ -358,6 +379,7 @@ static int slash_csp_program(struct slash * slash) {
 			printf("\033[0m\n");
 
             optparse_del(parser);
+			rdp_opt_reset();
 			return SLASH_EINVAL;
 		}
 	}
@@ -369,11 +391,12 @@ static int slash_csp_program(struct slash * slash) {
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
             optparse_del(parser);
+			rdp_opt_reset();
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
 	}
-	
+
 	char * path = bin_info.files[index];
 
     printf("\033[31m\n");
@@ -381,6 +404,7 @@ static int slash_csp_program(struct slash * slash) {
     printf("\033[0m\n");
     if (ping(node) == 0) {
         optparse_del(parser);
+		rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -392,6 +416,7 @@ static int slash_csp_program(struct slash * slash) {
 		if (strcmp(c, "yes") != 0) {
 			printf("Abort\n");
 			optparse_del(parser);
+			rdp_opt_reset();
 			return SLASH_EUSAGE;
 		}
 	}
@@ -400,6 +425,7 @@ static int slash_csp_program(struct slash * slash) {
 	int len;
 	if (image_get(path, &data, &len) < 0) {
         optparse_del(parser);
+		rdp_opt_reset();
 		return SLASH_EIO;
 	}
 
@@ -443,7 +469,7 @@ static int slash_csp_program(struct slash * slash) {
 	return result;
 }
 
-slash_command(program, slash_csp_program, "<node> <slot> [filename]", "program");
+slash_command(program, slash_csp_program, "<slot>", "Upload new firmware");
 
 
 static int slash_sps(struct slash * slash) {
@@ -451,17 +477,20 @@ static int slash_sps(struct slash * slash) {
 	unsigned int node = slash_dfl_node;
 	unsigned int reboot_delay = 1000;
 	int do_crc32 = 0;
+	char * filename = NULL;
 
     optparse_t * parser = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
+	optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
-    optparse_add_set(parser, 'c', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
+    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Compare CRC32 as a program success criteria");
 
 	rdp_opt_add(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
+        rdp_opt_reset();
         optparse_del(parser);
 	    return SLASH_EINVAL;
     }
@@ -472,6 +501,7 @@ static int slash_sps(struct slash * slash) {
 	if (++argi >= slash->argc) {
 		printf("missing from number\n");
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
 
@@ -481,6 +511,7 @@ static int slash_sps(struct slash * slash) {
 	if (++argi >= slash->argc) {
 		printf("missing to number\n");
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
 
@@ -497,6 +528,7 @@ static int slash_sps(struct slash * slash) {
 	if (vmem.size == 0) {
 		printf("Failed to find vmem on subsystem\n");
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	} else {
 		printf("  Found vmem\n");
@@ -504,28 +536,41 @@ static int slash_sps(struct slash * slash) {
 		printf("    Size: %u\n", vmem.size);
 	}
 
-	printf("  Searching for valid binaries\n");
-	strcpy(wpath, ".");
-	bin_info.addr_min = vmem.vaddr;
-	bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
-	bin_info.count = 0;
-	walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info);
-	if (bin_info.count) {
-		for (unsigned i = 0; i < bin_info.count; i++) {
-			if (bin_info.idents[i].valid) {
-				printf("  %u: %s (%s, %s, %s, 0x%08"PRIX32")\n", i, &bin_info.files[i][0], bin_info.idents[i].hostname, bin_info.idents[i].model, bin_info.idents[i].version_string, bin_info.idents[i].stext);
-			} else {
-				printf("  %u: %s\n", i, &bin_info.files[i][0]);
-			}
-		}
-	}
-	else {
-		printf("\033[31m\n");
-		printf("  Found no valid binary for the selected slot.\n");
-		printf("\033[0m\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
-	}
+    if (filename) {
+        strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
+        bin_info.count = 0;
+    } else {
+
+        printf("  Searching for valid binaries\n");
+        strcpy(wpath, ".");
+        bin_info.addr_min = vmem.vaddr;
+        bin_info.addr_max = (vmem.vaddr + vmem.size) - 1;
+        bin_info.count = 0;
+        walkdir(wpath, WALKDIR_MAX_PATH_SIZE, 10, dir_callback, file_callback, &bin_info, &slash->signal);
+        if(slash->signal == SIGINT){
+            optparse_del(parser);
+            rdp_opt_reset();
+            return SLASH_EINVAL;
+        }
+        if (bin_info.count) {
+            for (unsigned i = 0; i < bin_info.count; i++) {
+                if (bin_info.idents[i].valid) {
+                    printf("  %u: %s (%s, %s, %s, 0x%08"PRIX32")\n", i, &bin_info.files[i][0], bin_info.idents[i].hostname, bin_info.idents[i].model, bin_info.idents[i].version_string, bin_info.idents[i].stext);
+                } else {
+                    printf("  %u: %s\n", i, &bin_info.files[i][0]);
+                }
+            }
+        }
+        else {
+            printf("\033[31m\n");
+            printf("  Found no valid binary for the selected slot.\n");
+            printf("\033[0m\n");
+            optparse_del(parser);
+            rdp_opt_reset();
+            return SLASH_EINVAL;
+        }
+
+    }
 
 	int index = 0;
 	if (bin_info.count > 1) {
@@ -534,11 +579,12 @@ static int slash_sps(struct slash * slash) {
 		if (strlen(c) == 0) {
 	        printf("Abort\n");
             optparse_del(parser);
+            rdp_opt_reset();
 	        return SLASH_EUSAGE;
 		}
 		index = atoi(c);
 	}
-	
+
 	char * path = bin_info.files[index];
 
     printf("\033[31m\n");
@@ -546,6 +592,7 @@ static int slash_sps(struct slash * slash) {
     printf("\033[0m\n");
     if (ping(node) == 0) {
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EINVAL;
 	}
     printf("\n");
@@ -554,9 +601,10 @@ static int slash_sps(struct slash * slash) {
 	int len;
 	if (image_get(path, &data, &len) < 0) {
         optparse_del(parser);
+        rdp_opt_reset();
 		return SLASH_EIO;
 	}
-	
+
     optparse_del(parser);
 
 	int result = SLASH_SUCCESS;

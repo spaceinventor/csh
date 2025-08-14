@@ -224,7 +224,7 @@ void vm_add_param(param_t * param) {
 
     for (int j = 0; j < arr_cnt; j++) {
         param_value_str(param, j, valstr, 100);
-        snprintf(outstr, 1000, "%s{node=\"%u\", idx=\"%u\"} %s %"PRIu64"\n", param->name, param->node, j, valstr, time_ms);
+        snprintf(outstr, 1000, "%s{node=\"%u\", idx=\"%u\"} %s %"PRIu64"\n", param->name, *(param->node), j, valstr, time_ms);
         vm_add(outstr);
     }
 }
@@ -238,6 +238,8 @@ static int vm_start_cmd(struct slash * slash) {
     int logfile = 0;
     char * tmp_username = NULL;
     char * tmp_password = NULL;
+    char * key_file = NULL;
+    char * sec_key = NULL;
     char * api_root = NULL;
     vm_args * args = &victoria_metrics_args;
 
@@ -245,6 +247,7 @@ static int vm_start_cmd(struct slash * slash) {
     optparse_add_help(parser);
     optparse_add_string(parser, 'u', "user", "STRING", &tmp_username, "Username for vmauth");
     optparse_add_string(parser, 'p', "pass", "STRING", &tmp_password, "Password for vmauth");
+    optparse_add_string(parser, 'a', "auth_file", "STR", &key_file, "file containing private key for zmqproxy (default: None)");
     optparse_add_set(parser, 's', "ssl", 1, &(args->use_ssl), "Use SSL/TLS");
     optparse_add_int(parser, 'P', "server-port", "NUM", 0, &(args->port), "Overwrite default port");
     optparse_add_set(parser, 'l', "logfile", 1, &logfile, "Enable logging to param_sniffer.log");
@@ -274,14 +277,54 @@ static int vm_start_cmd(struct slash * slash) {
         args->server_ip = NULL;
     }
 
+    if(key_file) {
+
+        char key_file_local[256];
+        if (key_file[0] == '~') {
+            strcpy(key_file_local, getenv("HOME"));
+            strcpy(&key_file_local[strlen(key_file_local)], &key_file[1]);
+        }
+        else {
+            strcpy(key_file_local, key_file);
+        }
+
+        FILE *file = fopen(key_file_local, "r");
+        if(file == NULL){
+            printf("Could not open config %s\n", key_file_local);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+        sec_key = malloc(1024);
+        if (sec_key == NULL) {
+            printf("Failed to allocate memory for secret key.\n");
+            fclose(file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+
+        if (fgets(sec_key, 1024, file) == NULL) {
+            printf("Failed to read secret key from file.\n");
+            free(sec_key);
+            fclose(file);
+            optparse_del(parser);
+            return SLASH_EINVAL;
+        }
+        fclose(file);
+    }
+
     if (tmp_username) {
-        if (!tmp_password) {
+        if (!tmp_password && !sec_key) {
             printf("Provide password with -p\n");
             optparse_del(parser);
             return SLASH_EINVAL;
         }
         args->username = strdup(tmp_username);
-        args->password = strdup(tmp_password);
+        args->password = strdup(sec_key ? sec_key : tmp_password);
+        char * const newline = strchr(args->password, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
         if (!args->port) {
             args->port = SERVER_PORT_AUTH;
         }
@@ -294,6 +337,9 @@ static int vm_start_cmd(struct slash * slash) {
     vm_running = 1;
     optparse_del(parser);
 
+    if (sec_key != NULL) {
+        free(sec_key);
+    }
     return SLASH_SUCCESS;
 }
 slash_command_sub(vm, start, vm_start_cmd, "", "Start Victoria Metrics push thread");

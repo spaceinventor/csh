@@ -17,8 +17,8 @@
 #include <sys/types.h>
 #include <csp/csp_cmp.h>
 #include <slash/slash.h>
-#include <slash/dflopt.h>
 #include <slash/optparse.h>
+#include <apm/csh_api.h>
 
 
 
@@ -91,7 +91,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
     optparse_t * parser = optparse_new("stdbuf2", "");
     optparse_add_help(parser);
-    optparse_add_unsigned(parser, 'n', "node", "NUM", 0, &node, "node (default = <env>)");
+    csh_add_node_option(parser, &node);
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "paramversion (default = 2)");
 
@@ -153,7 +153,7 @@ static int stdbuf_mon_slash(struct slash *slash) {
 
 		uint16_t out_push = out + got;
 		out_push %= vmem.size;
-	    param_push_single(stdbuf_out, 0, &out_push, 0, node, 100, version, false);
+	    param_push_single(stdbuf_out, 0, CSP_PRIO_NORM, &out_push, 0, node, 100, version, false);
 
 	    if (got > 0) {
 	    	continue;

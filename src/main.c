@@ -1,3 +1,8 @@
+#define  _GNU_SOURCE
+#ifdef HAVE_PYTHON
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -9,16 +14,16 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include "python/python_loader.h"
 #include <slash/slash.h>
-#include <slash/dflopt.h>
-
+#include <apm/csh_api.h>
 #include <csp/csp.h>
 #include <csp/csp_hooks.h>
 
 #include <curl/curl.h>
 
 #include <param/param.h>
-#ifdef PARAM_HAVE_COMMANDS
+#ifdef PARAM_HAVE_COMMANDS_CLIENT
 #include <param/param_commands.h>
 #endif
 #ifdef PARAM_HAVE_SCHEDULER
@@ -26,8 +31,10 @@
 #endif
 
 #include <vmem/vmem_file.h>
+#include <vmem/vmem_client.h>
 
-#include "known_hosts.h"
+#include <apm/environment.h>
+#include "slash_env_var_completion.h"
 
 extern const char *version_string;
 
@@ -100,7 +107,7 @@ int slash_prompt(struct slash * slash) {
 
 	}
 
-#ifdef PARAM_HAVE_COMMANDS
+#ifdef PARAM_HAVE_COMMANDS_CLIENT
 	extern param_queue_t param_queue;
 	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
 
@@ -153,8 +160,9 @@ uint64_t clock_get_nsec(void) {
 
 void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
+	printf("Type 'manual' to open CSH manual\n");
 	printf("\n");
-	printf("Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
+	printf("Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>\n");
 	printf("\n");
 }
 
@@ -185,18 +193,35 @@ static struct slash *slash2;
 #define slash slash2
 
 static void csh_cleanup(void) {
+	/* Clear the environment, freeing up memory */
+	csh_clearenv();
 	slash_destroy(slash);  // Restores terminal
 	curl_global_cleanup();
 }
 
+sighandler_t old_handler = NULL;
 static void sigint_handler(int signum) {
-	/* Calls atexit() to handle cleanup */
-	exit(signum); // Exit the program with the signal number as the exit code
+#ifdef HAVE_PYTHON
+	if (exception_allowed && old_handler) {
+		old_handler(signum);  // Very likely to the python signal handler for KeyboardInterrupt
+	}
+
+#endif
+	slash_sigint(slash, signum);
+	vmem_client_abort();
 }
+
+static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
+    char *expansion = csh_expand_vars(line);
+    /* NULL check is not performed on purpose here, SLASH is able to deal with this */
+    return expansion;
+}
+
 
 int main(int argc, char **argv) {
 
 	int remain, index, i, c, p = 0;
+	int ret = SLASH_SUCCESS;
 
 	char * initfile = "init.csh";
 	char * dirname = getenv("HOME");
@@ -209,6 +234,18 @@ int main(int argc, char **argv) {
 		case 'i':
 			dirname = "";
 			initfile = optarg;
+			break;
+		case ':':
+			switch (optopt)
+			{
+			case 'i':
+				dirname = "";
+				initfile = "";
+				break;
+			default:
+				fprintf(stderr, "Argument -%c is missing a required argument\n", optopt);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		default:
 			printf("Argument -%c not recognized\n", c);
@@ -226,7 +263,7 @@ int main(int argc, char **argv) {
 		printf("  ***********************\n\n");
 
 		printf("\033[32m");
-		printf("  Copyright (c) 2016-2023 Space Inventor A/S <info@space-inventor.com>\n");
+		printf("  Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>\n");
 		printf("  Compiled: %s git: %s\n\n", __DATE__, version_string);
 
 		printf("\033[0m");
@@ -247,6 +284,12 @@ int main(int argc, char **argv) {
 	void serial_init(void);
 	serial_init();
 
+	/* 
+	 * Configure "slash_process_cmd_line_hook" with 
+	 * our function that expands environment variables
+	 */
+	slash_process_cmd_line_hook = csh_environ_slash_process_cmd_line_hook;
+	slash_global_completer = env_var_ref_completer;
 	slash = slash_create(LINE_SIZE, HISTORY_SIZE);
 	if (!slash) {
 		fprintf(stderr, "Failed to init slash\n");
@@ -280,8 +323,9 @@ int main(int argc, char **argv) {
 	} else {
 		snprintf(path, 100, "csh_hosts");
 	}
-	slash_run(slash, path, 0);
-
+	if (access(path, F_OK) == 0) {
+		slash_run(slash, path, 0);
+	}
 
 	/* Init file */
 	char buildpath[100];
@@ -290,14 +334,55 @@ int main(int argc, char **argv) {
 	} else {
 		snprintf(buildpath, 100, "%s", initfile);
 	}
-	printf("\033[34m  Init file: %s\033[0m\n", buildpath);
-	int ret = slash_run(slash, buildpath, 0);
+
+	{  /* Setting environment variables for init script to use. */
+
+		#define INIT_FILE "INIT_FILE"
+		#define INIT_DIR "INIT_DIR"
+
+		/* Set environment variable for init script file/directory, before running it. */
+		char pathbuf[PATH_MAX] = {0};
+		if (NULL == realpath(buildpath, pathbuf)) {
+			pathbuf[0] = '\0';
+		}
+		/* NOTE: pathbuf can be a directory here, which is not the intention.
+			It's a pretty inconsequential edge case though, so there's not much need to fix it. */
+		csh_putvar(INIT_FILE, pathbuf);
+
+		/* Init file found, and space for trailing '/' */
+		if (strnlen(pathbuf, PATH_MAX) > 0) {
+
+			/* Find init script dir by terminating at the last '/'.
+				Removing the last '/' will keep init scripts more readable. */
+			/* NOTE: This will not handle multiple invalid init files involving '/', such as:
+				-i init.csh/
+				-i /home/user  # <-- User being a directory
+			*/
+			char *last_slash = strrchr(pathbuf, '/');
+			if (last_slash < pathbuf+PATH_MAX-1) {
+				*(last_slash) = '\0';
+			}
+		}
+
+		csh_putvar(INIT_DIR, pathbuf);
+	}
+
+#ifdef HAVE_PYTHON
+	py_init_interpreter();
+#endif
+
+	/* Explicit init file given, or default file exists */
+	if ((strlen(dirname) == 0 && strlen(initfile) > 0) || access(buildpath, F_OK) == 0) {
+		printf("\033[34m  Init file: %s\033[0m\n", buildpath);
+		ret = slash_run(slash, buildpath, 0);
+	}
 
 	{	/* Setting up signal handlers */
 
 		atexit(csh_cleanup);
 
-		if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+		old_handler = signal(SIGINT, sigint_handler);
+		if (old_handler == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
 		}
