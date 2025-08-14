@@ -21,9 +21,7 @@
 #include <curl/curl.h>
 
 #include <param/param.h>
-#ifdef PARAM_HAVE_COMMANDS_CLIENT
-#include <param/param_commands.h>
-#endif
+#include <param/param_queue.h>
 #ifdef PARAM_HAVE_SCHEDULER
 #include <param/param_scheduler.h>
 #endif
@@ -35,6 +33,7 @@
 #include "slash_env_var_completion.h"
 
 extern const char *version_string;
+extern param_queue_t param_queue;
 
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    512
@@ -105,8 +104,6 @@ int slash_prompt(struct slash * slash) {
 
 	}
 
-#ifdef PARAM_HAVE_COMMANDS_CLIENT
-	extern param_queue_t param_queue;
 	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
 
 		fore = back;
@@ -119,10 +116,7 @@ int slash_prompt(struct slash * slash) {
 		printf("\u2193 %s", param_queue.name);
 		len += 2 + strlen(param_queue.name);
 
-	}
-
-	extern param_queue_t param_queue;
-	if (param_queue.type == PARAM_QUEUE_TYPE_SET) {
+	} else if (param_queue.type == PARAM_QUEUE_TYPE_SET) {
 
 		fore = back;
 		back = 124;
@@ -135,7 +129,6 @@ int slash_prompt(struct slash * slash) {
 		len += 2 + strlen(param_queue.name);
 
 	}
-#endif
 	/* End of breadcrumb */
 	fore = back;
 	printf(" \e[0m\e[0;38;5;%um \e[0m", fore);
