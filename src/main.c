@@ -47,13 +47,6 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
 
-#define CMD_NUM_ELEMENTS 0x200
-#define SCH_NUM_ELEMENTS 0x200
-
-VMEM_DEFINE_FILE(cmd_hash, "cmd_hash", "cmd_hash.vmem", 4*CMD_NUM_ELEMENTS);
-VMEM_DEFINE_FILE(cmd_store, "cmd_store", "cmd_store.vmem", 0x200*CMD_NUM_ELEMENTS);
-VMEM_DEFINE_FILE(sch_hash, "sch_hash", "sch_hash.vmem", 4*SCH_NUM_ELEMENTS);
-VMEM_DEFINE_FILE(sch_store, "sch_store", "sch_store.vmem", 0x100*SCH_NUM_ELEMENTS);
 
 int slash_prompt(struct slash * slash) {
 
