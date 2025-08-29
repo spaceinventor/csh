@@ -546,6 +546,8 @@ static int python_slash(struct slash *slash) {
 	#pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
+	slash_release_std_in_out(slash);
+
 	wchar_t **argv = NULL;
 	if(string) {
 		argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
@@ -572,14 +574,14 @@ static int python_slash(struct slash *slash) {
 			res = SLASH_EINVAL;
 		}
 	} else {
-		slash_release_std_in_out(slash);
 		PySys_SetArgv(0, NULL);
 		PyRun_SimpleString("import rlcompleter");
 		PyRun_SimpleString("import readline");
 		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
-		slash_acquire_std_in_out(slash);
 	}
+
+	slash_acquire_std_in_out(slash);
 
 	#pragma GCC diagnostic pop  /* -Wdeprecated-declarations */
 
