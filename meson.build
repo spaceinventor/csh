@@ -86,14 +86,10 @@ csh_sources = [
     'src/slash_nodes_cmds.c', 
     'src/slash_run_environment.c', 
     'src/require_version_cmd.c', 
-	'src/param_commands_slash.c',
-	'src/param_scheduler_slash.c',
 	'src/param_list_slash.c',
 	'src/param_slash.c',
 	'src/vmem_client_slash.c',
 	'src/vmem_client_slash_ftp.c',
-	'src/param_scheduler_client.c',
-	'src/param_commands_client.c'
 ]
 
 python_dep = dependency('python3', version : '>=3.10', required: false)
