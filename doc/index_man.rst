@@ -84,14 +84,6 @@ Built-in commands
     :widths: 20 20 70
     :header-rows: 1
 
-Housekeeping APM (libcsh_hk.so) commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. include:: MAN/Operating_Instructions/hk_apm.rst
-
-Cortex APM (libcsh_cortex.so) commands
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. include:: MAN/Operating_Instructions/cortex_apm.rst
-
 .. raw:: pdf
 
     PageBreak 
@@ -100,15 +92,7 @@ Command examples
 -----------------------------
 .. include:: MAN/Operating_Instructions/command_examples.rst
 
-Housekeeping commands (APM)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. include:: MAN/Operating_Instructions/hk_examples.rst
-
-Cortex CSH (APM)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. include:: MAN/Operating_Instructions/cortex_examples.rst
-
-Scheduler & Named Commands
+Named Commands
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. include:: MAN/Operating_Instructions/scheduler_examples.rst
 

@@ -18,28 +18,41 @@ Environment variables examples
 
 - Defining a new variable:
 
-|
+.. class:: table
 
-.. csh-prompt:: host>6> var set MY_VARIABLE 1
+.. list-table::
+   :widths: 100
+   :header-rows: 0
+   
+   * - 
+      .. csh-prompt:: host>6> var set MY_VARIABLE 1
 
 |
 
 
 - Printing the value of a variable:
 
-|
+.. class:: table
 
-
-.. csh-prompt:: host>6> var get MY_VARIABLE
+.. list-table::
+   :widths: 100
+   :header-rows: 0
+   
+   * - 
+      .. csh-prompt:: host>6> var get MY_VARIABLE
 
 |
 
 
 - Using a variable in a command:
 
-|
+.. class:: table
 
-
-.. csh-prompt:: host>6> watch -n 5 "ping $(MY_VARIABLE)"
+.. list-table::
+   :widths: 100
+   :header-rows: 0
+   
+   * - 
+      .. csh-prompt:: host>6> watch -n 5 "ping $(MY_VARIABLE)"
 
 
