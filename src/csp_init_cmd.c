@@ -635,7 +635,7 @@ slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN inte
 
 static int csp_multicast_add_cmd(struct slash *slash) {
 
-    optparse_t * parser = optparse_new("csp add route", "<addr> <ifname>");
+    optparse_t * parser = optparse_new("csp add multicast", "<addr> <ifname>");
     optparse_add_help(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
@@ -669,7 +669,7 @@ static int csp_multicast_add_cmd(struct slash *slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_subsub(csp, multicast, add, csp_multicast_add_cmd, NULL, "Register a new multicast address");
+slash_command_subsub(csp, add, multicast, csp_multicast_add_cmd, NULL, "Register a new multicast address");
 
 #if CSP_USE_RTABLE
 static int csp_routeadd_cmd(struct slash *slash) {
