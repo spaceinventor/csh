@@ -633,6 +633,44 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
 
+static int csp_multicast_add_cmd(struct slash *slash) {
+
+    optparse_t * parser = optparse_new("csp add route", "<addr> <ifname>");
+    optparse_add_help(parser);
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    csp_multicastaddr_t * multicastaddr = malloc(sizeof(multicastaddr));
+
+    /* Build string from the two slash input arguments */
+	if (++argi >= slash->argc) {
+		printf("missing parameter addr/mask\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+    char * endptr = NULL;
+    multicastaddr->addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (++argi >= slash->argc) {
+		printf("missing parameter ifname\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+    multicastaddr->iface = csp_iflist_get_by_name(slash->argv[argi]);
+
+    if (csp_multcastaddr_add(multicastaddr) < 0) {
+        free(multicastaddr);
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
+
+    optparse_del(parser);
+    return SLASH_SUCCESS;
+}
+slash_command_subsub(csp, multicast, add, csp_multicast_add_cmd, NULL, "Register a new multicast address");
+
 #if CSP_USE_RTABLE
 static int csp_routeadd_cmd(struct slash *slash) {
 
