@@ -660,7 +660,7 @@ static int csp_multicast_add_cmd(struct slash *slash) {
 
     multicastaddr->iface = csp_iflist_get_by_name(slash->argv[argi]);
 
-    if (csp_multcastaddr_add(multicastaddr) < 0) {
+    if (csp_multicastaddr_add(multicastaddr) < 0) {
         free(multicastaddr);
         optparse_del(parser);
         return SLASH_EINVAL;
