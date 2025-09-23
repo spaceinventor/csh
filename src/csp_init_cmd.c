@@ -633,14 +633,14 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
 
-static int csp_multicast_add_cmd(struct slash *slash) {
+static int csp_alias_add_cmd(struct slash *slash) {
 
-    optparse_t * parser = optparse_new("csp add multicast", "<addr> <ifname>");
+    optparse_t * parser = optparse_new("csp add alias", "<addr> <ifname>");
     optparse_add_help(parser);
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
-    csp_multicastaddr_t * multicastaddr = malloc(sizeof(multicastaddr));
+    csp_alias_t * alias = malloc(sizeof(csp_alias_t));
 
     /* Build string from the two slash input arguments */
 	if (++argi >= slash->argc) {
@@ -650,7 +650,7 @@ static int csp_multicast_add_cmd(struct slash *slash) {
 	}
 
     char * endptr = NULL;
-    multicastaddr->addr = strtoul(slash->argv[argi], &endptr, 10);
+    alias->addr = strtoul(slash->argv[argi], &endptr, 10);
 
     if (++argi >= slash->argc) {
 		printf("missing parameter ifname\n");
@@ -658,10 +658,10 @@ static int csp_multicast_add_cmd(struct slash *slash) {
 		return SLASH_EINVAL;
 	}
 
-    multicastaddr->iface = csp_iflist_get_by_name(slash->argv[argi]);
+    alias->iface = csp_iflist_get_by_name(slash->argv[argi]);
 
-    if (csp_multicastaddr_add(multicastaddr) < 0) {
-        free(multicastaddr);
+    if (csp_alias_add(alias) < 0) {
+        free(alias);
         optparse_del(parser);
         return SLASH_EINVAL;
     }
@@ -669,7 +669,7 @@ static int csp_multicast_add_cmd(struct slash *slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_subsub(csp, add, multicast, csp_multicast_add_cmd, NULL, "Register a new multicast address");
+slash_command_subsub(csp, add, alias, csp_alias_add_cmd, NULL, "Register a new alias receive address");
 
 #if CSP_USE_RTABLE
 static int csp_routeadd_cmd(struct slash *slash) {
