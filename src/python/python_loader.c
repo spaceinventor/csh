@@ -515,6 +515,32 @@ static wchar_t **handle_py_argv(char **args, int argc) {
 	return res;
 }
 
+int csh_python_exec_string(const char *string, int argc, char **argv) {
+	wchar_t **w_argv = handle_py_argv(argv, argc);
+	PySys_SetArgv(argc, w_argv);
+	return PyRun_SimpleString(string);
+}
+int csh_python_exec_file(const char *filename, int argc, char **argv) {
+	FILE *fp = fopen(filename, "rb");
+	if(fp) {
+		wchar_t **w_argv = handle_py_argv(argv, argc);
+		PySys_SetArgv(argc, w_argv);
+
+		{   /* `PyRun_AnyFileEx()` doesn't define `__file__`, so we do it ourselves. */
+			PyObject *main_mod = PyImport_AddModule("__main__");
+			PyObject *main_dict = PyModule_GetDict(main_mod);
+			PyObject *file_str = PyUnicode_FromString(filename);
+			PyDict_SetItemString(main_dict, "__file__", file_str);
+			Py_DECREF(file_str);
+		}
+
+		return PyRun_AnyFileEx(fp, filename, 1);
+	} else {
+		return -1;
+	}
+}
+
+
 const struct slash_command slash_cmd_python;
 static int python_slash(struct slash *slash) {
 	int res =  0;
@@ -550,27 +576,11 @@ static int python_slash(struct slash *slash) {
 
 	wchar_t **argv = NULL;
 	if(string) {
-		argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
-		PySys_SetArgv(slash->argc - argi, argv);
-		res = PyRun_SimpleString(string);
+		res = csh_python_exec_string(string, slash->argc - argi, slash->argv + argi);
 	} else if (++argi < slash->argc) {
-		FILE *fp = fopen(slash->argv[argi], "rb");
-		if(fp) {
-			argv = handle_py_argv(slash->argv + argi, slash->argc - argi);
-			PySys_SetArgv(slash->argc - argi, argv);
-
-			{   /* `PyRun_AnyFileEx()` doesn't define `__file__`, so we do it ourselves. */
-				PyObject *main_mod = PyImport_AddModule("__main__");
-				PyObject *main_dict = PyModule_GetDict(main_mod);
-				PyObject *file_str = PyUnicode_FromString(slash->argv[argi]);
-				PyDict_SetItemString(main_dict, "__file__", file_str);
-				Py_DECREF(file_str);
-			}
-
-			res = PyRun_AnyFileEx(fp, slash->argv[argi], 1);
-
-		} else {
-			fprintf(stderr, "Failed to open file: '%s'\n", slash->argv[argi]);
+		res = csh_python_exec_file(slash->argv[argi], slash->argc - argi, slash->argv + argi);
+		if (res != 0) {
+			fprintf(stderr, "Failed to execute python file: '%s'\n", slash->argv[argi]);
 			res = SLASH_EINVAL;
 		}
 	} else {
