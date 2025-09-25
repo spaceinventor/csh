@@ -48,92 +48,99 @@ VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
 
 
+static int (*current_apm_prompt)(struct slash * slash) = NULL;
+void csh_set_prompt_for_apm(int (*apm_prompt)(struct slash * slash)){
+	current_apm_prompt = apm_prompt;
+}
+
 int slash_prompt(struct slash * slash) {
+	if (current_apm_prompt) {
+		return current_apm_prompt(slash);
+	} else {
+		int len = 0;
+		int fore = 255;
+		int back = 33;
 
-	int len = 0;
-	int fore = 255;
-	int back = 33;
+		fflush(stdout);
+		printf("\e[0;38;5;%u;48;5;%u;1m ", fore, back);
+		len += 1;
 
-	fflush(stdout);
-	printf("\e[0;38;5;%u;48;5;%u;1m ", fore, back);
-	len += 1;
+		struct utsname info;
+		uname(&info);
+		printf("%s", info.nodename);
+		len += strlen(info.nodename);
 
-	struct utsname info;
-	uname(&info);
-	printf("%s", info.nodename);
-	len += strlen(info.nodename);
-		
-	if (slash_dfl_node != 0) {
+		if (slash_dfl_node != 0) {
 
-		fore = back;
-		back = 240;
-		printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
-		fore = 255;
-		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
-		len += 3;
+			fore = back;
+			back = 240;
+			printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+			fore = 255;
+			printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+			len += 3;
 
-		char nodebuf[CSP_HOSTNAME_LEN] = {0};
-		if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)-1) == 0) {
-			/* Failed to find hostname, only print node */
-			snprintf(nodebuf, CSP_HOSTNAME_LEN, "%d", slash_dfl_node);
-		} else {
-			/* Found hostname, now append node */
-			char nodenumbuf[7] = {0};  // Longest string is "@16383\0"
-			snprintf(nodenumbuf, 7, "@%d", slash_dfl_node);
+			char nodebuf[CSP_HOSTNAME_LEN] = {0};
+			if (known_hosts_get_name(slash_dfl_node, nodebuf, sizeof(nodebuf)-1) == 0) {
+				/* Failed to find hostname, only print node */
+				snprintf(nodebuf, CSP_HOSTNAME_LEN, "%d", slash_dfl_node);
+			} else {
+				/* Found hostname, now append node */
+				char nodenumbuf[7] = {0};  // Longest string is "@16383\0"
+				snprintf(nodenumbuf, 7, "@%d", slash_dfl_node);
 
-			int node_idx = strnlen(nodebuf, CSP_HOSTNAME_LEN);
-			const int overflow = (node_idx + strnlen(nodenumbuf, 7)) - CSP_HOSTNAME_LEN;
-			if (overflow > 0) {
-				node_idx -= overflow+1;
+				int node_idx = strnlen(nodebuf, CSP_HOSTNAME_LEN);
+				const int overflow = (node_idx + strnlen(nodenumbuf, 7)) - CSP_HOSTNAME_LEN;
+				if (overflow > 0) {
+					node_idx -= overflow+1;
+				}
+				if (node_idx < 0) {
+					node_idx = 0;
+				}
+				nodebuf[node_idx] = '\0';
+				strncat(nodebuf, nodenumbuf, CSP_HOSTNAME_LEN-strnlen(nodebuf, CSP_HOSTNAME_LEN-1)-1);
 			}
-			if (node_idx < 0) {
-				node_idx = 0;
-			}
-			nodebuf[node_idx] = '\0';
-			strncat(nodebuf, nodenumbuf, CSP_HOSTNAME_LEN-strnlen(nodebuf, CSP_HOSTNAME_LEN-1)-1);
+			printf("%s", nodebuf);
+			len += strlen(nodebuf);
+
 		}
-		printf("%s", nodebuf);
-		len += strlen(nodebuf);
 
-	}
+		if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
 
-	if (param_queue.type == PARAM_QUEUE_TYPE_GET) {
+			fore = back;
+			back = 34;
+			printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+			fore = 255;
+			printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+			len += 3;
 
+			printf("\u2193 %s", param_queue.name);
+			len += 2 + strlen(param_queue.name);
+
+		} else if (param_queue.type == PARAM_QUEUE_TYPE_SET) {
+
+			fore = back;
+			back = 124;
+			printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+			fore = 255;
+			printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+			len += 3;
+
+			printf("\u2191 %s", param_queue.name);
+			len += 2 + strlen(param_queue.name);
+
+		}
+		/* End of breadcrumb */
 		fore = back;
-		back = 34;
-		printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
-		fore = 255;
-		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+		printf(" \e[0m\e[0;38;5;%um \e[0m", fore);
 		len += 3;
 
-		printf("\u2193 %s", param_queue.name);
-		len += 2 + strlen(param_queue.name);
 
-	} else if (param_queue.type == PARAM_QUEUE_TYPE_SET) {
 
-		fore = back;
-		back = 124;
-		printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
-		fore = 255;
-		printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
-		len += 3;
 
-		printf("\u2191 %s", param_queue.name);
-		len += 2 + strlen(param_queue.name);
+		fflush(stdout);
 
+		return len;
 	}
-	/* End of breadcrumb */
-	fore = back;
-	printf(" \e[0m\e[0;38;5;%um \e[0m", fore);
-	len += 3;
-
-
-
-
-	fflush(stdout);
-
-	return len;
-
 }
 
 uint64_t clock_get_nsec(void) {
