@@ -355,9 +355,7 @@ int main(int argc, char **argv) {
 	/* Explicit init file given, or default file exists */
 	if ((strlen(dirname) == 0 && strlen(initfile) > 0) || access(buildpath, F_OK) == 0) {
 		printf("\033[34m  Init file: %s\033[0m\n", buildpath);
-		slash_release_std_in_out(slash);
 		ret = slash_run(slash, buildpath, 0);
-		slash_acquire_std_in_out(slash);
 	}
 
 	{	/* Setting up signal handlers */
