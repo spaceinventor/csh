@@ -38,7 +38,7 @@ static int vmem_client_slash_download(struct slash *slash)
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	// optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
-	optparse_add_unsigned(parser, 'r', "use_rdp", "NUM", 0, &use_rdp, "rdp ack for each (default = 1)");
+	optparse_add_unsigned(parser, 'r', "use_rdp", "NUM", 0, &use_rdp, "rdp enable (default = 1)");
 
 	rdp_opt_add(parser);
 
