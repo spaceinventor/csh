@@ -317,7 +317,6 @@ int main(int argc, char **argv) {
 	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
 
 	static pthread_t router_handle;
-    csp_router_set_running(true);
     pthread_create(&router_handle, NULL, &router_task, NULL);
 	static pthread_t vmem_server_handle;
     pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);

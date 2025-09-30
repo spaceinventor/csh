@@ -22,14 +22,6 @@
 
 #define CURVE_KEYLEN 41
 
-static bool csp_router_started = false;
-bool csp_router_is_running() {
-    return csp_router_started;
-}
-void csp_router_set_running(bool is_running) {
-    csp_router_started = is_running;
-}
-
 static int csp_init_cmd(struct slash *slash) {
 
     char * hostname = NULL;
