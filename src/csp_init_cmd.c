@@ -5,8 +5,6 @@
 #include <csp/csp.h>
 
 #include <pthread.h>
-#include <param/param_server.h>
-#include <vmem/vmem_server.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include <sys/utsname.h>
@@ -24,29 +22,7 @@
 
 #define CURVE_KEYLEN 41
 
-static bool csp_router_started = false;
-bool csp_router_is_running() {
-    return csp_router_started;
-}
-void csp_router_set_running(bool is_running) {
-    csp_router_started = is_running;
-}
-
-void * router_task(void * param) {
-	while(1) {
-		csp_route_work();
-	}
-}
-
-void * vmem_server_task(void * param) {
-	vmem_server_loop(param);
-	return NULL;
-}
-
 static int csp_init_cmd(struct slash *slash) {
-    if (true == csp_router_is_running()) {
-    	return SLASH_SUCCESS;
-    }
 
     char * hostname = NULL;
     char * model = NULL;
@@ -97,24 +73,6 @@ static int csp_init_cmd(struct slash *slash) {
 	csp_conf.revision = revision;
 	csp_conf.version = version;
 	csp_conf.dedup = dedup;
-	csp_init();
-
-    csp_bind_callback(csp_service_handler, CSP_ANY);
-	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
-
-	static pthread_t router_handle;
-    csp_router_set_running(true);
-    pthread_create(&router_handle, NULL, &router_task, NULL);
-	static pthread_t vmem_server_handle;
-    pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
-
-    csp_iflist_check_dfl();
-
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
-	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
-	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
-	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
 
     optparse_del(parser);
 	return SLASH_SUCCESS;

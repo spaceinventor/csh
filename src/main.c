@@ -20,6 +20,10 @@
 
 #include <curl/curl.h>
 
+#include <csp/csp.h>
+#include <param/param_server.h>
+#include <vmem/vmem_server.h>
+
 #include <param/param.h>
 #include <param/param_queue.h>
 #ifdef PARAM_HAVE_SCHEDULER
@@ -47,6 +51,8 @@ VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
 VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
 #endif
 
+
+void csp_router_set_running(bool is_running);
 
 static int (*current_apm_prompt)(struct slash * slash) = NULL;
 void csh_set_prompt_for_apm(int (*apm_prompt)(struct slash * slash)){
@@ -208,6 +214,16 @@ static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
     return expansion;
 }
 
+void * router_task(void * param) {
+	while(1) {
+		csp_route_work();
+	}
+}
+
+void * vmem_server_task(void * param) {
+	vmem_server_loop(param);
+	return NULL;
+}
 
 int main(int argc, char **argv) {
 
@@ -286,6 +302,26 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "Failed to init slash\n");
 		exit(EXIT_FAILURE);
 	}
+
+	static struct utsname info;
+	uname(&info);
+
+    csp_conf.hostname = info.nodename;
+	csp_conf.model = info.version;
+	csp_conf.revision = info.release;
+	csp_conf.version = 2;
+	csp_conf.dedup = 3;
+	csp_init();
+
+    csp_bind_callback(csp_service_handler, CSP_ANY);
+	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
+
+	static pthread_t router_handle;
+    pthread_create(&router_handle, NULL, &router_task, NULL);
+	static pthread_t vmem_server_handle;
+    pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
+
+	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 
 #ifdef PARAM_HAVE_COMMANDS
 	vmem_file_init(&vmem_commands);
