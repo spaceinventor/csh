@@ -67,7 +67,6 @@ csh_sources = [
 	'src/param_sniffer.c',
 	'src/prometheus.c',
 	'src/resbuf_dump.c',
-	'src/stdbuf_mon.c',
 	'src/stdbuf_client.c',
 	'src/randombytes.c',
 	'src/csp_scan.c',
