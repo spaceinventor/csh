@@ -517,14 +517,21 @@ static wchar_t **handle_py_argv(char **args, int argc) {
 
 int csh_python_exec_string(const char *string, int argc, char **argv) {
 	wchar_t **w_argv = handle_py_argv(argv, argc);
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	PySys_SetArgv(argc, w_argv);
+	#pragma GCC diagnostic pop  /* -Wdeprecated-declarations */
 	return PyRun_SimpleString(string);
 }
 int csh_python_exec_file(const char *filename, int argc, char **argv) {
 	FILE *fp = fopen(filename, "rb");
 	if(fp) {
 		wchar_t **w_argv = handle_py_argv(argv, argc);
+		#pragma GCC diagnostic push
+    	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 		PySys_SetArgv(argc, w_argv);
+		#pragma GCC diagnostic pop  /* -Wdeprecated-declarations */
+		
 
 		{   /* `PyRun_AnyFileEx()` doesn't define `__file__`, so we do it ourselves. */
 			PyObject *main_mod = PyImport_AddModule("__main__");
