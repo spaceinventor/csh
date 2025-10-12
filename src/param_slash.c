@@ -415,12 +415,12 @@ void param_completer(struct slash *slash, char * token) {
 	if (has_wildcard(token, strlen(token))) {
 		// Only print parameters when globbing is involved.
 		while ((param = param_list_iterate(&i)) != NULL) {
-		if(node == *param->node) {
-			if (strmatch(param->name, token, strlen(param->name), strlen(token))) {
-				param_print(param, -1, NULL, 0, 2, 0);
-				found_completion = true;
+			if(node == *param->node) {
+				if (strmatch(param->name, token, strlen(param->name), strlen(token))) {
+					param_print(param, -1, NULL, 0, 2, 0);
+					found_completion = true;
+				}
 			}
-		}
 		}
 		slash_completer_revert_skip(slash, orig_slash_buf);
 		if(!found_completion) {
@@ -483,6 +483,7 @@ static int cmd_get(struct slash *slash) {
 	int paramver = 2;
 	int server = 0;
 	int prio = CSP_PRIO_NORM;
+	char * maskstr = NULL;
 
 	optparse_t * parser = optparse_new("get", "<name>");
 	optparse_add_help(parser);
@@ -490,6 +491,7 @@ static int cmd_get(struct slash *slash) {
 	optparse_add_custom(parser, 's', "server", "NUM", "server to get parameters from (default = node)", get_host_by_addr_or_name, &server);
 	optparse_add_int(parser, 'v', "paramver", "NUM", 0, &paramver, "parameter system version (default = 2)");
 	optparse_add_int(parser, 'p', "prio", "NUM", 0, &prio, "CSP priority (0 = CRITICAL, 1 = HIGH, 2 = NORM (default), 3 = LOW)");
+	optparse_add_string(parser, 'm', "mask", "STR", &maskstr, "mask string");
 
 	int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 	if (argi < 0) {
@@ -514,6 +516,12 @@ static int cmd_get(struct slash *slash) {
 		return SLASH_EINVAL;
 	}
 
+	/* Interpret maskstring */
+    uint32_t mask = 0xFFFFFFFF;
+    if (maskstr != NULL) {
+        mask = param_maskstr_to_mask(maskstr);
+    }
+
 	/* Go through the list of parameters */
 	param_list_iterator i = {};
 	while ((param = param_list_iterate(&i)) != NULL) {
@@ -525,6 +533,10 @@ static int cmd_get(struct slash *slash) {
 
 		/* Node match */
 		if (*param->node != node) {
+			continue;
+		}
+
+		if ((param->mask & mask) == 0) {
 			continue;
 		}
 
