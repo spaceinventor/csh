@@ -208,6 +208,13 @@ static void sigint_handler(int signum) {
 	vmem_client_abort();
 }
 
+static void sigcont_handler(int signum) {
+	if(slash->waitfunc) {
+		slash_acquire_std_in_out(slash);
+		slash_refresh(slash, 0);
+	}
+}
+
 static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
     char *expansion = csh_expand_vars(line);
     /* NULL check is not performed on purpose here, SLASH is able to deal with this */
@@ -408,6 +415,12 @@ int main(int argc, char **argv) {
 			perror("signal");
 			exit(EXIT_FAILURE);
 		}
+
+		if (signal(SIGCONT, sigcont_handler) == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
+		}
+
 	}
 
 	/* Interactive or one-shot mode */
