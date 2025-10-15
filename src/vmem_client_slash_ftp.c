@@ -181,9 +181,20 @@ static int vmem_client_slash_download(struct slash *slash)
 }
 slash_command(download, vmem_client_slash_download, "<address> <length> <file>", "Download from VMEM to FILE");
 
+static void vmem_upload_progress(uint32_t total, uint32_t sofar) {
+	if ((sofar / VMEM_SERVER_MTU) % 32 == 0) {
+		printf("  ");
+	}
+	printf(".");
+	fflush(stdout);
+	if ((sofar / VMEM_SERVER_MTU + 1) % 32 == 0) {
+		printf(" - %.0f K\n", (sofar / 1024.0));
+	}
+}
+
 static int vmem_client_slash_upload(struct slash *slash)
 {
-
+	int res = SLASH_SUCCESS;
 	unsigned int node = slash_dfl_node;
     unsigned int timeout = slash_dfl_timeout;
     unsigned int version = 1;
@@ -250,25 +261,56 @@ static int vmem_client_slash_upload(struct slash *slash)
 	/* Copy to memory */
 	char * data = malloc(file_stat.st_size);
 
-	unsigned int size = fread(data, 1, file_stat.st_size - offset, fd);
+	size_t size = fread(data, 1, file_stat.st_size - offset, fd);
 	fclose(fd);
 
 	address += offset;
 
-	printf("File size %ld, offset %u, to upload %u to address %lx\n", file_stat.st_size, offset, size, address);
+	printf("File size %ld, offset %u, to upload %zu to address %lx\n", file_stat.st_size, offset, size, address);
 
 	csp_hex_dump("File head", data, 256);
 
-	printf("Size %u\n", size);
+	printf("Size %zu\n", size);
 
-	vmem_upload(node, timeout, address, data, size, version);
+	uint32_t time_begin = csp_get_ms();
+	int count = vmem_upload_ex(node, timeout, address, data, size, version, vmem_upload_progress);
+	uint32_t time_total = csp_get_ms() - time_begin;
+
+	printf(" - %.0f K\n", (count / 1024.0));
+	switch (count) {
+	case CSP_ERR_TIMEDOUT:
+		printf("Connection timeout\n");
+		res = SLASH_EIO;
+		break;
+	case CSP_ERR_NOBUFS:
+		printf("No more CSP buffers\n");
+		res = SLASH_ENOMEM;
+		break;
+	default: 
+		{
+			if((size_t)count != size){
+				unsigned int window_size = 0;
+				csp_rdp_get_opt(&window_size, NULL, NULL, NULL, NULL, NULL);
+				uint32_t suggested_offset = 0;
+				if(((offset + count)) > ((window_size + 1) * VMEM_SERVER_MTU)){
+					suggested_offset = (offset + count) - ((window_size + 1) * VMEM_SERVER_MTU);
+				} 
+				printf("Upload didn't complete, suggested offset to resume: %"PRIu32"\n", suggested_offset);
+				res = SLASH_EIO;
+			} else {
+				printf("Uploaded %"PRIu32" bytes in %.03f s at %"PRIu32" Bps\n", count, time_total / 1000.0, (uint32_t)(count / ((float)time_total / 1000.0)) );
+				res = SLASH_SUCCESS;
+			}
+		}
+		break;
+	}
 
 	free(data);
 	optparse_del(parser);
 
 	rdp_opt_reset();
 
-	return SLASH_SUCCESS;
+	return res;
 }
 slash_command_completer(upload, vmem_client_slash_upload, slash_path_completer, "<file> <address>", "Upload from FILE to VMEM");
 
