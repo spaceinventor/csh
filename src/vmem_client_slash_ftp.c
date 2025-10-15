@@ -150,47 +150,52 @@ static int vmem_client_slash_download(struct slash *slash)
     	optparse_del(parser);
 		return SLASH_EINVAL;
 	}
+	int res = SLASH_SUCCESS;
+	printf(" - %.0f K\n", (count / 1024.0));
 
 	/* Write data */
 	int written = fwrite(data, 1, count, fd);
 	fclose(fd);
 	free(data);
 
-	/* If byte count is not equal to length - offset write to status file for resume later */
-	if(count != (int)(length - offset)) {
-		fd_status = fopen(file_status, "w+");
-		if(fd_status) {
-			rewind(fd_status);
-			fprintf(fd_status, "%u", count + offset);
-			fclose(fd_status);
-			printf("Download didn't finish,  creating stat file %s. \nTo resume download rerun download cmd\n", file_status);
-		} else {
-			printf("Error creating stat file %s.\nTo resume download rerun download cmd\n", file_status);
-		}
-	} else {
-		remove(file_status);
-	}
+	switch (count) {
+	case CSP_ERR_TIMEDOUT:
+		printf("Connection timeout\n");
+		res = SLASH_EIO;
+		break;
+	case CSP_ERR_NOBUFS:
+		printf("No more CSP buffers\n");
+		res = SLASH_ENOMEM;
+		break;
+	default: 
+		{
+			/* If byte count is not equal to length - offset write to status file for resume later */
+			if(count != (int)(length - offset)) {
+				fd_status = fopen(file_status, "w+");
+				if(fd_status) {
+					rewind(fd_status);
+					fprintf(fd_status, "%u", count + offset);
+					fclose(fd_status);
+					printf("Download didn't finish,  creating stat file %s. \nTo resume download rerun download cmd\n", file_status);
+				} else {
+					printf("Error creating stat file %s.\nTo resume download rerun download cmd\n", file_status);
+				}
+			} else {
+				remove(file_status);
+			}
 
-	printf("wrote %d bytes to %s\n", written, file);
+			printf("wrote %d bytes to %s\n", written, file);
+		}
+		break;
+	}
 
     optparse_del(parser);
 
 	rdp_opt_reset();
 
-	return SLASH_SUCCESS;
+	return res;
 }
 slash_command(download, vmem_client_slash_download, "<address> <length> <file>", "Download from VMEM to FILE");
-
-static void vmem_upload_progress(uint32_t total, uint32_t sofar) {
-	if ((sofar / VMEM_SERVER_MTU) % 32 == 0) {
-		printf("  ");
-	}
-	printf(".");
-	fflush(stdout);
-	if ((sofar / VMEM_SERVER_MTU + 1) % 32 == 0) {
-		printf(" - %.0f K\n", (sofar / 1024.0));
-	}
-}
 
 static int vmem_client_slash_upload(struct slash *slash)
 {
@@ -273,7 +278,7 @@ static int vmem_client_slash_upload(struct slash *slash)
 	printf("Size %zu\n", size);
 
 	uint32_t time_begin = csp_get_ms();
-	int count = vmem_upload_ex(node, timeout, address, data, size, version, vmem_upload_progress);
+	int count = vmem_upload(node, timeout, address, data, size, version);
 	uint32_t time_total = csp_get_ms() - time_begin;
 
 	printf(" - %.0f K\n", (count / 1024.0));
