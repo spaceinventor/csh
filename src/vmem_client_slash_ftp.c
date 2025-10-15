@@ -119,6 +119,7 @@ static int vmem_client_slash_download(struct slash *slash)
 
 		if (strcmp(c, "yes") != 0) {
 			fd = fopen(file, "w+");
+			offset = 0;
 		} else {
 			fd = fopen(file, "a");
 		}
