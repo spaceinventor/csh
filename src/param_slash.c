@@ -810,7 +810,7 @@ static int cmd_set(struct slash *slash) {
 
 	/* Local parameters are set directly */
 	if (*param->node == 0) {
-		param_queue_apply(&queue, 1, 0);
+		param_queue_apply(&queue, 0);
 
 		// if (offset < 0 && param->type != PARAM_TYPE_STRING && param->type != PARAM_TYPE_DATA) {
 		// 	for (int i = 0; i < param->array_size; i++)

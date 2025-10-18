@@ -94,7 +94,7 @@ Parameters can be manually added with 'list add'.");
 		}
     }
 
-    if(node == 0){
+    if(node == 0 || csp_iflist_get_by_addr(node) != NULL || csp_iflist_get_by_broadcast(node) != NULL) {
         printf("Download of local parameters not needed, use cmd 'list' instead\n");
         optparse_del(parser);
         return SLASH_EINVAL;

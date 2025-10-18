@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <param/param_server.h>
 #include <param/param_queue.h>
+#include <param/param_serializer.h>
 #include <mpack/mpack.h>
 #include <csp/csp.h>
 #include <csp/csp_crc32.h>
@@ -213,7 +214,6 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 	size_t data_len = packet->length - header_size - ((packet->id.flags & CSP_FRDP) ? 5 : 0);
 	param_queue_t queue;
 	param_queue_init(&queue, &packet->data[header_size], data_len, data_len, PARAM_QUEUE_TYPE_SET, 2);
-	queue.last_node = packet->id.src;
 
 	mpack_reader_t reader;
 	mpack_reader_init_data(&reader, queue.buffer, queue.used);

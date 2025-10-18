@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <param/param_server.h>
 #include <param/param_queue.h>
+#include <param/param_serializer.h>
 #include <mpack/mpack.h>
 #include <csp/csp.h>
 #include <csp/csp_hooks.h>
@@ -175,7 +176,6 @@ static void * param_sniffer(void * param) {
 
         param_queue_t queue;
         param_queue_init(&queue, &packet->data[2], packet->length - 2, packet->length - 2, PARAM_QUEUE_TYPE_SET, queue_version);
-        queue.last_node = packet->id.src;
 
         csp_timestamp_t time_now;
         csp_clock_get_time(&time_now);
