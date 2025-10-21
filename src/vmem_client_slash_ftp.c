@@ -272,7 +272,7 @@ static int vmem_client_slash_upload(struct slash *slash)
 
 	address += offset;
 
-	printf("File size %ld, offset %u, to upload %zu to address %lx\n", file_stat.st_size, offset, size, address);
+	printf("File size %ld, offset %u, %u bytes to upload to address 0x%"PRIX64"\n", file_stat.st_size, offset, size, address);
 
 	csp_hex_dump("File head", data, 256);
 
