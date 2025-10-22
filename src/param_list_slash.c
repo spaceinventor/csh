@@ -19,6 +19,7 @@
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_string.h>
+#include <pycsh/param_list_py.h>
 
 #include <endian.h>
 
@@ -111,12 +112,14 @@ static int list_forget(struct slash *slash)
 {
 
     unsigned int node = slash_dfl_node;
+    int verbose = 2;
 
     optparse_t * parser = optparse_new("list forget", "[node]\n\
 Will remove remote parameters from the local parameter list.\n\
 This makes it possible to download them again, in cases where they've changed.");
     optparse_add_help(parser);
     optparse_add_custom(parser, 'n', "node", "NUM",  "node (-1 for all) (default = <env>)", get_host_by_addr_or_name, &node);
+    optparse_add_int(parser, 'v', "verbose", "NUM", 0, &verbose, "Verbosity, 2 prints every parameter removed, 1 only prints count (default = 2)");
 
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
     if (argi < 0) {
@@ -132,7 +135,11 @@ This makes it possible to download them again, in cases where they've changed.")
 		}
     }
 
-    printf("Removed %i parameters\n", param_list_remove(node, 1));
+    const int count = param_list_remove_py(node, verbose);
+
+    if (verbose > 0) {
+        printf("Removed %i parameters\n", count);
+    }
 
     optparse_del(parser);
     return SLASH_SUCCESS;
