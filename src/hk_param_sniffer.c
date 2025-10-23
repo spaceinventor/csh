@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include <param/param_server.h>
 #include <param/param_queue.h>
+#include <param/param_serializer.h>
 #include <mpack/mpack.h>
 #include <csp/csp.h>
 #include <csp/csp_crc32.h>
