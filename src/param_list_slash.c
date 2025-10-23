@@ -135,7 +135,11 @@ This makes it possible to download them again, in cases where they've changed.")
 		}
     }
 
+#ifdef HAVE_PYTHON
     const int count = param_list_remove_py(node, verbose);
+#else
+    const int count = param_list_remove(node, verbose);
+#endif
 
     if (verbose > 0) {
         printf("Removed %i parameters\n", count);
