@@ -151,7 +151,7 @@ static void * param_sniffer(void * param) {
             continue;
         }
 
-        if (packet->id.sport != PARAM_PORT_SERVER) {
+        if (packet->id.sport != PARAM_PORT_SERVER && packet->id.dport != PARAM_PORT_SERVER) {
             csp_buffer_free(packet);
             continue;
         }
