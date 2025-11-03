@@ -39,7 +39,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 
-#define WALKDIR_MAX_ENTRIES 10
+#define WALKDIR_MAX_ENTRIES 32
 #define WALKDIR_MAX_PATH_SIZE 256
 
 /**
@@ -52,8 +52,9 @@
  * @param file_cb The file callback function.
  * @param custom A pointer that may be set to refer to any data structure used for aggregating
  *      information on the visited file system entities.
+ * @param signum Pass a interrupt signal to stop walkdir
  */
 void walkdir(char * path, size_t path_size, unsigned depth, 
  			  bool (*dir_cb)(const char *, const char *, void *), 
 			  void (*file_cb)(const char *, const char *, void *), 
-			  void * custom);
+			  void * custom, int * signum);

@@ -1,7 +1,7 @@
 [submodule "lib/libcsp"]
   path = lib/csp
   url = https://github.com/spaceinventor/libcsp
-  branch = master     
+  branch = master
 [submodule "lib/slash"]
   path = lib/slash
   url = https://github.com/spaceinventor/slash
@@ -14,7 +14,14 @@
 	url = https://github.com/discosat/csp_proc.git
 [submodule "lib/param"]
 	path = lib/param
-	url = https://github.com/discosat/libparam.git
+	url = https://github.com/spaceinventor/libparam
+	branch = master
 [submodule "lib/csp_ippc"]
 	path = lib/csp_ippc
 	url = https://github.com/discosat/csp_ippc.git
+[submodule "lib/apm"]
+	path = lib/apm_csh
+	url = https://github.com/spaceinventor/libapm_csh
+[submodule "lib/pycsh_core"]
+	path = lib/pycsh_core
+	url = https://github.com/spaceinventor/pycsh_core.git

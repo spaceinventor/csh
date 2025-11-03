@@ -1,5 +1,6 @@
 [binaries]
-c = 'arm-linux-gnueabihf-gcc-12'
+c = 'arm-linux-gnueabihf-gcc'
+cpp = 'arm-linux-gnueabihf-g++'
 ar = 'arm-linux-gnueabihf-ar'
 strip = 'arm-linux-gnueabihf-strip'
 
@@ -12,7 +13,7 @@ cpu = ''
 endian = 'little'
 
 [constants]
-sys_root = '@GLOBAL_SOURCE_ROOT@' / 'sysroot'
+sys_root = '@GLOBAL_SOURCE_ROOT@' / 'sysroot-gnueabihf'
 
 [properties]
 sys_root = sys_root

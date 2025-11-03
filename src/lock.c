@@ -1,8 +1,7 @@
 /* CSP Posix implementation of libparam command locks */
 
 #include <semaphore.h>
-
-#include <param/param_scheduler.h>
+#include <stdint.h>
 #include <time.h>
 
 int si_lock_take(void* lock, int block_time_ms) {
@@ -52,7 +51,7 @@ int si_lock_give(void* lock) {
 	return 0;
 }
 
-#define NUM_LOCKS 2
+#define NUM_LOCKS 3
 
 static uint8_t lock_taken[NUM_LOCKS] = {0};
 static sem_t locks[NUM_LOCKS] = {0};
