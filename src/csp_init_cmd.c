@@ -595,6 +595,49 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
 slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
 
+static int csp_ifadd_alias_cmd(struct slash *slash) {
+
+    optparse_t * parser = optparse_new("csp add alias", "<addr> <ifname>");
+
+    int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+
+    if (argi < 0) {
+        optparse_del(parser);
+	    return SLASH_EINVAL;
+    }
+
+    if (++argi >= slash->argc) {
+		printf("missing parameter addr\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+    char * endptr = NULL;
+    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (++argi >= slash->argc) {
+		printf("missing parameter ifname\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+    csp_alias_t * addr_struct = malloc(sizeof(csp_alias_t));
+    if (!addr_struct) {
+        printf("Failed to allocate memory for alias address.\n");
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
+
+    addr_struct->addr = addr;
+    addr_struct->iface = csp_iflist_get_by_name(slash->argv[argi]);
+    addr_struct->iface->add_alias(addr_struct->iface->driver_data, addr);
+    csp_alias_add(addr_struct);
+
+    optparse_del(parser);
+	return SLASH_SUCCESS;
+}
+
+slash_command_subsub(csp, add, alias, csp_ifadd_alias_cmd, NULL, "Add a new Alias address");
+
 #if CSP_USE_RTABLE
 static int csp_routeadd_cmd(struct slash *slash) {
 
