@@ -19,7 +19,9 @@
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_string.h>
+#ifdef HAVE_PYTHON
 #include <pycsh/param_list_py.h>
+#endif
 
 #include <endian.h>
 
