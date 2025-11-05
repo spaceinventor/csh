@@ -157,7 +157,7 @@ uint64_t clock_get_nsec(void) {
 
 void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
-	printf("Type 'manual' to open CSH manual\n");
+	printf("In CSH, type 'manual' to open CSH manual\n");
 	printf("\n");
 	printf("Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>\n");
 	printf("\n");

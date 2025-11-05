@@ -39,9 +39,13 @@ Requirements
 -------------------
 .. include:: MAN/Installation/requirements.rst
 
-Build and install
+Installation
 ------------------------
 .. include:: MAN/Installation/install.rst
+
+Manual build from sources
+-------------------------
+.. include:: MAN/Installation/build.rst
 
 Launch software
 --------------------

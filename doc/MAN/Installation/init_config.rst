@@ -1,3 +1,3 @@
-In order to avoid configuring csp and interfaces on every launch an init.csh file can be created. CSH will look for one in your home directory or you can select one at launch with the -i argument. In the init folder, examples can be found for different interface configurations.
+In order to avoid configuring csp and interfaces on every launch, an init.csh file can be created. CSH will look for one in your home directory or you can select one at launch with the -i argument. In the init folder, examples can be found for different interface configurations.
 
-
+Loading the default init.csh file in the home directory can be omitted by providing the -i argument without any filename.
