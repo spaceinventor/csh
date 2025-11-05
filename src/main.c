@@ -36,6 +36,10 @@
 #include <apm/environment.h>
 #include "slash_env_var_completion.h"
 
+#ifdef HAVE_PYTHON
+#include <pycsh/utils.h>
+#endif
+
 extern const char *version_string;
 extern param_queue_t param_queue;
 
@@ -327,8 +331,9 @@ int main(int argc, char **argv) {
     pthread_create(&router_handle, NULL, &router_task, NULL);
 	static pthread_t vmem_server_handle;
     pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
+#ifdef HAVE_PYTHON
 	csp_router_set_running(true);
-
+#endif
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 
 #ifdef PARAM_HAVE_COMMANDS
