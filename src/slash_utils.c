@@ -38,14 +38,23 @@ int parse_length(struct slash *slash, int *argi, uint32_t *length) {
 	}
 
 	char * endptr;
-	*length = strtoul(slash->argv[*argi], &endptr, 10);
+	uint64_t length64;
+	length64 = strtoul(slash->argv[*argi], &endptr, 10);
 	if (*endptr != '\0') {
-		*length = strtoul(slash->argv[*argi], &endptr, 16);
+		length64 = strtoul(slash->argv[*argi], &endptr, 16);
 		if (*endptr != '\0' || strncmp(slash->argv[*argi], "0x", 2) != 0) {
 			printf("Failed to parse length in base 10 or base 16\n");
 			return SLASH_EUSAGE;
 		}
+
 	}
+
+	if (length64 > UINT32_MAX) {
+		printf("Length is too large\n");
+		return SLASH_EINVAL;
+	}
+
+	*length = (uint32_t)length64;
 
 	return SLASH_SUCCESS;
 }
