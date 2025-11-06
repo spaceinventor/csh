@@ -50,6 +50,96 @@ static int vmem_client_slash_list(struct slash *slash)
 }
 slash_command(vmem, vmem_client_slash_list, "", "List virtual memory");
 
+static int vmem_client_slash_codec(struct slash *slash) {
+
+	unsigned int node = slash_dfl_node;
+	unsigned int timeout = slash_dfl_timeout;
+	unsigned int version = 1;
+	int decompress = 0;
+
+	optparse_t * parser = optparse_new("codec", "<src_address> <dst_address> [length base10 or base16]");
+	optparse_add_help(parser);
+	csh_add_node_option(parser, &node);
+	optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
+	optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
+	optparse_add_set(parser, 'd', "decompress", 1, &decompress, "Enable decompress (default = compress)");
+
+	int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
+	if (argi < 0) {
+		optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+	/* Expect address */
+	if (++argi >= slash->argc) {
+		printf("missing address\n");
+		optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+	char * endptr;
+	uint64_t src_address = strtoul(slash->argv[argi], &endptr, 16);
+	if (*endptr != '\0') {
+		printf("Failed to parse address\n");
+		optparse_del(parser);
+		return SLASH_EUSAGE;
+	}
+
+
+	/* Expect address */
+	if (++argi >= slash->argc) {
+		printf("missing address\n");
+		optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+	uint64_t dst_address = strtoul(slash->argv[argi], &endptr, 16);
+	if (*endptr != '\0') {
+		printf("Failed to parse address\n");
+		optparse_del(parser);
+		return SLASH_EUSAGE;
+	}
+
+	uint32_t length = 0;
+	/* Expect length */
+	if (++argi >= slash->argc) {
+		printf("missing length\n");
+		optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+	length = strtoul(slash->argv[argi], &endptr, 10);
+	if (*endptr != '\0') {
+		length = strtoul(slash->argv[argi], &endptr, 16);
+		if (*endptr != '\0') {
+			printf("Failed to parse length in base 10 or base 16\n");
+			optparse_del(parser);
+			return SLASH_EUSAGE;
+		}
+	}
+	int res = 0;
+	if(decompress) {
+		res = vmem_client_decompress(node, timeout, src_address, dst_address, length, version);
+	} else {
+		res = vmem_client_compress(node, timeout, src_address, dst_address, length, version);
+	}
+
+	optparse_del(parser);
+	if (res) {
+		if (res == -1) {
+			return SLASH_ENOMEM;
+		} else if (res == -2) {
+			printf("\033[31m\n");
+			printf("Timed out on codec response\n");
+			printf("\033[0m\n");
+			return SLASH_EIO;
+		}
+	}
+
+	return SLASH_SUCCESS;
+}
+slash_command(codec, vmem_client_slash_codec, "<src_address> <dst_address> <length>", "Perform (de)compression from src into dst");
+
 #if 0
 static int vmem_client_slash_fram(struct slash *slash, int backup) {
 
