@@ -65,21 +65,11 @@ static int vmem_client_slash_download(struct slash *slash)
 		return SLASH_EUSAGE;
 	}
 
-	/* Expect length */
-	if (++argi >= slash->argc) {
-		printf("missing length\n");
-        optparse_del(parser);
-		return SLASH_EINVAL;
-	}
-
-	uint32_t length = strtoul(slash->argv[argi], &endptr, 10);
-	if (*endptr != '\0') {
-		length = strtoul(slash->argv[argi], &endptr, 16);
-		if (*endptr != '\0') {
-			printf("Failed to parse length in base 10 or base 16\n");
-            optparse_del(parser);
-			return SLASH_EUSAGE;
-		}
+	uint32_t length;
+	int result = parse_length(slash, &argi, &length);
+	if (result < 0) {
+		optparse_del(parser);
+		return result;
 	}
 
 	/* Expect filename */

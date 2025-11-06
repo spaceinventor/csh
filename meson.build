@@ -44,6 +44,7 @@ zmq_dep = dependency(
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+ossi_dep = dependency('ossi', fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
 	fallback: 
@@ -135,6 +136,7 @@ csh = executable('csh', csh_sources,
 		slash_dep,
 		csp_dep,
 		param_dep,
+		ossi_dep,
 		curl_dep,
 		utils_lib_dep.as_link_whole(),
 		pycsh_dep
