@@ -47,15 +47,6 @@ extern param_queue_t param_queue;
 #define LINE_SIZE		    512
 #define HISTORY_SIZE		2048
 
-VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
-#ifdef PARAM_HAVE_COMMANDS
-VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
-#endif
-#ifdef PARAM_HAVE_SCHEDULER
-VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
-#endif
-
-
 void csp_router_set_running(bool is_running);
 
 static int (*current_apm_prompt)(struct slash * slash) = NULL;
