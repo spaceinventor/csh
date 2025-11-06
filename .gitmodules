@@ -16,3 +16,6 @@
 [submodule "lib/pycsh_core"]
 	path = lib/pycsh_core
 	url = https://github.com/spaceinventor/pycsh_core.git
+[submodule "lib/ossi"]
+	path = lib/ossi
+	url = https://github.com/spaceinventor/libossi.git
