@@ -11,8 +11,6 @@ The environment variable related commands all start with the ``var`` prefix and 
 * ``var show``: show all the variables currently defined in the environment
 * ``var expand``: perform variable expansion in a string
 
-See the `Built-in commands`_ section for a description of these commands.
-
 Environment variables examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

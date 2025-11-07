@@ -75,23 +75,6 @@ Example module testing procedure using CSH
 
     PageBreak oneColumn
 
-List of commands
------------------------------
-
-Built-in commands
-~~~~~~~~~~~~~~~~~
-
-.. partool -q --csv -s builddir/csh > doc/MAN/Operating_Instructions/builtin_commands.csv
-
-.. csv-table:: Built-in commands
-    :file: MAN/Operating_Instructions/builtin_commands.csv
-    :widths: 20 20 70
-    :header-rows: 1
-
-.. raw:: pdf
-
-    PageBreak 
-
 Command examples
 -----------------------------
 .. include:: MAN/Operating_Instructions/command_examples.rst
@@ -102,15 +85,37 @@ Named Commands
 
 .. include:: MAN/Operating_Instructions/environment_variables.rst
 
-.. Appendices
-.. ===========================================================================
+.. raw:: pdf
 
-.. .. include:: MAN/Appendices/abbreviation_list.rst
+    PageBreak 
+
+APMs
+===========================================================================
+.. include:: MAN/APMs/introduction.rst
 
 
+Commands provided by CSH SI
+-----------------------------
+.. include:: MAN/APMs/csh_si.rst
 
 
+Creating a new APM
+-----------------------------
+.. include:: MAN/APMs/csh_example.rst
 
-.. .....................................................................
-    
+.. raw:: pdf
 
+    PageBreak 
+
+Appendices
+===========================================================================
+
+List of Built-in commands
+-----------------------------
+
+.. partool -q --csv -s builddir/csh > doc/MAN/Operating_Instructions/builtin_commands.csv
+
+.. csv-table:: Built-in commands
+    :file: MAN/Operating_Instructions/builtin_commands.csv
+    :widths: 20 20 70
+    :header-rows: 1
