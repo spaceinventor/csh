@@ -7,8 +7,8 @@ The preferred way to aquire the application is by installing a release. Go to ht
    :header-rows: 0
 
    * -
-
-      .. csh-prompt:: >>$ sudo dpkg --install si-csh_<Ubuntu_version>_amd64_<CSH_version>.deb
+ 
+      .. csh-prompt:: >>$ sudo apt install ./si-csh_<Ubuntu_version>_amd64_<CSH_version>.deb
 
 .. class:: centered
 
