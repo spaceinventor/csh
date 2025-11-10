@@ -17,7 +17,9 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'csp:use_rtable=true',
 	'param:have_fopen=true', 
 	'param:collector=false', 
-	'param:list_dynamic=true'])
+	'param:list_dynamic=true'],
+	version: '2.10-rc2'
+)
 
 # Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
 # 'Consider using the built-in warning_level option instead of using "-Wall"'
