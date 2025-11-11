@@ -35,8 +35,10 @@ slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list file
 
 static void print_cwd() {
     char *cwd = get_current_dir_name();
-    printf("%s\n", cwd);
-    free(cwd);
+    if(NULL != cwd) {
+        printf("%s\n", cwd);
+        free(cwd);
+    }
 }
 
 static int slash_pwd(struct slash *slash) {
@@ -65,7 +67,7 @@ static int slash_cd(struct slash *slash) {
                 strcat(expanded_path, &slash->argv[1][1]);
             }
             if (chdir(expanded_path) < 0) {
-                printf("Failed to cd into %s, current dir is: ", expanded_path);
+                printf("Failed to cd into %s\n", expanded_path);
                 free(expanded_path);
                 print_cwd();
                 return SLASH_EINVAL;
@@ -74,14 +76,14 @@ static int slash_cd(struct slash *slash) {
             }
         } else {
             if (chdir(slash->argv[1]) < 0) {
-                printf("Failed to cd into %s, current dir is: ", slash->argv[1]);
+                printf("Failed to cd into %s\n", slash->argv[1]);
                 print_cwd();
                 return SLASH_EINVAL;
             }            
         }
     } else {
         if (chdir(home) < 0) {
-            printf("Failed to cd into %s, current dir is: ", home);
+            printf("Failed to cd into %s\n", home);
             print_cwd();
             return SLASH_EINVAL;
         }                   
