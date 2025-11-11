@@ -24,6 +24,7 @@
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp/csp_crc32.h>
+#include <csp/arch/csp_time.h>
 
 #include "csh_internals.h"
 
@@ -275,13 +276,50 @@ static void file_callback(const char * path, const char * last_entry, void * cus
 	}
 }
 
+static int do_upload(int node, unsigned int timeout, int address, char * data, int len) {
+	int res = SLASH_SUCCESS;
+	uint32_t time_begin = csp_get_ms();
+	int count = vmem_upload(node, timeout, address, data, len, 1);
+	uint32_t time_total = csp_get_ms() - time_begin;
+
+	printf(" - %.0f K\n", (count / 1024.0));
+	switch (count) {
+	case CSP_ERR_TIMEDOUT:
+		printf("Connection timeout\n");
+		res = SLASH_EIO;
+		break;
+	case CSP_ERR_NOBUFS:
+		printf("No more CSP buffers\n");
+		res = SLASH_ENOMEM;
+		break;
+	default: 
+		{
+			if(count != len){
+				unsigned int window_size = 0;
+				csp_rdp_get_opt(&window_size, NULL, NULL, NULL, NULL, NULL);
+				uint32_t suggested_offset = 0;
+				if(count > (((signed int)window_size + 1) * VMEM_SERVER_MTU)) {
+					suggested_offset = (count) - ((window_size + 1) * VMEM_SERVER_MTU);
+				} 
+				printf("Upload didn't complete, suggested offset to resume: %"PRIu32"\n", suggested_offset);
+				res = SLASH_EIO;
+			} else {
+				printf("Uploaded %"PRIu32" bytes in %.03f s at %"PRIu32" Bps\n", count, time_total / 1000.0, (uint32_t)(count / ((float)time_total / 1000.0)) );
+				res = SLASH_SUCCESS;
+			}
+		}
+		break;
+	}
+	return res;
+}
+
 static int upload_and_verify(int node, int address, char * data, int len) {
 
 	unsigned int timeout = 10000;
 	printf("  Upload %u bytes to node %u addr 0x%x\n", len, node, address);
-	int res = vmem_upload(node, timeout, address, data, len, 1);
+	int res = do_upload(node, timeout, address, data, len);
 	if(res < 0){
-		return SLASH_EINVAL;
+		return res;
 	}
 
 	char * datain = malloc(len);
@@ -438,7 +476,10 @@ static int slash_csp_program(struct slash * slash) {
 		crc = csp_crc32_memory((const uint8_t *)data, len);
 		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
-		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
+		result = do_upload(node, 10000, vmem.vaddr, data, len);
+		if(result < 0){
+			return result;
+		}
 		uint32_t crc_node;
 		int res = vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 		if (res >= 0) {
@@ -614,7 +655,11 @@ static int slash_sps(struct slash * slash) {
 		crc = csp_crc32_memory((const uint8_t *)data, len);
 		printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 		printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
-		vmem_upload(node, 10000, vmem.vaddr, data, len, 1);
+		result = do_upload(node, 10000, vmem.vaddr, data, len);
+		if(result < 0){
+			return result;
+		}
+
 		uint32_t crc_node;
 		int res = vmem_client_calc_crc32(node, 10000, vmem.vaddr, len, &crc_node, 1);
 		if (res >= 0) {
