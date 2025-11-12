@@ -1,6 +1,0 @@
-# Basic image processing pipeline configuration
-# This processes raw images through demosaicing and encoding
-
-- order: 1
-  param_id: 1
-  name: libid
