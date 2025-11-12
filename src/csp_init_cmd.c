@@ -5,8 +5,6 @@
 #include <csp/csp.h>
 
 #include <pthread.h>
-#include <param/param_server.h>
-#include <vmem/vmem_server.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>
 #include <sys/utsname.h>
@@ -23,17 +21,6 @@
 #include <ifaddrs.h>
 
 #define CURVE_KEYLEN 41
-
-void * router_task(void * param) {
-	while(1) {
-		csp_route_work();
-	}
-}
-
-void * vmem_server_task(void * param) {
-	vmem_server_loop(param);
-	return NULL;
-}
 
 static int csp_init_cmd(struct slash *slash) {
 
@@ -61,18 +48,19 @@ static int csp_init_cmd(struct slash *slash) {
 	static struct utsname info;
 	uname(&info);
 
-    if (hostname == NULL){
-        hostname = info.nodename;
-    }else{
-        strncpy(info.nodename, hostname, 65);
-        hostname = info.nodename;
+    if (hostname){
+        strncpy(info.nodename, hostname, _UTSNAME_NODENAME_LENGTH - 1);
+    }
+    if (model){
+        strncpy(info.version, model, _UTSNAME_VERSION_LENGTH - 1);
+    }
+    if (revision){
+        strncpy(info.release, revision, _UTSNAME_RELEASE_LENGTH - 1);
     }
 
-    if (model == NULL)
-        model = info.version;
-
-    if (revision == NULL)
-        revision = info.release;
+    hostname = info.nodename;
+    model = info.version;
+    revision = info.release;
 
     printf("  Version %d\n", version);
     printf("  Hostname: %s\n", hostname);
@@ -85,26 +73,8 @@ static int csp_init_cmd(struct slash *slash) {
 	csp_conf.revision = revision;
 	csp_conf.version = version;
 	csp_conf.dedup = dedup;
-	csp_init();
 
-    csp_bind_callback(csp_service_handler, CSP_ANY);
-	csp_bind_callback(param_serve, PARAM_PORT_SERVER);
-
-	static pthread_t router_handle;
-	pthread_create(&router_handle, NULL, &router_task, NULL);
-
-	static pthread_t vmem_server_handle;
-	pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
-
-    csp_iflist_check_dfl();
-
-	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
-	//csp_rdp_set_opt(5, 10000, 5000, 1, 2000, 4);
-	//csp_rdp_set_opt(10, 10000, 5000, 1, 2000, 8);
-	//csp_rdp_set_opt(25, 10000, 5000, 1, 2000, 20);
-	//csp_rdp_set_opt(40, 3000, 1000, 1, 250, 35);
-
-    /* no optparse_del() here as the arg string pointers might be used */
+    optparse_del(parser);
 	return SLASH_SUCCESS;
 }
 
@@ -115,8 +85,8 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "ZMQ%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "ZMQ%u", ifidx);
     
     int promisc = 0;
     int mask = 8;
@@ -147,8 +117,14 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter server\n");
@@ -165,7 +141,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
         pubport = CSP_ZMQPROXY_PUBLISH_PORT + ((key_file == NULL) ? 0 : 1);
     }
 
-    if(key_file){
+    if(key_file) {
 
         char key_file_local[256];
         if (key_file[0] == '~') {
@@ -198,19 +174,29 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
             optparse_del(parser);
             return SLASH_EINVAL;
         }
+        /* We are most often saved from newlines, by only reading out CURVE_KEYLEN.
+            But we still attempt to strip them, in case someone decides to use a short key. */
+        char * const newline = strchr(sec_key, '\n');
+        if (newline) {
+            *newline = '\0';
+        }
         fclose(file);
     }
 
     csp_iface_t * iface;
-    csp_zmqhub_init_filter2((const char *) name, server, addr, mask, promisc, &iface, sec_key, subport, pubport);
+    int error = csp_zmqhub_init_filter2((const char *) name, server, addr, mask, promisc, &iface, sec_key, subport, pubport);
+    if (error != CSP_ERR_NONE) {
+        csp_print("Failed to add zmq interface [%s], error: %d\n", server, error);
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
     iface->is_default = dfl;
     iface->addr = addr;
 	iface->netmask = mask;
 
-    if (sec_key != NULL) {
-        free(sec_key);
-    }
+    free(sec_key);
     optparse_del(parser);
+    ifidx++;
 	return SLASH_SUCCESS;
 }
 
@@ -220,10 +206,9 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "KISS%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name,CSP_IFLIST_NAME_MAX, "KISS%u", ifidx);
     
-    int promisc = 0;
     int mask = 8;
     int dfl = 0;
     int baud = 1000000;
@@ -231,7 +216,6 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
     optparse_t * parser = optparse_new("csp add kiss", "<addr>");
     optparse_add_help(parser);
-    optparse_add_set(parser, 'p', "promisc", 1, &promisc, "Promiscuous Mode");
     optparse_add_int(parser, 'm', "mask", "NUM", 0, &mask, "Netmask (defaults to 8)");
     optparse_add_int(parser, 'b', "baud", "NUM", 0, &baud, "Baudrate (defaults to 1000000)");
     optparse_add_string(parser, 'u', "uart", "STR", &device, "UART device name (defaults to /dev/ttyUSB0)");
@@ -240,6 +224,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -248,23 +233,28 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     csp_usart_conf_t conf = {
         .device = device,
         .baudrate = baud,
         .databits = 8,
         .stopbits = 1,
-        .paritysetting = 0,
-        .checkparity = 0
+        .paritysetting = 0
     };
 
     csp_iface_t * iface;
     
-    int error = csp_usart_open_and_add_kiss_interface(&conf, name, &iface);
+    int error = csp_usart_open_and_add_kiss_interface(&conf, name, addr, &iface);
     if (error != CSP_ERR_NONE) {
-        printf("Failed to add kiss interface\n");
+        csp_print("Failed to add kiss interface [%s], error: %d\n", device, error);
         optparse_del(parser);
         return SLASH_EINVAL;
     }
@@ -273,6 +263,8 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
+    ifidx++;
 	return SLASH_SUCCESS;
 }
 
@@ -284,8 +276,8 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "CAN%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "CAN%u", ifidx);
     
     int promisc = 0;
     int mask = 8;
@@ -313,14 +305,20 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     csp_iface_t * iface;
     
     int error = csp_can_socketcan_open_and_add_interface(device, name, addr, baud, promisc, &iface);
     if (error != CSP_ERR_NONE) {
-        csp_print("failed to add CAN interface [%s], error: %d", device, error);
+        csp_print("failed to add CAN interface [%s], error: %d\n", device, error);
         optparse_del(parser);
         return SLASH_EINVAL;
     }
@@ -329,6 +327,8 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
     iface->addr = addr;
 	iface->netmask = mask;
 
+    optparse_del(parser);
+    ifidx++;
 	return SLASH_SUCCESS;
 }
 
@@ -352,7 +352,7 @@ static void eth_select_interface(const char ** device) {
         for( ; address && (selected[0] == 0); address = address->ifa_next) {
             if (address->ifa_addr && strcmp("lo", address->ifa_name) != 0) {
                 if (strncmp(*device, address->ifa_name, strlen(*device)) == 0) {
-                    strncpy(selected, address->ifa_name, sizeof(selected));
+                    strncpy(selected, address->ifa_name, sizeof(selected)-1);  // -1 to fit NULL byte
                 }
             }
         }
@@ -368,8 +368,8 @@ static void eth_select_interface(const char ** device) {
 static int csp_ifadd_eth_cmd(struct slash *slash) {
 
     static int ifidx = 0;
-    char name[CSP_IFLIST_NAME_MAX + 1];
-    sprintf(name, "ETH%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "ETH%u", ifidx);
     const char * device = "e";
    
     int promisc = 0;
@@ -388,6 +388,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -396,8 +397,14 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     eth_select_interface(&device);
     if (strlen(device) == 0) {
@@ -408,13 +415,19 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     csp_iface_t * iface = NULL;
 
     // const char * device, const char * ifname, int mtu, unsigned int node_id, csp_iface_t ** iface, bool promisc
-    csp_eth_init(device, name, mtu, addr, promisc == 1, &iface);
+    int error = csp_eth_init(device, name, mtu, addr, promisc == 1, &iface);
+    if (error != CSP_ERR_NONE) {
+        csp_print("Failed to add ethernet interface [%s], error: %d\n", device, error);
+        optparse_del(parser);
+        return SLASH_EINVAL;
+    }
 
     iface->is_default = dfl;
     iface->addr = addr;
 	iface->netmask = mask;
 
     optparse_del(parser);
+    ifidx++;
     return SLASH_SUCCESS;
 }
 
@@ -424,8 +437,8 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "UDP%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "UDP%u", ifidx);
     
     int promisc = 0;
     int mask = 8;
@@ -453,8 +466,14 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
 	if (++argi >= slash->argc) {
 		printf("missing parameter server\n");
@@ -465,8 +484,19 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 
     csp_iface_t * iface;
     iface = malloc(sizeof(csp_iface_t));
+    if(!iface) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     memset(iface, 0, sizeof(csp_iface_t));
     csp_if_udp_conf_t * udp_conf = malloc(sizeof(csp_if_udp_conf_t));
+    if(!udp_conf) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        free(iface);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     udp_conf->host = strdup(server);
     udp_conf->lport = listen_port;
     udp_conf->rport = remote_port;
@@ -477,6 +507,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 	iface->netmask = mask;
 
     optparse_del(parser);
+    ifidx++;
 	return SLASH_SUCCESS;
 }
 
@@ -486,8 +517,8 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
     static int ifidx = 0;
 
-    char name[10];
-    sprintf(name, "TUN%u", ifidx++);
+    char name[CSP_IFLIST_NAME_MAX+1] = {0};
+    snprintf(name, CSP_IFLIST_NAME_MAX, "TUN%u", ifidx);
     
     int promisc = 0;
     int mask = 8;
@@ -502,6 +533,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 
@@ -510,8 +542,14 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
-    char * endptr;
-    unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+    char * endptr = NULL;
+    const unsigned int addr = strtoul(slash->argv[argi], &endptr, 10);
+
+    if (*endptr != '\0') {
+        fprintf(stderr, "Addr argument '%s' is not an integer\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
 
     if (++argi >= slash->argc) {
 		printf("missing parameter tun src\n");
@@ -529,7 +567,18 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 
     csp_iface_t * iface;
     iface = malloc(sizeof(csp_iface_t));
+    if(!iface) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     csp_if_tun_conf_t * ifconf = malloc(sizeof(csp_if_tun_conf_t));
+    if(!ifconf) {
+        fprintf(stderr, "Cannot allocate memory\n");
+        free(iface);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+    }
     ifconf->tun_dst = tun_dst;
     ifconf->tun_src = tun_src;
 
@@ -540,6 +589,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 	iface->netmask = mask;
 
     optparse_del(parser);
+    ifidx++;
 	return SLASH_SUCCESS;
 }
 
@@ -556,6 +606,7 @@ static int csp_routeadd_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
+        optparse_del(parser);
 	    return SLASH_EINVAL;
     }
 

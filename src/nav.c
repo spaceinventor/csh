@@ -1,6 +1,9 @@
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <slash/slash.h>
 #include <slash/completer.h>
 
@@ -28,9 +31,23 @@ static int slash_ls(struct slash *slash) {
 
 	return SLASH_SUCCESS;
 }
-
 slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list files");
 
+static void print_cwd() {
+    char *cwd = get_current_dir_name();
+    printf("%s\n", cwd);
+    free(cwd);
+}
+
+static int slash_pwd(struct slash *slash) {
+
+    if (slash->argc != 0) {
+        return SLASH_EUSAGE;
+    }
+    print_cwd();
+	return SLASH_SUCCESS;
+}
+slash_command(pwd, slash_pwd, "", "Print current working directory");
 
 static int slash_cd(struct slash *slash) {
 
@@ -38,8 +55,36 @@ static int slash_cd(struct slash *slash) {
         return SLASH_EUSAGE;
     }
 
-    if (chdir(slash->argv[1]) < 0) {
-        return SLASH_EINVAL;
+    char *expanded_path = NULL;
+    char *home = getenv("HOME");
+    if(strlen(slash->argv[1])) {
+        if (slash->argv[1][0] == '~') {
+            expanded_path = calloc(PATH_MAX, sizeof(char));
+            strcpy(expanded_path, home);
+            if(slash->argv[1][1]) {
+                strcat(expanded_path, &slash->argv[1][1]);
+            }
+            if (chdir(expanded_path) < 0) {
+                printf("Failed to cd into %s, current dir is: ", expanded_path);
+                free(expanded_path);
+                print_cwd();
+                return SLASH_EINVAL;
+            } else {
+                free(expanded_path);
+            }
+        } else {
+            if (chdir(slash->argv[1]) < 0) {
+                printf("Failed to cd into %s, current dir is: ", slash->argv[1]);
+                print_cwd();
+                return SLASH_EINVAL;
+            }            
+        }
+    } else {
+        if (chdir(home) < 0) {
+            printf("Failed to cd into %s, current dir is: ", home);
+            print_cwd();
+            return SLASH_EINVAL;
+        }                   
     }
 	return SLASH_SUCCESS;
 }
