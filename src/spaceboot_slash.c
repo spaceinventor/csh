@@ -59,6 +59,11 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 		}
 	}
 
+	if (flash < 0 || flash >= NUM_SLOTS) {
+		printf("  Invalid slot number %d\n", flash);
+		return;
+	}
+
 	printf("  Switching to flash %d\n", flash);
 	printf("  Will run this image %d times\n", times);
 
