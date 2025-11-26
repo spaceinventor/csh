@@ -5,9 +5,12 @@
  *      Author: johan
  */
 
+#include "param_sniffer.h"
+
 #include <stdio.h>
 #include <sys/time.h>
 #include <pthread.h>
+#include <sys/queue.h>
 #include <param/param_server.h>
 #include <param/param_queue.h>
 #include <param/param_serializer.h>
@@ -141,6 +144,51 @@ int param_sniffer_crc(csp_packet_t * packet) {
     return 0;
 }
 
+/* The intention here is to hide the `SLIST` usage behind the `register` and `unregister` API,
+    so we could change to a statically allocated array instead if desired. */
+typedef struct param_sniffer_callback_s {
+    param_sniffer_callback_f callback;
+    void *context;
+    SLIST_ENTRY(param_sniffer_callback_s) next;
+} param_sniffer_callback_t;
+static SLIST_HEAD( sniffer_callbacks_head_s, param_sniffer_callback_s ) sniffer_callbacks_head = SLIST_HEAD_INITIALIZER(sniffer_callbacks_head);
+
+int param_sniffer_register_callback(param_sniffer_callback_f callback, void * context) {
+
+    /* TODO Kevin: What about registering the same callback multiple times? What if it has different contexts? */
+    param_sniffer_callback_t * slist_entry = calloc(1, sizeof(*slist_entry));
+    slist_entry->callback = callback;
+    slist_entry->context = context;
+    SLIST_INSERT_HEAD(&sniffer_callbacks_head, slist_entry, next);
+
+    return 0;
+}
+
+int param_sniffer_unregister_callback(param_sniffer_callback_f callback) {
+
+    param_sniffer_callback_t *callback_entry = NULL;
+    param_sniffer_callback_t *prev_entry = (param_sniffer_callback_t*)&sniffer_callbacks_head;
+
+    SLIST_FOREACH(callback_entry, &sniffer_callbacks_head, next) {
+
+        if (callback_entry->callback == callback) {
+            //SLIST_REMOVE_PREVPTR(&prev_entry, callback_entry, next);
+            SLIST_REMOVE(&sniffer_callbacks_head, callback_entry, param_sniffer_callback_s, next);
+        }
+        prev_entry = callback_entry;
+    }
+    
+    return 0;
+}
+
+static void param_sniffer_call_callbacks(param_t * param) {
+    param_sniffer_callback_t *callback_entry = NULL;
+
+    SLIST_FOREACH(callback_entry, &sniffer_callbacks_head, next) {
+        callback_entry->callback(param, callback_entry->context);
+    }
+}
+
 static void * param_sniffer(void * param) {
     csp_promisc_enable(100);
     while(1) {
@@ -200,6 +248,7 @@ static void * param_sniffer(void * param) {
             param_t * param = param_list_find_id(node, id);
             if (param) {
                 param_sniffer_log(NULL, &queue, param, offset, &reader, &timestamp);
+                param_sniffer_call_callbacks(param);
             } else {
                 printf("Found unknown param node %d id %d\n", node, id);
                 mpack_discard(&reader);
