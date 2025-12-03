@@ -1,24 +1,29 @@
-project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
-	'buildtype=debug', 
-	'optimization=2',
-	'warning_level=0',
-	'c_std=gnu11', 
-	'b_lto=false',
-	'default_library=static',
-	'slash:builtins=true',
-	'csp:packet_padding_bytes=42', 
-	'csp:buffer_count=1000',
-	'csp:buffer_size=2048',
-	'csp:conn_max=20',
-	'csp:conn_rxqueue_len=1000',
-	'csp:qfifo_len=1000',
-	'csp:rdp_max_window=1000',
-	'csp:port_max_bind=16',
-	'csp:use_rtable=true',
-	'param:have_fopen=true', 
-	'param:collector=false', 
-	'param:list_dynamic=true'],
-	version: '2.10-rc2'
+project('csh',
+	['c', 'cpp'],
+	subproject_dir: 'lib',
+	default_options: [
+		'buildtype=debug',
+		'optimization=2',
+		'warning_level=0',
+		'c_std=gnu11',
+		'b_lto=false',
+		'default_library=static',
+		'slash:builtins=true',
+		'csp:packet_padding_bytes=42',
+		'csp:buffer_count=1000',
+		'csp:buffer_size=2048',
+		'csp:conn_max=20',
+		'csp:conn_rxqueue_len=1000',
+		'csp:qfifo_len=1000',
+		'csp:rdp_max_window=1000',
+		'csp:port_max_bind=16',
+		'csp:use_rtable=true',
+		'param:have_fopen=true',
+		'param:collector=false',
+		'param:list_dynamic=true'
+	],
+	meson_version: '>= 1.1',
+	version: run_command('git', 'describe',  '--long', '--always', '--dirty', check: true).stdout().strip()
 )
 
 # Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
@@ -34,7 +39,7 @@ add_project_arguments(['-Wall', '-Wextra', '-Wno-unused-parameter'], language: '
 # add_project_arguments(['-fanalyzer'], language: 'c')
 
 curl_dep = dependency(
-	'libcurl', 
+	'libcurl',
 	not_found_message: 'libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.'
 )
 
@@ -49,13 +54,13 @@ param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true
 ossi_dep = dependency('ossi', fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
-	fallback: 
+	fallback:
 	[
-		'apm_csh', 
+		'apm_csh',
 		'apm_csh_dep'
 	],
 	required: true).partial_dependency(
-		links: false, 
+		links: false,
 		includes: true
 	)
 
@@ -82,16 +87,16 @@ csh_sources = [
 	'src/csp_init_cmd.c',
 	'src/vts.c',
 	'src/walkdir.c',
-    'src/victoria_metrics.c', 
+    'src/victoria_metrics.c',
     'src/loki.c',
-    'src/slash_env_var_cmds.c', 
-    'src/slash_nodes_cmds.c', 
-    'src/slash_run_environment.c', 
-    'src/require_version_cmd.c', 
-	'src/param_list_slash.c',
-	'src/param_slash.c',
-	'src/vmem_client_slash.c',
-	'src/vmem_client_slash_ftp.c',
+    'src/slash_env_var_cmds.c',
+    'src/slash_nodes_cmds.c',
+    'src/slash_run_environment.c',
+    'src/require_version_cmd.c',
+    'src/param_list_slash.c',
+    'src/param_slash.c',
+    'src/vmem_client_slash.c',
+    'src/vmem_client_slash_ftp.c',
 ]
 
 python_dep = dependency('python3', version : '>=3.10', required: false)
