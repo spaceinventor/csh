@@ -15,7 +15,7 @@
 #include <csp/csp_types.h>
 #include <csp/arch/csp_queue.h>
 
-#include "arch/posix/pthread_queue.h"
+#include <ossi/message_queue.h>
 #include "url_utils.h"
 
 static int loki_running = 0;
@@ -26,7 +26,8 @@ static int loki_running = 0;
 static char readbuffer[BUFFER_SIZE] = {0};
 static char formatted_log[BUFFER_SIZE - 100] = {0};
 static pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_queue_t * loki_q;
+
+static message_queue_t loki_q;
 
 typedef struct {
     char * data;
@@ -207,15 +208,15 @@ next:
 
     pthread_mutex_unlock(&buffer_mutex);
     json_str_t json_str = {.data = json_str_buf, .len = written};
-    pthread_queue_enqueue(loki_q, &json_str, CSP_MAX_TIMEOUT);
+    message_queue_send(&loki_q, &json_str);
 }
 
 static void *post_thread(void *arg) {
 
     while(loki_running){
         json_str_t json_str;
-        int p_res = pthread_queue_dequeue(loki_q, (void *)&json_str, CSP_MAX_TIMEOUT);
-        if(p_res != PTHREAD_QUEUE_OK){
+        int p_res = message_queue_receive(&loki_q, &json_str);
+        if(p_res != 0){
             continue;
         }
         curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, json_str.len);
@@ -438,13 +439,11 @@ static int loki_start_cmd(struct slash * slash) {
         perror("dup2");
         return SLASH_EINVAL;
     }
-    if(!loki_q){
-        loki_q = pthread_queue_create(2000, sizeof(json_str_t));
-        if(!loki_q){
-            printf("\033[1;31mLOKI CURL: Out of memory!\033[0m\n");
-            return SLASH_EINVAL;
-        }
-
+    static bool queue_created = false;
+    if(!queue_created){
+        queue_created = true;
+        static uint8_t queue_storage[2000 * sizeof(json_str_t)];
+        message_queue_create(&loki_q, sizeof(json_str_t), 2000, queue_storage);
     }
     loki_running = 1;
     pthread_t read_thread_id;
