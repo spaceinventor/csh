@@ -56,7 +56,7 @@ void known_host_set_storage_size(uint32_t new_size){
     known_host_storage_size = new_size;
 }
 
-uint32_t known_host_get_storage_size() {
+uint32_t known_host_get_storage_size(void) {
     return known_host_storage_size;
 }
 

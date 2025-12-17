@@ -56,7 +56,7 @@ int si_lock_give(void* lock) {
 static uint8_t lock_taken[NUM_LOCKS] = {0};
 static sem_t locks[NUM_LOCKS] = {0};
 
-void* si_lock_init() {
+void* si_lock_init(void) {
 
 	for (int i = 0; i < NUM_LOCKS; i++) {
 		if(lock_taken[i] == 0) {
