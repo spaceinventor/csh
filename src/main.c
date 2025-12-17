@@ -34,6 +34,7 @@
 #include <vmem/vmem_client.h>
 
 #include <apm/environment.h>
+#include <ossi/sitime.h>
 #include "slash_env_var_completion.h"
 
 #ifdef HAVE_PYTHON
@@ -220,6 +221,7 @@ static void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
 	}
+	return NULL;
 }
 
 static void * vmem_server_task(void * param) {

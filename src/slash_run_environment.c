@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <slash/slash.h>
 
 #include <apm/environment.h>
 

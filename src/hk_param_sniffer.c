@@ -20,6 +20,7 @@
 #include <apm/csh_api.h>
 
 #include "param_sniffer.h"
+#include "hk_param_sniffer.h"
 
 pthread_t hk_param_sniffer_thread;
 #define MAX_HKS 16
