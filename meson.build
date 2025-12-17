@@ -35,7 +35,7 @@ project('csh',
 # they want.
 # As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
 # accept the Meson warnings given the flexibilty we gain
-add_project_arguments(['-Wall', '-Wextra', '-Wno-unused-parameter'], language: 'c')
+add_project_arguments(['-Wall', '-Wextra', '-Wstrict-prototypes', '-Wmissing-prototypes', '-Wno-unused-parameter'], language: 'c')
 # add_project_arguments(['-fanalyzer'], language: 'c')
 
 curl_dep = dependency(
