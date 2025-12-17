@@ -24,7 +24,7 @@ struct host_s {
 };
 
 static uint32_t known_host_storage_size = sizeof(host_t);
-SLIST_HEAD(known_host_s, host_s) known_hosts = {};
+SLIST_HEAD(known_host_s, host_s) known_hosts = {0};
 
 /** Private (CSH-only API) */
 void node_save(const char * filename) {
@@ -62,7 +62,7 @@ uint32_t known_host_get_storage_size(void) {
 
 
 void host_name_completer(struct slash *slash, char * token) {
-    SLIST_HEAD(known_host_s, host_s) matching_hosts = {};
+    SLIST_HEAD(known_host_s, host_s) matching_hosts = {0};
     char *part_to_complete = token + strnlen(token, slash->length);
     /* Rewind to a potential whitespace */
     while(part_to_complete > token) {
