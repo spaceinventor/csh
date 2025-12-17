@@ -215,13 +215,13 @@ int csp_cmp_memcpy(csp_memptr_t to, csp_const_memptr_t from, size_t size) {
 	return CSP_ERR_NONE;
 }
 
-void * router_task(void * param) {
+static void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
 	}
 }
 
-void * vmem_server_task(void * param) {
+static void * vmem_server_task(void * param) {
 	vmem_server_loop(param);
 	return NULL;
 }

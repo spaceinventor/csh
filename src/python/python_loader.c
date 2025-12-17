@@ -143,7 +143,7 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
     return module;
 }
 
-PyObject * pycsh_load_pymod(const char * const _filepath, const char * const init_function_name, int verbose) {
+static PyObject * pycsh_load_pymod(const char * const _filepath, const char * const init_function_name, int verbose) {
 
 	if (_filepath == NULL) {
 		return NULL;

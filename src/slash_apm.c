@@ -74,7 +74,7 @@ void apm_queue_add(apm_entry_t * e) {
 
 }
 
-apm_entry_t * load_apm(const char * path) {
+static apm_entry_t * load_apm(const char * path) {
 
     void * handle = dlopen(path, RTLD_NOW);
     if (!handle)
@@ -111,7 +111,7 @@ apm_entry_t * load_apm(const char * path) {
 
 }
 
-int initialize_apm(apm_entry_t * e) {
+static int initialize_apm(apm_entry_t * e) {
 
     const int * apm_init_version_in_apm_ptr = dlsym(e->handle, "apm_init_version");
     if (apm_init_version_in_apm_ptr == NULL) {
@@ -169,7 +169,7 @@ typedef struct lib_search_s {
 	lib_info_t libs[WALKDIR_MAX_ENTRIES];
 } lib_search_t;
 
-void init_info(lib_info_t * info, const char * path) {
+static void init_info(lib_info_t * info, const char * path) {
 
     if (!info) {
         return;
@@ -252,7 +252,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
 
 }
 
-void build_apm_list(lib_search_t* lib_search) {
+static void build_apm_list(lib_search_t* lib_search) {
 
     /* Clear search list */
 	lib_search->lib_count = 0;
@@ -277,7 +277,7 @@ void build_apm_list(lib_search_t* lib_search) {
 
 }
 
-int apm_load_search(lib_search_t *lib_search) {
+static int apm_load_search(lib_search_t *lib_search) {
 
     char *path = calloc(1, WALKDIR_MAX_PATH_SIZE);
     if(!path) {
@@ -419,7 +419,7 @@ slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
 
 static char doc_folder[256] = "/usr/share/si-csh";
 
-void doc_found_cb(const char *a, const char *b, void *ctx) {
+static void doc_found_cb(const char *a, const char *b, void *ctx) {
     size_t len = strlen(b);
     if(len > 4) {
         if (b[len - 1] == 'f' && 
@@ -469,7 +469,7 @@ struct manual_entry {
     SLIST_ENTRY(manual_entry) list;
 };
 
-void manual_cb(const char *a, const char *b, void *ctx) {
+static void manual_cb(const char *a, const char *b, void *ctx) {
     struct manual_list *manuals = (struct manual_list *)ctx;
     size_t len = strlen(b);
     if(len > 4) {
