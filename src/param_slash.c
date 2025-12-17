@@ -27,6 +27,7 @@
 
 #include <param/param_wildcard.h>
 #include "time.h"
+#include "csh_internals.h"
 
 static char queue_buf[PARAM_SERVER_MTU];
 param_queue_t param_queue = { .buffer = queue_buf, .buffer_size = PARAM_SERVER_MTU, .type = PARAM_QUEUE_TYPE_EMPTY, .version = 2 };
