@@ -21,6 +21,7 @@
 #include <param/param_string.h>
 #include "param_sniffer.h"
 #include "url_utils.h"
+#include "victoria_metrics.h"
 
 static pthread_t vm_push_thread;
 int vm_running = 0;

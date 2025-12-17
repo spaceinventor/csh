@@ -1,5 +1,7 @@
 #include <csp/csp.h>
 #include <apm/csh_api.h>
+#include "csh_internals.h"
+
 
 unsigned int slash_dfl_node = 0;
 unsigned int slash_dfl_timeout = 1000;

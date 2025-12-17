@@ -17,6 +17,7 @@
 
 #include "arch/posix/pthread_queue.h"
 #include "url_utils.h"
+#include "loki.h"
 
 static int loki_running = 0;
 

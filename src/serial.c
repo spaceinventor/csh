@@ -2,6 +2,7 @@
 #include <stdlib.h>
 
 #include <param/param.h>
+#include "csh_internals.h"
 
 uint32_t _serial0;
 

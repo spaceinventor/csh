@@ -16,6 +16,7 @@
 #include <csp/csp_hooks.h>
 #include <csp/csp_crc32.h>
 
+#include "param_sniffer.h"
 #include "hk_param_sniffer.h"
 #include "prometheus.h"
 #include "victoria_metrics.h"

@@ -3,6 +3,7 @@
 #include <semaphore.h>
 #include <stdint.h>
 #include <time.h>
+#include "csh_internals.h"
 
 int si_lock_take(void* lock, int block_time_ms) {
 
