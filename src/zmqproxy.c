@@ -114,7 +114,7 @@ static int get_monitor_event(void * monitor, int * value, char ** address) {
     return event;
 }
 
-void handle_event(int event, int value, char *address){
+static void handle_event(int event, int value, char *address){
 
     switch (event) {
         case ZMQ_EVENT_ACCEPTED: {

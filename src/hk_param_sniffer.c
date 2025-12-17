@@ -38,7 +38,7 @@ typedef struct timesync_nodes_s {
 } timesync_nodes_t;
 static timesync_nodes_t timesync_nodes = {0};
 
-void hk_set_utcparam(unsigned int node, unsigned int paramid) {
+static void hk_set_utcparam(unsigned int node, unsigned int paramid) {
 
 	// update existing
 	for (int i = 0; i < timesync_nodes.count; i++) {

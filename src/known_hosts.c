@@ -138,7 +138,7 @@ void host_name_completer(struct slash *slash, char * token) {
 
 }
 
-void known_hosts_del(int host) {
+static void known_hosts_del(int host) {
 
     // SLIST_FOREACH(host_t host, &known_hosts, next) {
     for (host_t* element = SLIST_FIRST(&known_hosts); element != NULL; element = SLIST_NEXT(element, next)) {

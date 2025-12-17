@@ -33,7 +33,7 @@ static char header[1024] =
 		"Content-Type: text/plain;\r\n\r\n";
 
 
-void * prometheus_exporter(void * param) {
+static void * prometheus_exporter(void * param) {
 
 	listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 

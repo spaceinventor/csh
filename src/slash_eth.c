@@ -57,7 +57,7 @@ static int eth_debug_toggle(struct slash *slash)
 slash_command_sub(eth, debug, eth_debug_toggle, "", "Toggle ethernet debugging");
 
 
-int eth_init_check(char * device) {
+static int eth_init_check(char * device) {
     static int sockfd;
     struct ifreq if_idx;
     struct ifreq if_mac;
@@ -140,7 +140,7 @@ int eth_init_check(char * device) {
 }
 
 
-static void eth_list_interfaces()
+static void eth_list_interfaces(void)
 {
     // Create link of interface adresses
     struct ifaddrs *addresses;

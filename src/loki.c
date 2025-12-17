@@ -64,7 +64,7 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
 /* strip ansi escape codes, special characters and newlines to nullterminator
  * returns if number of nulltermintors inserted
 */
-int strip_str(char *str) {
+static int strip_str(char *str) {
     char *read_p = str;
     char *write_p = str;
     int str_counter = 0;
