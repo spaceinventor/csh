@@ -49,7 +49,7 @@ static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdat
     return size * nmemb;
 }
 
-void * vm_push(void * arg) {
+static void * vm_push(void * arg) {
 
     vm_args * args = arg;
 
