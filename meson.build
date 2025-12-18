@@ -76,7 +76,6 @@ csh_sources = [
 	'src/prometheus.c',
 	'src/resbuf_dump.c',
 	'src/stdbuf_client.c',
-	'src/randombytes.c',
 	'src/csp_scan.c',
 	'src/sleep_slash.c',
 	'src/spaceboot_slash.c',
