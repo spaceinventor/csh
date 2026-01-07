@@ -107,8 +107,6 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 
 	time_t current_epoch;
 	time(&current_epoch);
-	char current_time_str[32];
-	strftime(current_time_str, sizeof(current_time_str), "%Y-%m-%d %H:%M:%S", gmtime(&current_epoch));
 
 	/* 1577833200: Jan 1st 2020 */
 	if (epoch > current_epoch || epoch < 1577833200) {
