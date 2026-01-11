@@ -238,6 +238,9 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 				if (timesync_nodes.node[i] == node && timesync_nodes.paramid[i] == param->id) {
 					mpack_tag_t tag = mpack_peek_tag(&reader);
 					local_epoch = tag.v.i - timestamp.tv_sec;
+					if (local_epoch == 0) {
+						local_epoch = tag.v.i;
+					}
 					hk_set_epoch(local_epoch, packet->id.src, true);
 					break;
 				}
@@ -251,7 +254,10 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 				continue;
 			}
 
-			param->timestamp->tv_sec += local_epoch;
+			/* Only update if not receiving a UTC timestamp. 1577833200: Jan 1st 2020 */
+			if (param->timestamp->tv_sec < 1577833200) {
+				param->timestamp->tv_sec += local_epoch;
+			}
 			param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
 		} else {
 			printf("HK: Found unknown param node %d id %d\n", node, id);
