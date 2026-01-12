@@ -34,6 +34,7 @@
 #include <vmem/vmem_client.h>
 
 #include <apm/environment.h>
+#include <ossi/sitime.h>
 #include "slash_env_var_completion.h"
 
 #ifdef HAVE_PYTHON
@@ -150,7 +151,7 @@ uint64_t clock_get_nsec(void) {
 	return ts.tv_sec * 1E9 + ts.tv_nsec;
 }
 
-void usage(void) {
+static void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
 	printf("In CSH, type 'manual' to open CSH manual\n");
 	printf("\n");
@@ -216,13 +217,14 @@ static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
     return expansion;
 }
 
-void * router_task(void * param) {
+static void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
 	}
+	return NULL;
 }
 
-void * vmem_server_task(void * param) {
+static void * vmem_server_task(void * param) {
 	vmem_server_loop(param);
 	return NULL;
 }

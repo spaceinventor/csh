@@ -59,6 +59,11 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 		}
 	}
 
+	if (flash < 0 || flash >= NUM_SLOTS) {
+		printf("  Invalid slot number %d\n", flash);
+		return;
+	}
+
 	printf("  Switching to flash %d\n", flash);
 	printf("  Will run this image %d times\n", times);
 
@@ -189,7 +194,7 @@ static char wpath[WALKDIR_MAX_PATH_SIZE];
 // C21: 4, E70: 2C4
 static const uint32_t entry_offsets[] = { 4, 0x2c4 };
 
-bool is_valid_binary(const char * path, struct bin_info_t * binf, bin_file_ident_t * binf_ident)
+static bool is_valid_binary(const char * path, struct bin_info_t * binf, bin_file_ident_t * binf_ident)
 {
 	binf_ident->valid = false;
 
