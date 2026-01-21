@@ -595,6 +595,8 @@ static int python_slash(struct slash *slash) {
 		PyRun_SimpleString("import rlcompleter");
 		PyRun_SimpleString("import readline");
 		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
+		PyRun_SimpleString("import sys");
+		PyRun_SimpleString("if sys.base_prefix != sys.prefix or hasattr(sys, \"real_prefix\"): sys.ps1 = '(venv) >>> '");
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 	}
 
