@@ -145,16 +145,16 @@ static int image_get(char * filename, char ** data, int * len) {
 	struct stat file_stat;
 	fstat(fd->_fileno, &file_stat);
 
+	/* Protect against return codes thrown by fread, and sizes that cannot possibly be valid FW */
+	if (file_stat.st_size > __INT32_MAX__ || file_stat.st_size < 4) {
+		return -2;
+	}
+
 	/* Copy to memory:
 	 * Note we ignore the memory leak because the application will terminate immediately after using the data */
 	*data = malloc(file_stat.st_size);
 	size_t length = fread(*data, 1, file_stat.st_size, fd);
 	fclose(fd);
-
-	/* Protect against return codes thrown by fread, and sizes that cannot possibly be valid FW */
-	if (length > __INT32_MAX__ || length < 4) {
-		return -2;
-	}
 
 	*len = length;
 
