@@ -195,6 +195,7 @@ static int vmem_client_slash_upload(struct slash *slash)
     unsigned int timeout = slash_dfl_timeout;
     unsigned int version = 1;
 	unsigned int offset = 0;
+	int do_crc32 = 0;
 
     optparse_t * parser = optparse_new("upload", "<file> <address>");
     optparse_add_help(parser);
@@ -202,6 +203,7 @@ static int vmem_client_slash_upload(struct slash *slash)
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
+	optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Compare CRC32 as an upload success criteria");
 
 	rdp_opt_add(parser);
 
@@ -299,6 +301,29 @@ static int vmem_client_slash_upload(struct slash *slash)
 			}
 		}
 		break;
+	}
+
+	if (do_crc32 && res == SLASH_SUCCESS) {
+		uint32_t crc = csp_crc32_memory((const uint8_t *)data, size);
+		uint32_t crc_node;
+		int res = vmem_client_calc_crc32(node, timeout, address, size, &crc_node, 1);
+		if (res >= 0) {
+			if (crc_node == crc) {
+				printf("\033[32m\n");
+				printf("  Success\n");
+				printf("\033[0m\n");
+			} else {
+				printf("\033[31m\n");
+				printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+				printf("\033[0m\n");
+				res = SLASH_ENOSPC;
+			}
+		} else {
+			printf("\033[31m\n");
+			printf("  Communication failure: %"PRId32"\n", res);
+			printf("\033[0m\n");
+			res = SLASH_ENOSPC;
+		}
 	}
 
 	free(data);
