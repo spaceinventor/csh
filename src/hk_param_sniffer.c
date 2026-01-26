@@ -108,8 +108,8 @@ void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 	char current_time_str[32];
 	strftime(current_time_str, sizeof(current_time_str), "%Y-%m-%d %H:%M:%S", gmtime(&current_epoch));
 
-	/* 1577833200: Jan 1st 2020 */
-	if (epoch > current_epoch || epoch < 1577833200) {
+	/* 1577836800: Jan 1st 2020 */
+	if (epoch > current_epoch || epoch < 1577836800) {
 		char current_epoch_str[32];
 		strftime(current_epoch_str, sizeof(current_epoch_str), "%Y-%m-%d %H:%M:%S", gmtime(&epoch));
 		printf("At %s: Illegal EPOCH %lu (%s) received\n", current_time_str, current_epoch, current_epoch_str);
@@ -254,8 +254,8 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 				continue;
 			}
 
-			/* Only update if not receiving a UTC timestamp. 1577833200: Jan 1st 2020 */
-			if (param->timestamp->tv_sec < 1577833200) {
+			/* Only update if not receiving a UTC timestamp. 1577836800: Jan 1st 2020 */
+			if (param->timestamp->tv_sec < 1577836800) {
 				param->timestamp->tv_sec += local_epoch;
 			}
 			param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
