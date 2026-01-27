@@ -22,7 +22,7 @@ project('csh',
 		'param:collector=false',
 		'param:list_dynamic=true'
 	],
-	meson_version: '>= 1.1',
+	meson_version: '>= 1.6',
 	version: run_command('git', 'describe',  '--long', '--always', '--dirty', check: true).stdout().strip()
 )
 
