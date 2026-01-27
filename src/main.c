@@ -144,13 +144,7 @@ int slash_prompt(struct slash * slash) {
 	}
 }
 
-uint64_t clock_get_nsec(void) {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ts.tv_sec * 1E9 + ts.tv_nsec;
-}
-
-void usage(void) {
+static void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
 	printf("In CSH, type 'manual' to open CSH manual\n");
 	printf("\n");
@@ -281,7 +275,7 @@ int main(int argc, char **argv) {
 		printf("  CSP shell batch: ");
 		printf("\033[0m");
 		printf("\n");
-		
+
 	}
 	srand(time(NULL));
 
@@ -293,8 +287,8 @@ int main(int argc, char **argv) {
 	void serial_init(void);
 	serial_init();
 
-	/* 
-	 * Configure "slash_process_cmd_line_hook" with 
+	/*
+	 * Configure "slash_process_cmd_line_hook" with
 	 * our function that expands environment variables
 	 */
 	slash_process_cmd_line_hook = csh_environ_slash_process_cmd_line_hook;
