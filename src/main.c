@@ -145,12 +145,6 @@ int slash_prompt(struct slash * slash) {
 	}
 }
 
-uint64_t clock_get_nsec(void) {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ts.tv_sec * 1E9 + ts.tv_nsec;
-}
-
 static void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
 	printf("In CSH, type 'manual' to open CSH manual\n");
