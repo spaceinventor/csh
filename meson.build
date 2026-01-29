@@ -19,6 +19,7 @@ project('csh',
 		'csp:port_max_bind=16',
 		'csp:use_rtable=true',
 		'param:have_fopen=true',
+		'param:have_timestamp=true',
 		'param:collector=false',
 		'param:list_dynamic=true'
 	],
