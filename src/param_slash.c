@@ -129,7 +129,7 @@ int param_slash_parse_slice(char * token, int *start_index, int *end_index, int 
 	return 0;
 }
 
-static int param_parse_from_str(int node, char * arg, param_t **param) {
+static int param_parse_from_str(int node, char * arg, const param_t **param) {
 	char *endptr;
 	int id = strtoul(arg, &endptr, 10);
 	// If strtoul has an error, then it will return ULONG_MAX, so we check on that.
@@ -304,7 +304,7 @@ static int param_offsets_parse_from_str(char * arg, int array_size, int *offset_
 	return 0;
 }
 
-static int parse_param_offset_string(char * arg_in,  int node, param_t **param, char ** arg_out) {
+static int parse_param_offset_string(char * arg_in,  int node, const param_t **param, char ** arg_out) {
 	if (param_get_offset_string(arg_in, arg_out) < 0) {
 		fprintf(stderr, "Error when parsing offset string.\n");
 		return -1;
@@ -335,7 +335,7 @@ static int hasDuplicates(int arr[], int size) {
 }
 
 
-static void param_slash_parse(char * arg, int node, param_t **param, int *offset) {
+static void param_slash_parse(char * arg, int node, const param_t **param, int *offset) {
 
 	/* Search for the '@' symbol:
 	* Call strtok twice in order to skip the stuff head of '@' */
@@ -366,7 +366,7 @@ void param_completer(struct slash *slash, char * token) {
 
 	int matches = 0;
 	size_t prefixlen = -1;
-	param_t *prefix = NULL;
+	const param_t *prefix = NULL;
 	char * orig_slash_buf = NULL;
 
 	unsigned int node = slash_dfl_node;
@@ -410,7 +410,7 @@ void param_completer(struct slash *slash, char * token) {
 
 	size_t tokenlen = strlen(token);
 
-	param_t * param;
+	const param_t * param;
 	param_list_iterator i = { };
 	bool found_completion = false;
 	if (has_wildcard(token, strlen(token))) {
@@ -509,7 +509,7 @@ static int cmd_get(struct slash *slash) {
 
 	char * name = slash->argv[argi];
 	int offset = -1;
-	param_t * param = NULL;
+	const param_t * param = NULL;
 
 	if (++argi != slash->argc) {
 		optparse_del(parser);
@@ -602,7 +602,7 @@ static int cmd_set(struct slash *slash) {
 
 	char * name = slash->argv[argi];
 
-	param_t * param = NULL;
+	const param_t * param = NULL;
 
 	// offset array, amount of possible offsets should be equal to param->array_size.
 	// Default set to INT_MIN to determine if they've been set or not, since an offset can be < 0.
@@ -886,7 +886,7 @@ static int cmd_add(struct slash *slash) {
 
 		char * name = slash->argv[argi];
 		int offset = -1;
-		param_t * param = NULL;
+		const param_t * param = NULL;
 		param_slash_parse(name, node, &param, &offset);
 
 		if (param == NULL) {
@@ -926,7 +926,7 @@ static int cmd_add(struct slash *slash) {
 
 		char * name = slash->argv[argi];
 		int offset = -1;
-		param_t * param = NULL;
+		const param_t * param = NULL;
 
 		/* Go through the list of parameters */
 		param_list_iterator i = {};

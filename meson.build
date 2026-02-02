@@ -99,7 +99,7 @@ csh_sources = [
     'src/vmem_client_slash_ftp.c',
 ]
 
-python_dep = dependency('python3', version : '>=3.10', required: false)
+python_dep = dependency('python3-nobuild', version : '>=3.10', required: false)
 
 if python_dep.found()
 	py = import('python').find_installation('python3')

@@ -462,7 +462,7 @@ static void manual_cb(const char *a, const char *b, void *ctx) {
             b[len - 2] == 'd' && 
             b[len - 3] == 'p' && 
             b[len - 4] == '.') {
-            struct manual_entry *manual = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            struct manual_entry *manual = (struct manual_entry *)calloc(1, sizeof(struct manual_entry));
             if(manual) {
                 manual->pdf = strdup(b);
                 if(manual->pdf) {
@@ -502,7 +502,7 @@ static void manual_cmd_completer(struct slash *slash, char *arg) {
         match = strncmp(arg, cur_manual->pdf, slash_min(len_to_compare_to, (int)len));
         /* Do we have an exact match on the buffer ?*/
         if (match == 0) {
-            completion = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            completion = (struct manual_entry *)calloc(1, sizeof(struct manual_entry));
             if(completion) {
                 completion->pdf = strdup(cur_manual->pdf);
                 if(completion->pdf) {

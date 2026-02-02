@@ -29,7 +29,7 @@ int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, const param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
 
     char tmp[1000] = {};
 
@@ -197,7 +197,7 @@ static void * param_sniffer(void * param) {
                 timestamp.tv_sec = packet->timestamp_rx;
                 timestamp.tv_nsec = 0;
             }
-            param_t * param = param_list_find_id(node, id);
+            const param_t * param = param_list_find_id(node, id);
             if (param) {
                 param_sniffer_log(NULL, &queue, param, offset, &reader, &timestamp);
             } else {
