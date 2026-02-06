@@ -234,29 +234,27 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 				break;
 			}
 
-			time_t local_epoch = -1;
-			for (int i = 0; i < timesync_nodes.count; i++) {
-				if (timesync_nodes.node[i] == node && timesync_nodes.paramid[i] == param->id) {
-					mpack_tag_t tag = mpack_peek_tag(&reader);
-					local_epoch = tag.v.i - timestamp.tv_sec;
-					if (local_epoch == 0) {
-						local_epoch = tag.v.i;
-					}
-					hk_set_epoch(local_epoch, packet->id.src, true);
-					break;
-				}
-			}
-			if (local_epoch == -1 && !hk_get_epoch(&local_epoch, packet->id.src)) {
-				if(!epoch_notfound_warning) {
-					printf("HK: No local epoch found for node %u, skipping\n", packet->id.src);
-					epoch_notfound_warning = true;
-				}
-				mpack_discard(&reader);
-				continue;
-			}
-
-			/* Only update if not receiving a UTC timestamp. 1577836800: Jan 1st 2020 */
+			/* Only use local epoch if not receiving a UTC timestamp. 1577836800: Jan 1st 2020 */
 			if (param->timestamp->tv_sec < 1577836800) {
+				time_t local_epoch = -1;
+				for (int i = 0; i < timesync_nodes.count; i++) {
+					if (timesync_nodes.node[i] == node && timesync_nodes.paramid[i] == param->id) {
+						mpack_tag_t tag = mpack_peek_tag(&reader);
+						local_epoch = tag.v.i - timestamp.tv_sec;
+						hk_set_epoch(local_epoch, packet->id.src, true);
+						break;
+					}
+				}
+
+				if (local_epoch == -1 && !hk_get_epoch(&local_epoch, packet->id.src)) {
+					if(!epoch_notfound_warning) {
+						printf("HK: No local epoch found for node %u, skipping %u %u %u\n", packet->id.src, *param->node, param->id, param->timestamp->tv_sec);
+						epoch_notfound_warning = true;
+					}
+					mpack_discard(&reader);
+					continue;
+				}
+
 				param->timestamp->tv_sec += local_epoch;
 			}
 			param_sniffer_log(NULL, &queue, param, offset, &reader, param->timestamp);
