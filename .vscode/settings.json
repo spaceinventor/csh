@@ -93,4 +93,13 @@
 	},
 	"C_Cpp.default.compileCommands": "builddir/compile_commands.json",
 	"C_Cpp.default.configurationProvider": "mesonbuild.mesonbuild",
+
+	"clangd.arguments": [
+		"--compile-commands-dir=${workspaceFolder}/builddir",
+		"--query-driver=/usr/bin/arm-none-eabi-gcc",
+		"--background-index",
+		"--clang-tidy",
+		"--header-insertion=never"
+	],
+	"editor.inlayHints.enabled": "off",
 }
