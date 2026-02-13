@@ -64,7 +64,7 @@ int slash_prompt(struct slash * slash) {
 		int back = 33;
 
 		fflush(stdout);
-		printf("\e[0;38;5;%u;48;5;%u;1m ", fore, back);
+		printf("\033[0;38;5;%u;48;5;%u;1m ", fore, back);
 		len += 1;
 
 		struct utsname info;
@@ -76,9 +76,9 @@ int slash_prompt(struct slash * slash) {
 
 			fore = back;
 			back = 240;
-			printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+			printf(" \033[0;38;5;%u;48;5;%u;22m ", fore, back);
 			fore = 255;
-			printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+			printf("\033[0;38;5;%u;48;5;%u;1m", fore, back);
 			len += 3;
 
 			char nodebuf[CSP_HOSTNAME_LEN] = {0};
@@ -110,9 +110,9 @@ int slash_prompt(struct slash * slash) {
 
 			fore = back;
 			back = 34;
-			printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+			printf(" \033[0;38;5;%u;48;5;%u;22m ", fore, back);
 			fore = 255;
-			printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+			printf("\033[0;38;5;%u;48;5;%u;1m", fore, back);
 			len += 3;
 
 			printf("\u2193 %s", param_queue.name);
@@ -122,9 +122,9 @@ int slash_prompt(struct slash * slash) {
 
 			fore = back;
 			back = 124;
-			printf(" \e[0;38;5;%u;48;5;%u;22m ", fore, back);
+			printf(" \033[0;38;5;%u;48;5;%u;22m ", fore, back);
 			fore = 255;
-			printf("\e[0;38;5;%u;48;5;%u;1m", fore, back);
+			printf("\033[0;38;5;%u;48;5;%u;1m", fore, back);
 			len += 3;
 
 			printf("\u2191 %s", param_queue.name);
@@ -133,7 +133,7 @@ int slash_prompt(struct slash * slash) {
 		}
 		/* End of breadcrumb */
 		fore = back;
-		printf(" \e[0m\e[0;38;5;%um \e[0m", fore);
+		printf(" \033[0m\033[0;38;5;%um \033[0m", fore);
 		len += 3;
 
 
@@ -418,7 +418,7 @@ int main(int argc, char **argv) {
 
 	/* Interactive or one-shot mode */
 	if (ret != SLASH_EXIT && remain > 0) {
-		char ex[LINE_SIZE] = {};
+		char ex[LINE_SIZE] = {0};
 
 		/* Build command string */
 		for (i = 0; i < remain; i++) {

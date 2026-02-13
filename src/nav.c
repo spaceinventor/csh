@@ -31,7 +31,7 @@ static int slash_ls(struct slash *slash) {
 
 	return SLASH_SUCCESS;
 }
-slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list files");
+slash_command_completer(ls, slash_ls, slash_path_completer, "[path]", "list files")
 
 static void print_cwd(void) {
     char *cwd = get_current_dir_name();
@@ -49,7 +49,7 @@ static int slash_pwd(struct slash *slash) {
     print_cwd();
 	return SLASH_SUCCESS;
 }
-slash_command(pwd, slash_pwd, "", "Print current working directory");
+slash_command(pwd, slash_pwd, "", "Print current working directory")
 
 static int slash_cd(struct slash *slash) {
 
@@ -91,7 +91,7 @@ static int slash_cd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_completer(cd, slash_cd, slash_path_completer, "", "change dir");
+slash_command_completer(cd, slash_cd, slash_path_completer, "", "change dir")
 
 static int slash_cat(struct slash *slash) {
 
@@ -118,4 +118,4 @@ static int slash_cat(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_completer(cat, slash_cat, slash_path_completer, "[file]", "cat out file, no concat");
+slash_command_completer(cat, slash_cat, slash_path_completer, "[file]", "cat out file, no concat")

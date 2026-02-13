@@ -103,11 +103,11 @@ static int get_monitor_event(void * monitor, int * value, char ** address) {
     assert(!zmq_msg_more(&msg));
 
     if (address) {
-        uint8_t * data = (uint8_t *)zmq_msg_data(&msg);
+        uint8_t * data2 = (uint8_t *)zmq_msg_data(&msg);
         size_t size = zmq_msg_size(&msg);
         *address = (char *)malloc(size + 1);
         if(*address) {
-            memcpy(*address, data, size);
+            memcpy(*address, data2, size);
             (*address)[size] = 0;
         }
     }

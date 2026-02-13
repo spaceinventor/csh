@@ -31,7 +31,7 @@ FILE *logfile;
 
 int param_sniffer_log(void * ctx, param_queue_t *queue, const param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
 
-    char tmp[1000] = {};
+    char tmp[1000] = {0};
 
     if (offset < 0)
         offset = 0;

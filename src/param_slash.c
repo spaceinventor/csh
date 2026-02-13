@@ -411,7 +411,7 @@ void param_completer(struct slash *slash, char * token) {
 	size_t tokenlen = strlen(token);
 
 	const param_t * param;
-	param_list_iterator i = { };
+	param_list_iterator i = {0};
 	bool found_completion = false;
 	if (has_wildcard(token, strlen(token))) {
 		// Only print parameters when globbing is involved.
@@ -524,7 +524,7 @@ static int cmd_get(struct slash *slash) {
     }
 
 	/* Go through the list of parameters */
-	param_list_iterator i = {};
+	param_list_iterator i = {0};
 	while ((param = param_list_iterate(&i)) != NULL) {
 
 		/* Name match (with wildcard) */
@@ -568,7 +568,7 @@ static void param_get_cmd_completer(struct slash *slash, char * token) {
 	param_completer(slash, token);
 }
 
-slash_command_completer(get, cmd_get, param_get_cmd_completer, "<param>", "Get");
+slash_command_completer(get, cmd_get, param_get_cmd_completer, "<param>", "Get")
 
 static int cmd_set(struct slash *slash) {
 	unsigned int node = slash_dfl_node;
@@ -721,7 +721,7 @@ static int cmd_set(struct slash *slash) {
 	int iterations = 0;
 	int single_value_flag = 0;
 	for (int i = argi; should_break == 1; i++) {
-		char valuebuf[128] __attribute__((aligned(16))) = { };
+		char valuebuf[128] __attribute__((aligned(16))) = {0};
 
 		char *arg = slash->argv[i];
 		if (!arg) {
@@ -844,7 +844,7 @@ static int cmd_set(struct slash *slash) {
 static void param_set_cmd_completer(struct slash *slash, char * token) {
 	param_completer(slash, token);
 }
-slash_command_completer(set, cmd_set, param_set_cmd_completer, "<param> <value>", "Set");
+slash_command_completer(set, cmd_set, param_set_cmd_completer, "<param> <value>", "Set")
 
 
 static int cmd_add(struct slash *slash) {
@@ -908,7 +908,7 @@ static int cmd_add(struct slash *slash) {
 			return SLASH_EINVAL;
 		}
 
-		char valuebuf[128] __attribute__((aligned(16))) = { };
+		char valuebuf[128] __attribute__((aligned(16))) = {0};
 		if (param_str_to_value(param->type, slash->argv[argi], valuebuf) < 0) {
 			printf("invalid parameter value\n");
 			optparse_del(parser);
@@ -929,7 +929,7 @@ static int cmd_add(struct slash *slash) {
 		const param_t * param = NULL;
 
 		/* Go through the list of parameters */
-		param_list_iterator i = {};
+		param_list_iterator i = {0};
 		while ((param = param_list_iterate(&i)) != NULL) {
 
 			/* Name match (with wildcard) */
@@ -966,7 +966,7 @@ static int cmd_add(struct slash *slash) {
 static void param_cmd_add_cmd_completer(struct slash *slash, char * token) {
 	param_completer(slash, token);
 }
-slash_command_sub_completer(cmd, add, cmd_add, param_cmd_add_cmd_completer, "<param>[offset] [value]", "Add a new parameter to a command");
+slash_command_sub_completer(cmd, add, cmd_add, param_cmd_add_cmd_completer, "<param>[offset] [value]", "Add a new parameter to a command")
 
 
 static int cmd_run(struct slash *slash) {
@@ -1016,7 +1016,7 @@ static int cmd_run(struct slash *slash) {
 	optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub(cmd, run, cmd_run, "", NULL);
+slash_command_sub(cmd, run, cmd_run, "", NULL)
 
 const struct slash_command slash_cmd_pull;
 static int cmd_pull(struct slash *slash) {
@@ -1100,7 +1100,7 @@ static int cmd_pull(struct slash *slash) {
 	optparse_del(parser);
 	return result;
 }
-slash_command(pull, cmd_pull, "", "Pull all metrics from given CSP node(s)");
+slash_command(pull, cmd_pull, "", "Pull all metrics from given CSP node(s)")
 
 static int cmd_new(struct slash *slash) {
 
@@ -1154,14 +1154,14 @@ static int cmd_new(struct slash *slash) {
 	optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub(cmd, new, cmd_new, "<get/set> <cmd name>", "Create a new command");
+slash_command_sub(cmd, new, cmd_new, "<get/set> <cmd name>", "Create a new command")
 
 
 static int cmd_done(struct slash *slash) {
 	param_queue.type = PARAM_QUEUE_TYPE_EMPTY;
 	return SLASH_SUCCESS;
 }
-slash_command_sub(cmd, done, cmd_done, "", "Exit cmd edit mode");
+slash_command_sub(cmd, done, cmd_done, "", "Exit cmd edit mode")
 
 
 static int cmd_print(struct slash *slash) {
@@ -1173,4 +1173,4 @@ static int cmd_print(struct slash *slash) {
 	}
 	return SLASH_SUCCESS;
 }
-slash_command(cmd, cmd_print, NULL, "Show current command");
+slash_command(cmd, cmd_print, NULL, "Show current command")

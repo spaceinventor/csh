@@ -103,7 +103,7 @@ slash_command_subsub(require, version, csh, slash_require_version_csh_cmd, "<ver
 "- Warn: Which simply prints the specified message,\n "\
 "(Single letters may be used for error codes, e.g 'Q' for Quit).\n\n "\
 "Version constraint supports the typical comparisons: \"==\", \"!=\", \">=\", \"<=\", \">\" and \"<\".\n "\
-"For example: >=2.5-20");
+"For example: >=2.5-20")
 
 
 const struct slash_command slash_cmd_version;

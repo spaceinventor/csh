@@ -32,7 +32,7 @@ static int cmd_node(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_completer(node, cmd_node, host_name_completer, "node", "Set global default node");
+slash_command_completer(node, cmd_node, host_name_completer, "node", "Set global default node")
 
 
 const struct slash_command slash_cmd_node_save;
@@ -54,7 +54,7 @@ static int cmd_node_save(struct slash *slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes");
+slash_command_sub(node, save, cmd_node_save, "", "Save or print known nodes")
 
 const struct slash_command slash_cmd_node_list;
 static int cmd_node_list(struct slash *slash) {
@@ -75,7 +75,7 @@ static int cmd_node_list(struct slash *slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(node, list, cmd_node_list, "", "Save or print known nodes");  // Alias
+slash_command_sub(node, list, cmd_node_list, "", "Save or print known nodes")  // Alias
 
 static int cmd_node_add(struct slash *slash)
 {
@@ -116,7 +116,7 @@ static int cmd_node_add(struct slash *slash)
     return SLASH_SUCCESS;
 }
 
-slash_command_sub(node, add, cmd_node_add, NULL, NULL);
+slash_command_sub(node, add, cmd_node_add, NULL, NULL)
 
 
 static int cmd_timeout(struct slash *slash) {
@@ -129,4 +129,4 @@ static int cmd_timeout(struct slash *slash) {
 
 	return SLASH_SUCCESS;
 }
-slash_command(timeout, cmd_timeout, "[timeout ms]", "Set global default timeout");
+slash_command(timeout, cmd_timeout, "[timeout ms]", "Set global default timeout")

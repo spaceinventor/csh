@@ -56,4 +56,4 @@ static int csp_scan(struct slash *slash)
     return SLASH_SUCCESS;
 }
 
-slash_command_sub(csp, scan, csp_scan, NULL, NULL);
+slash_command_sub(csp, scan, csp_scan, NULL, NULL)

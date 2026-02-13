@@ -101,7 +101,7 @@ static int hk_utcparam(struct slash * slash) {
 
 	return SLASH_SUCCESS;
 }
-slash_command_sub(hk, utcparam, hk_utcparam, NULL, NULL);
+slash_command_sub(hk, utcparam, hk_utcparam, NULL, NULL)
 
 void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 
@@ -186,7 +186,7 @@ static int hk_timeoffset(struct slash * slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL);
+slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL)
 
 bool hk_get_epoch(time_t * local_epoch, uint16_t node) {
 

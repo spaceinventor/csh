@@ -30,7 +30,7 @@
 
 static int ping(int node) {
 
-	struct csp_cmp_message message = {};
+	struct csp_cmp_message message = {0};
 	if (csp_cmp_ident(node, 3000, &message) != CSP_ERR_NONE) {
 		printf("Cannot ping system\n");
 		return 0;
@@ -131,7 +131,7 @@ static int slash_csp_switch(struct slash * slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(switch, slash_csp_switch, "<slot>", "switch");
+slash_command(switch, slash_csp_switch, "<slot>", "switch")
 
 static int image_get(char * filename, char ** data, int * len) {
 
@@ -523,7 +523,7 @@ static int slash_csp_program(struct slash * slash) {
 	return result;
 }
 
-slash_command(program, slash_csp_program, "<slot>", "Upload new firmware");
+slash_command(program, slash_csp_program, "<slot>", "Upload new firmware")
 
 
 static int slash_sps(struct slash * slash) {
@@ -707,4 +707,4 @@ static int slash_sps(struct slash * slash) {
 	return result;
 }
 
-slash_command(sps, slash_sps, "<node> <from> <to> [filename]", "switch program switch");
+slash_command(sps, slash_sps, "<node> <from> <to> [filename]", "switch program switch")

@@ -5,7 +5,7 @@ project('csh',
 		'buildtype=debug',
 		'optimization=2',
 		'warning_level=0',
-		'c_std=gnu11',
+		'c_std=gnu18',
 		'b_lto=false',
 		'default_library=static',
 		'slash:builtins=true',
@@ -21,23 +21,15 @@ project('csh',
 		'param:have_fopen=true',
 		'param:have_timestamp=true',
 		'param:collector=false',
-		'param:list_dynamic=true'
+		'param:list_dynamic=true',
+		'warning_level=3', 
+		'werror=true'
 	],
 	meson_version: '>= 1.6',
 	version: run_command('git', 'describe',  '--long', '--always', '--dirty', check: true).stdout().strip()
 )
 
-# Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
-# 'Consider using the built-in warning_level option instead of using "-Wall"'
-# 'Consider using the built-in warning_level option instead of using "-Wextra"'
-# which would be fine *IF* doing so didn't automatically propagate these options to this project's dependencies.
-# As we would like (at least for now) to only care about the warnings in this project's source code,
-# we don't want to propagate our warning settings to them, these dependencies can use whatever warning settings
-# they want.
-# As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
-# accept the Meson warnings given the flexibilty we gain
-add_project_arguments(['-Wall', '-Wextra', '-Wstrict-prototypes', '-Wmissing-prototypes', '-Wno-unused-parameter'], language: 'c')
-# add_project_arguments(['-fanalyzer'], language: 'c')
+add_project_arguments(['-Wstrict-prototypes', '-Wmissing-prototypes', '-Wmissing-declarations', '-Wcast-align', '-Wpointer-arith', '-Wshadow', '-Wno-unused-parameter'], language: 'c')
 
 curl_dep = dependency(
 	'libcurl',

@@ -174,7 +174,7 @@ static void env_var_completer(struct slash * slash, char * token) {
 }
 
 
-slash_command_group(env, "CSH environment variables");
+slash_command_group(env, "CSH environment variables")
 
 const struct slash_command slash_cmd_var_set;
 static int slash_var_set(struct slash *slash)
@@ -196,7 +196,7 @@ static int slash_var_set(struct slash *slash)
     optparse_del(parser);    
 	return SLASH_SUCCESS;
 }
-slash_command_sub_completer(var, set, slash_var_set, env_var_completer, "NAME VALUE", "Create or update an environment variable in CSH");
+slash_command_sub_completer(var, set, slash_var_set, env_var_completer, "NAME VALUE", "Create or update an environment variable in CSH")
 
 
 const struct slash_command slash_cmd_var_unset;
@@ -218,7 +218,7 @@ static int slash_var_unset(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub_completer(var, unset, slash_var_unset, env_var_completer, "NAME", "Remove an environment variable in CSH");
+slash_command_sub_completer(var, unset, slash_var_unset, env_var_completer, "NAME", "Remove an environment variable in CSH")
 
 const struct slash_command slash_cmd_var_clear;
 static int slash_var_clear(struct slash *slash)
@@ -239,7 +239,7 @@ static int slash_var_clear(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub(var, clear, slash_var_clear, NULL, "Clear all environment variables in CSH");
+slash_command_sub(var, clear, slash_var_clear, NULL, "Clear all environment variables in CSH")
 
 void env_var_ref_completer(struct slash * slash, char * token) {
     int length = strlen(token);
@@ -321,7 +321,7 @@ static int slash_var_get(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub_completer(var, get, slash_var_get, env_var_completer, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined");
+slash_command_sub_completer(var, get, slash_var_get, env_var_completer, "NAME", "Show the value of the given 'NAME' environment variable in CSH, shows nothing if variable is not defined")
 
 static void print_var(const char *name, void *ctx) {
     (void)ctx;
@@ -347,7 +347,7 @@ static int slash_var_show(struct slash *slash)
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }
-slash_command_sub(var, show, slash_var_show, NULL, "Print the defined variables and their values");
+slash_command_sub(var, show, slash_var_show, NULL, "Print the defined variables and their values")
 
 const struct slash_command slash_cmd_var_expand;
 static int slash_var_expand(struct slash *slash)
@@ -388,4 +388,4 @@ static int slash_var_expand(struct slash *slash)
     optparse_del(parser);
 	return result;
 }
-slash_command_sub_completer(var, expand, slash_var_expand, env_var_ref_completer, "[-e] [-q] INPUT", "Display the given INPUT string with references to defined variables expanded.");
+slash_command_sub_completer(var, expand, slash_var_expand, env_var_ref_completer, "[-e] [-q] INPUT", "Display the given INPUT string with references to defined variables expanded.")

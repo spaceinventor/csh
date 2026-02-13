@@ -49,7 +49,7 @@ static int vmem_client_slash_list(struct slash *slash)
 	return SLASH_SUCCESS;
 
 }
-slash_command(vmem, vmem_client_slash_list, "", "List virtual memory");
+slash_command(vmem, vmem_client_slash_list, "", "List virtual memory")
 
 static int vmem_client_slash_decompress(struct slash *slash) {
 
@@ -101,7 +101,7 @@ failure:
 	optparse_del(parser);
 	return res;
 }
-slash_command_sub(vmem, decompress, vmem_client_slash_decompress, "<src_address> <dst_address> <length>", "Perform decompression from src into dst");
+slash_command_sub(vmem, decompress, vmem_client_slash_decompress, "<src_address> <dst_address> <length>", "Perform decompression from src into dst")
 
 static int vmem_client_slash_compress(struct slash *slash) {
 
@@ -153,5 +153,5 @@ failure:
 	optparse_del(parser);
 	return res;
 }
-slash_command_sub(vmem, compress, vmem_client_slash_compress, "<src_address> <dst_address> <length>", "Perform compression from src into dst");
+slash_command_sub(vmem, compress, vmem_client_slash_compress, "<src_address> <dst_address> <length>", "Perform compression from src into dst")
 
