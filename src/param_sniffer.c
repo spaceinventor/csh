@@ -182,7 +182,6 @@ static void * param_sniffer(void * param) {
         csp_timestamp_t time_now;
         csp_clock_get_time(&time_now);
         queue.last_timestamp = time_now;
-        queue.client_timestamp = time_now;
 
         mpack_reader_t reader;
         mpack_reader_init_data(&reader, queue.buffer, queue.used);
