@@ -713,8 +713,8 @@ static int cmd_set(struct slash *slash) {
 
 	// Create a queue, so that we can set the param in a single packet.
 	param_queue_t queue;
-	char queue_buf[PARAM_SERVER_MTU];
-	param_queue_init(&queue, queue_buf, PARAM_SERVER_MTU, 0, PARAM_QUEUE_TYPE_SET, 2);
+	char set_queue_buf[PARAM_SERVER_MTU];
+	param_queue_init(&queue, set_queue_buf, PARAM_SERVER_MTU, 0, PARAM_QUEUE_TYPE_SET, 2);
 
 	// We should iterate until we find an ending bracket ']'. Therefore we use the 'should_break' flag.
 	int should_break = 1;

@@ -142,7 +142,7 @@ int param_sniffer_crc(csp_packet_t * packet) {
     return 0;
 }
 
-static void * param_sniffer(void * param) {
+static void * param_sniffer(void * arg) {
     csp_promisc_enable(100);
     while(1) {
         csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
