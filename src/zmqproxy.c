@@ -19,6 +19,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
 #include <unistd.h>
+#include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <zmq.h>
