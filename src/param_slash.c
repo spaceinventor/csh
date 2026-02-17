@@ -1144,13 +1144,10 @@ static int cmd_new(struct slash *slash) {
 	name = slash->argv[argi];
 	strncpy(param_queue.name, name, sizeof(param_queue.name)-1);  // -1 to fit NULL byte
 
-	csp_timestamp_t time_now;
-	csp_clock_get_time(&time_now);
 	param_queue.used = 0;
 	param_queue.version = paramver;
 	param_queue.last_timestamp.tv_sec = 0;
 	param_queue.last_timestamp.tv_nsec = 0;
-	param_queue.client_timestamp = time_now;
 
 	printf("Initialized new command: %s\n", name);
 
