@@ -34,7 +34,6 @@
 #include <vmem/vmem_client.h>
 
 #include <apm/environment.h>
-#include <ossi/sitime.h>
 #include "slash_env_var_completion.h"
 
 #ifdef HAVE_PYTHON

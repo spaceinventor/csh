@@ -15,7 +15,7 @@
 #include <csp/csp_types.h>
 #include <csp/arch/csp_queue.h>
 
-#include <ossi/message_queue.h>
+#include "message_queue.h"
 #include "url_utils.h"
 #include "loki.h"
 

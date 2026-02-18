@@ -17,7 +17,7 @@
 
 #include <vmem/vmem_client.h>
 #include <vmem/vmem_server.h>
-#include <vmem/vmem_codec.h>
+#include "vmem_codec.h"
 #include <csp/csp.h>
 #include <sys/types.h>
 
@@ -154,4 +154,3 @@ failure:
 	return res;
 }
 slash_command_sub(vmem, compress, vmem_client_slash_compress, "<src_address> <dst_address> <length>", "Perform compression from src into dst")
-

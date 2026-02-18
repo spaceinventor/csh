@@ -44,7 +44,6 @@ zmq_dep = dependency(
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
-ossi_dep = dependency('ossi', version: ['>=0.0.2'],fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
 	fallback:
@@ -81,6 +80,7 @@ csh_sources = [
 	'src/walkdir.c',
     'src/victoria_metrics.c',
     'src/loki.c',
+	'src/message_queue.c',
     'src/slash_env_var_cmds.c',
     'src/slash_nodes_cmds.c',
     'src/slash_run_environment.c',
@@ -89,6 +89,7 @@ csh_sources = [
     'src/param_slash.c',
     'src/vmem_client_slash.c',
     'src/vmem_client_slash_ftp.c',
+	'src/vmem_codec.c',
 ]
 
 python_dep = dependency('python3-nobuild', version : '>=3.10', required: false)
@@ -134,7 +135,6 @@ csh = executable('csh', csh_sources,
 		apm_api_dep,
 		slash_dep,
 		param_dep,
-		ossi_dep,
 		csp_dep,
 		curl_dep,
 		utils_lib_dep.as_link_whole(),
