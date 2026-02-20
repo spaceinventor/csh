@@ -129,6 +129,8 @@ if meson.is_subproject() == false
 	subdir('tests')
 endif
 
+linker_script = meson.current_source_dir() / 'linux.ld'
+
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
@@ -141,9 +143,10 @@ csh = executable('csh', csh_sources,
 		pycsh_dep
 	],
 	include_directories: include_directories('include'),
-	# Posix Message Queues (see libossi) are accessible through the "rt" library, so add it
-	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl', '-lrt'],
+	# Posix Message Queues are accessible through the "rt" library
+	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl', '-lrt', '-Wl,--script=' + linker_script],
 	install : true,
+	link_depends: linker_script
 )
 
 custom_target('size', output: ['dummy.txt'], command: [find_program('size'), csh.full_path()], depends: csh, build_by_default: true)
