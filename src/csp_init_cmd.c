@@ -497,6 +497,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
         optparse_del(parser);
 		return SLASH_EINVAL;
     }
+    udp_conf->sockfd = 0;
     udp_conf->host = strdup(server);
     udp_conf->lport = listen_port;
     udp_conf->rport = remote_port;
@@ -505,6 +506,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
     iface->is_default = dfl;
     iface->addr = addr;
 	iface->netmask = mask;
+    iface->name = strdup(name);
 
     optparse_del(parser);
     ifidx++;
