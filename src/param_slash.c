@@ -537,7 +537,7 @@ static int cmd_get(struct slash *slash) {
 			continue;
 		}
 
-		if (param->mask != 0 && (param->mask & mask) == 0) {
+		if (mask != 0xFFFFFFFF && (param->mask & mask) == 0) {
 			continue;
 		}
 
