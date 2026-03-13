@@ -537,7 +537,7 @@ static int cmd_get(struct slash *slash) {
 			continue;
 		}
 
-		if ((param->mask & mask) == 0) {
+		if (mask != 0xFFFFFFFF && (param->mask & mask) == 0) {
 			continue;
 		}
 
@@ -946,7 +946,7 @@ static int cmd_add(struct slash *slash) {
 				continue;
 			}
 
-			if ((param->mask & include_mask) == 0) {
+			if (include_mask != 0xFFFFFFFF && (param->mask & include_mask) == 0) {
 				continue;
 			}
 
