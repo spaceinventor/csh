@@ -506,7 +506,7 @@ int py_apm_load_cmd(struct slash *slash) {
 }
 
 static wchar_t **handle_py_argv(char **args, int argc) {
-	wchar_t **res = calloc(sizeof(wchar_t *), argc);
+	wchar_t **res = calloc(argc, sizeof(wchar_t *));
 	if (res) {
 		for (int i = 0; i < argc; i++) {
 			res[i] = Py_DecodeLocale(args[i], NULL);
@@ -619,5 +619,5 @@ static int python_slash(struct slash *slash) {
 	"or execute the script in given file.\n"\
 	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
 	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH."
-slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);
-slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);  // Alias
+slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP)
+slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP)  // Alias
