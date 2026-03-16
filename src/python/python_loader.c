@@ -106,7 +106,9 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
     snprintf(init_func_name, init_func_name_len, "PyInit_%s", filename);
 
     typedef PyObject* (*PyInitFunc)(void);
-    PyInitFunc init_func = (PyInitFunc)dlsym(handle, init_func_name);
+    PyInitFunc init_func;
+	/* Fix for: ISO C forbids conversion of object pointer to function pointer type [-Werror=pedantic] */
+	*(void **)(&init_func) = dlsym(handle, init_func_name);
 
     if (!init_func) {
         fprintf(stderr, "Error finding initialization function: %s\n", dlerror());
