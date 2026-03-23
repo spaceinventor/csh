@@ -106,7 +106,9 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
     snprintf(init_func_name, init_func_name_len, "PyInit_%s", filename);
 
     typedef PyObject* (*PyInitFunc)(void);
-    PyInitFunc init_func = (PyInitFunc)dlsym(handle, init_func_name);
+    PyInitFunc init_func;
+	/* Fix for: ISO C forbids conversion of object pointer to function pointer type [-Werror=pedantic] */
+	*(void **)(&init_func) = dlsym(handle, init_func_name);
 
     if (!init_func) {
         fprintf(stderr, "Error finding initialization function: %s\n", dlerror());
@@ -506,7 +508,7 @@ int py_apm_load_cmd(struct slash *slash) {
 }
 
 static wchar_t **handle_py_argv(char **args, int argc) {
-	wchar_t **res = calloc(sizeof(wchar_t *), argc);
+	wchar_t **res = calloc(argc, sizeof(wchar_t *));
 	if (res) {
 		for (int i = 0; i < argc; i++) {
 			res[i] = Py_DecodeLocale(args[i], NULL);
@@ -515,13 +517,30 @@ static wchar_t **handle_py_argv(char **args, int argc) {
 	return res;
 }
 
+
+/* NOTE: It appears that `PySys_SetArgv(argc, w_argv);` copies `wchar_t **w_argv`,
+	as freeing it doesn't give any Valgrind warnings. */
+static void py_argv_free(wchar_t **w_argv, int argc) {
+
+	if (!w_argv || !*w_argv) {
+		return;
+	}
+
+	for (int i = 0; i < argc; i++) {
+		PyMem_RawFree(w_argv[i]);
+	}
+	free(w_argv);
+}
+
 int csh_python_exec_string(const char *string, int argc, char **argv) {
 	wchar_t **w_argv = handle_py_argv(argv, argc);
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	PySys_SetArgv(argc, w_argv);
 	#pragma GCC diagnostic pop  /* -Wdeprecated-declarations */
-	return PyRun_SimpleString(string);
+	const int res = PyRun_SimpleString(string);
+	py_argv_free(w_argv, argc);
+	return res;
 }
 int csh_python_exec_file(const char *filename, int argc, char **argv) {
 	FILE *fp = fopen(filename, "rb");
@@ -541,7 +560,9 @@ int csh_python_exec_file(const char *filename, int argc, char **argv) {
 			Py_DECREF(file_str);
 		}
 
-		return PyRun_AnyFileEx(fp, filename, 1);
+		const int res = PyRun_AnyFileEx(fp, filename, 1);
+		py_argv_free(w_argv, argc);
+		return res;
 	} else {
 		return -1;
 	}
@@ -619,5 +640,5 @@ static int python_slash(struct slash *slash) {
 	"or execute the script in given file.\n"\
 	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
 	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH."
-slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);
-slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);  // Alias
+slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP)
+slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP)  // Alias
