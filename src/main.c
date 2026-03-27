@@ -17,6 +17,7 @@
 #include <apm/csh_api.h>
 #include <csp/csp.h>
 #include <csp/csp_hooks.h>
+#include <csp/csp_iflist.h>
 
 #include <curl/curl.h>
 
@@ -43,6 +44,9 @@
 
 extern const char *version_string;
 extern param_queue_t param_queue;
+#include <slash/statusline.h>
+#include <param/param_list.h>
+#include <slash/dflopt.h>
 
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    512
@@ -61,7 +65,7 @@ int slash_prompt(struct slash * slash) {
 	} else {
 		int len = 0;
 		int fore = 255;
-		int back = 33;
+		int back = 127;
 
 		fflush(stdout);
 		printf("\e[0;38;5;%u;48;5;%u;1m ", fore, back);
@@ -138,6 +142,18 @@ int slash_prompt(struct slash * slash) {
 
 
 
+		/* Statusline: timeout and remote param count first (leftmost) */
+		slash_statusline_set("timeout", {0}, "Timeout: %u ms", slash_dfl_timeout);
+
+		int remote_count = 0;
+		param_list_iterator pi = { .phase = 1 };
+		param_t * p;
+		while ((p = param_list_iterate(&pi)) != NULL) {
+			if (*p->node == slash_dfl_node && slash_dfl_node != 0){
+				remote_count++; // TODO this might be slow :(
+			}
+		}
+		slash_statusline_set("params", {0}, "Params: %d", remote_count);
 
 		fflush(stdout);
 
@@ -200,9 +216,15 @@ static void sigint_handler(int signum) {
 
 static void sigcont_handler(int signum) {
 	if(slash->waitfunc) {
+		slash->statusline_enabled = false;  /* force scroll region re-setup */
 		slash_acquire_std_in_out(slash);
 		slash_refresh(slash, 0);
 	}
+}
+
+static void sigwinch_handler(int signum) {
+	(void)signum;
+	slash_sigwinch(slash);
 }
 
 static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
@@ -410,6 +432,11 @@ int main(int argc, char **argv) {
 		}
 
 		if (signal(SIGCONT, sigcont_handler) == SIG_ERR) {
+			perror("signal");
+			exit(EXIT_FAILURE);
+		}
+
+		if (signal(SIGWINCH, sigwinch_handler) == SIG_ERR) {
 			perror("signal");
 			exit(EXIT_FAILURE);
 		}

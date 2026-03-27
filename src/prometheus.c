@@ -14,6 +14,7 @@
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
+#include <slash/statusline.h>
 
 #include <param/param.h>
 #include <param/param_queue.h>
@@ -133,6 +134,7 @@ static int prometheus_start_cmd(struct slash *slash) {
     prometheus_init();
     param_sniffer_init(logfile);
     prometheus_started = 1;
+    slash_statusline_set("prometheus", {0}, "Prom: :9101");
     optparse_del(parser);
 	return SLASH_SUCCESS;
 }

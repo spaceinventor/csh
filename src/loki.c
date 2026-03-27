@@ -18,6 +18,7 @@
 #include <ossi/message_queue.h>
 #include "url_utils.h"
 #include "loki.h"
+#include <slash/statusline.h>
 
 static int loki_running = 0;
 
@@ -242,6 +243,7 @@ static void *post_thread(void *arg) {
                 loki_running = 0;
                 curl_err_count = 0;
                 printf("\n\033[31mLOKI LOGGING STOPPED!\033[0m\n");
+                slash_statusline_set("loki", {.type = SLASH_STATUS_ERROR }, "Loki: error");
             }
         } else {
             curl_err_count = 0;
@@ -452,6 +454,7 @@ static int loki_start_cmd(struct slash * slash) {
     pthread_t post_thread_id;
     pthread_create(&post_thread_id, NULL, &post_thread, NULL);
     printf("Loki logging started\n");
+    slash_statusline_set("loki", {0}, "Loki: logging");
 
     optparse_del(parser);
 

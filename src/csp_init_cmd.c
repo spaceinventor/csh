@@ -19,6 +19,7 @@
 #include <csp/drivers/usart.h>
 #include <csp/csp_rtable.h>
 #include <ifaddrs.h>
+#include <slash/statusline.h>
 
 #define CURVE_KEYLEN 41
 
@@ -193,6 +194,8 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
     iface->is_default = dfl;
     iface->addr = addr;
 	iface->netmask = mask;
+
+    slash_statusline_set(name, {0}, "%s %s PUB:%d SUB:%d", name, server, pubport, subport);
 
     free(sec_key);
     optparse_del(parser);

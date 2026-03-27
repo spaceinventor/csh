@@ -22,9 +22,12 @@
 #include "param_sniffer.h"
 #include "url_utils.h"
 #include "victoria_metrics.h"
+#include <slash/statusline.h>
 
 static pthread_t vm_push_thread;
 int vm_running = 0;
+static int vm_param_count = 0;
+char * primary_ip = NULL;
 
 #define SERVER_PORT      8428
 #define SERVER_PORT_AUTH 8427
@@ -32,6 +35,7 @@ int vm_running = 0;
 
 static char buffer[BUFFER_SIZE];
 static size_t buffer_size = 0;
+static size_t buffer_param_count = 0;
 static pthread_mutex_t buffer_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct {
@@ -133,11 +137,14 @@ static void * vm_push(void * arg) {
     }
 
     if (vm_running) {
+        curl_easy_getinfo(curl, CURLINFO_PRIMARY_IP, &primary_ip);
+
         if(args->api_root) {
             printf("Connection established to %s", args->api_root);
         } else {
             printf("Connection established to %s://%s:%d\n", protocol, args->server_ip, args->port);
         }
+        slash_statusline_set("VM", {0}, "VM:⇄ %s ↑%d", primary_ip ? primary_ip : "unknown", vm_param_count);
     }
 
     while (vm_running) {
@@ -157,6 +164,9 @@ static void * vm_push(void * arg) {
             printf("Failed push: %s\n", curl_easy_strerror(res));
         } else {
             buffer_size = 0;
+            vm_param_count += buffer_param_count;
+            slash_statusline_set("VM", {0}, "VM:⇄ %s ↑%d", primary_ip ? primary_ip : "unknown", vm_param_count);
+            buffer_param_count = 0;
         }
         // Unlock the buffer mutex
         pthread_mutex_unlock(&buffer_mutex);
@@ -165,6 +175,8 @@ static void * vm_push(void * arg) {
     }
 
     printf("vm push stopped\n");
+    slash_statusline_remove("VM");
+
     // Clean up
     if (curl) {
         curl_easy_cleanup(curl);
@@ -202,6 +214,9 @@ void vm_add(char * metric_line) {
         // Add the new metric line to the buffer
         strcpy(buffer + buffer_size, metric_line);
         buffer_size += line_len;
+        buffer_param_count++;
+    } else {
+        slash_statusline_set("VM", {.type = SLASH_STATUS_ERROR }, "VM:⇄ %s ↑%d BUFFER OVERRUN", primary_ip ? primary_ip : "unknown", vm_param_count);
     }
 
     // Unlock the buffer mutex
