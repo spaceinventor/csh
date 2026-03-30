@@ -194,18 +194,25 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
     packet->length = 1;
     csp_send(conn, packet);
 
+    #define LF '\n' /* ASCII 10d */
+    #define CR '\r' /* ASCII 13d */
     while ((packet = csp_read(conn, timeout))) {
-        //csp_hex_dump("stdbuf", &packet->data[1], packet->length - 1);
-        int ignore __attribute__((unused)) = write(fileno(stdout), &packet->data[1], packet->length - 1);
+        int again = packet->data[0];
+        int ignore __attribute__((unused));
+        ignore = write(fileno(stdout), &packet->data[1], packet->length - 1);
+        if (again == 0 && packet->data[packet->length - 1] != LF) {
+            /* If this was the last packet and there was no LF we will add one here to flush the stdout file */
+            ignore = write(fileno(stdout), "\n", 1);
+        }
         if (log_f) {
             int i = 1;
             while (i < packet->length) {
                 if (isprint(packet->data[i])) {
                     fprintf(log_f, "%c", packet->data[i]);
                     i++;
-                } else if ((packet->data[i] == '\r') || (packet->data[i] == '\n')) {
-                    fprintf(log_f, "\n");
-                    while ((i < packet->length) && ((packet->data[i] == '\r') || (packet->data[i] == '\n'))) {
+                } else if ((packet->data[i] == CR) || (packet->data[i] == LF)) {
+                    fprintf(log_f, "%c", LF);
+                    while ((i < packet->length) && ((packet->data[i] == CR) || (packet->data[i] == LF))) {
                         i++;
                     }
                 } else  {
@@ -216,7 +223,6 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
             }
         }
 
-        int again = packet->data[0];
         csp_buffer_free(packet);
 
         if (again == 0) {
