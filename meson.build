@@ -1,12 +1,12 @@
 project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
-	'buildtype=debug', 
+	'buildtype=debug',
 	'optimization=2',
 	'warning_level=0',
-	'c_std=gnu11', 
+	'c_std=gnu11',
 	'b_lto=false',
 	'default_library=static',
 	'slash:builtins=true',
-	'csp:packet_padding_bytes=42', 
+	'csp:packet_padding_bytes=42',
 	'csp:buffer_count=1000',
 	'csp:buffer_size=2048',
 	'csp:conn_max=20',
@@ -15,8 +15,8 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'csp:rdp_max_window=1000',
 	'csp:port_max_bind=16',
 	'csp:use_rtable=true',
-	'param:have_fopen=true', 
-	'param:collector=false', 
+	'param:have_fopen=true',
+	'param:collector=false',
 	'param:list_dynamic=true'],
 	version: '2.10-rc2'
 )
@@ -34,7 +34,7 @@ add_project_arguments(['-Wall', '-Wextra', '-Wno-unused-parameter'], language: '
 # add_project_arguments(['-fanalyzer'], language: 'c')
 
 curl_dep = dependency(
-	'libcurl', 
+	'libcurl',
 	not_found_message: 'libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.'
 )
 
@@ -49,13 +49,13 @@ param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true
 ossi_dep = dependency('ossi', version: ['>=0.0.2'],fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
-	fallback: 
+	fallback:
 	[
-		'apm_csh', 
+		'apm_csh',
 		'apm_csh_dep'
 	],
 	required: true).partial_dependency(
-		links: false, 
+		links: false,
 		includes: true
 	)
 
@@ -82,12 +82,12 @@ csh_sources = [
 	'src/csp_init_cmd.c',
 	'src/vts.c',
 	'src/walkdir.c',
-    'src/victoria_metrics.c', 
+    'src/victoria_metrics.c',
     'src/loki.c',
-    'src/slash_env_var_cmds.c', 
-    'src/slash_nodes_cmds.c', 
-    'src/slash_run_environment.c', 
-    'src/require_version_cmd.c', 
+    'src/slash_env_var_cmds.c',
+    'src/slash_nodes_cmds.c',
+    'src/slash_run_environment.c',
+    'src/require_version_cmd.c',
 	'src/param_list_slash.c',
 	'src/param_slash.c',
 	'src/vmem_client_slash.c',
@@ -136,8 +136,8 @@ csh = executable('csh', csh_sources,
 		python_dep,
 		apm_api_dep,
 		slash_dep,
-		param_dep,
 		ossi_dep,
+		param_dep,
 		csp_dep,
 		curl_dep,
 		utils_lib_dep.as_link_whole(),
