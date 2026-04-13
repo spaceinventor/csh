@@ -98,9 +98,11 @@ static int strip_str(char *str) {
             while (*read_p && (*read_p < 32) && *read_p != 27) {
                 read_p++;
             }
-            *write_p = '\0';
-            write_p++;
-            str_counter++;
+            if(write_p > str && *(write_p - 1) != '\0')  {
+                *write_p = '\0';
+                write_p++;
+                str_counter++;
+            }
         } else if (*read_p == '\t'){
             *write_p = ' ';
             read_p++;
