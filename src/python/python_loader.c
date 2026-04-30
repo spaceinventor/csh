@@ -419,40 +419,48 @@ static void load_py(char *path, char *search_str) {
 	DIR *dir CLEANUP_DIR = opendir(path);
 	if (dir == NULL) {
 		perror("opendir");
-	} else {
-		while ((entry = readdir(dir)) != NULL)  {
+		return;
+	}
 
-			/* Verify file has search string */
-			if (search_str && !strstr(entry->d_name, search_str)) {
-				continue;
-			}
-			if(strstr(entry->d_name, ".py")) {
-				int fullpath_len = strnlen(path, WALKDIR_MAX_PATH_SIZE) + strnlen(entry->d_name, WALKDIR_MAX_PATH_SIZE);
-				char fullpath[fullpath_len+1];
-				strncpy(fullpath, path, fullpath_len);
-				strncat(fullpath, entry->d_name, fullpath_len-strnlen(path, WALKDIR_MAX_PATH_SIZE));
-				PyObject * pymod AUTO_DECREF = pycsh_load_pymod(fullpath, DEFAULT_INIT_FUNCTION, 1);
-				if (pymod == NULL) {
-					PyErr_Print();
-					continue;
-				}
-				apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
-				if (!e) {
-					printf("Memory allocation error.\n");
-				} else {
-					e->apm_init_version = APM_INIT_VERSION;
-					strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
-					size_t i = strlen(e->path);
-					while ((i > 0) && (e->path[i-1] != '/')) {
-						i--;
-					}
-					e->file = &(e->path[i]);
-					// TODO Kevin: Verbose argument?
-					printf("\033[32mLoaded: %s\033[0m\n", fullpath);
-					apm_queue_add(e);
-				}
-			}
+	while ((entry = readdir(dir)) != NULL)  {
+
+		/* Verify file has search string */
+		if (search_str && !strstr(entry->d_name, search_str)) {
+			continue;
 		}
+
+		if ((entry->d_type != DT_DIR) && !strstr(entry->d_name, ".py")) {
+			/* Not a Python packages (directory) nor a module (`.py` file) */
+			continue;
+		}
+
+		int fullpath_len = strnlen(path, WALKDIR_MAX_PATH_SIZE) + strnlen(entry->d_name, WALKDIR_MAX_PATH_SIZE);
+		char fullpath[fullpath_len+1];
+		strncpy(fullpath, path, fullpath_len);
+		strncat(fullpath, entry->d_name, fullpath_len-strnlen(path, WALKDIR_MAX_PATH_SIZE));
+		PyObject * pymod AUTO_DECREF = pycsh_load_pymod(fullpath, DEFAULT_INIT_FUNCTION, 1);
+		if (pymod == NULL) {
+			PyErr_Print();
+			continue;
+		}
+
+		/* Not freed, added to APM linked list. */
+		apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
+		if (!e) {
+			printf("Memory allocation error.\n");
+			continue;
+		} 
+
+		e->apm_init_version = APM_INIT_VERSION;
+		strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
+		size_t i = strlen(e->path);
+		while ((i > 0) && (e->path[i-1] != '/')) {
+			i--;
+		}
+		e->file = &(e->path[i]);
+		// TODO Kevin: Verbose argument?
+		printf("\033[32mLoaded: %s\033[0m\n", fullpath);
+		apm_queue_add(e);
 	}
 }
 
