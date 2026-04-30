@@ -279,7 +279,6 @@ void build_apm_list(lib_search_t* lib_search) {
 
 int apm_load_search(lib_search_t *lib_search) {
 
-    // char path[WALKDIR_MAX_PATH_SIZE] = {0};
     char *path = calloc(1, WALKDIR_MAX_PATH_SIZE);
     if(!path) {
         return SLASH_ENOMEM;
@@ -370,7 +369,7 @@ static int apm_load_cmd(struct slash *slash) {
     bool free_path = lib_search.path == NULL;
 #ifdef HAVE_PYTHON
     res = py_apm_load_cmd(slash, &lib_search.lib_count);
-    #endif
+#endif
     if (lib_search.lib_count == 0) {
         printf("\033[31mNo new APMs loaded from %s\033[0m\n", lib_search.path);
     }
