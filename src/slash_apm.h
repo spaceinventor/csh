@@ -9,6 +9,7 @@ typedef int (*libmain_t)(void);
 typedef void (*libinfo_t)(void);
 typedef struct apm_entry_s apm_entry_t;
 extern void apm_queue_add(apm_entry_t * e);
+apm_entry_t *apm_get_entry(const char *needle);
 struct apm_entry_s {
     void * handle;
 
