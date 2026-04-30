@@ -39,6 +39,17 @@ static const int apm_init_version = APM_INIT_VERSION;
 static apm_entry_t * apm_queue = 0; 
 typedef void (*info_t) (void);
 
+apm_entry_t *apm_get_entry(const char *needle) {
+    apm_entry_t *res = NULL;
+    for (apm_entry_t * e = apm_queue; e; e = e->next) {
+        if (strcmp(e->file, needle) == 0) {
+            res = e;
+            break;
+        }
+    }
+    return res;    
+}
+
 void apm_queue_add(apm_entry_t * e) {
 
     if (!e) {
@@ -214,7 +225,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
     /* Verify not already loaded */
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (strcmp(e->file, last_entry) == 0) {
-            fprintf(stderr, "\033[33mWarn skipping %s already loaded\033[0m\n", last_entry);
+            fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", last_entry);
             return;
         }
     }
@@ -268,7 +279,11 @@ void build_apm_list(lib_search_t* lib_search) {
 
 int apm_load_search(lib_search_t *lib_search) {
 
-    char path[WALKDIR_MAX_PATH_SIZE] = {0};
+    // char path[WALKDIR_MAX_PATH_SIZE] = {0};
+    char *path = calloc(1, WALKDIR_MAX_PATH_SIZE);
+    if(!path) {
+        return SLASH_ENOMEM;
+    }
     int search_bin_path = 0;
 
     if (lib_search->path == NULL) {
@@ -293,7 +308,6 @@ int apm_load_search(lib_search_t *lib_search) {
 
         if (count == -1) {
             perror("readlink");
-            lib_search->path = NULL;
             return SLASH_EUSAGE;
         }
 
@@ -307,10 +321,6 @@ int apm_load_search(lib_search_t *lib_search) {
     strncat(path, "/usr/lib/csh", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
 
     build_apm_list(lib_search);
-
-    if (lib_search->lib_count == 0) {
-        printf("\033[31mNo APMs found in %s\033[0m\n", lib_search->path);
-    }
 
     for (unsigned i = 0; i < lib_search->lib_count; i++) {
         apm_entry_t * e = load_apm(lib_search->libs[i].path);
@@ -331,7 +341,6 @@ int apm_load_search(lib_search_t *lib_search) {
         apm_queue_add(e);
         printf("\033[32mLoaded: %s\033[0m\n", e->path);
     }
-    lib_search->path = NULL;
     return SLASH_SUCCESS;
 }
 
@@ -358,9 +367,16 @@ static int apm_load_cmd(struct slash *slash) {
 
     int res = apm_load_search(&lib_search);
     optparse_del(parser);
+    bool free_path = lib_search.path == NULL;
 #ifdef HAVE_PYTHON
-    res = py_apm_load_cmd(slash);
-#endif
+    res = py_apm_load_cmd(slash, &lib_search.lib_count);
+    #endif
+    if (lib_search.lib_count == 0) {
+        printf("\033[31mNo new APMs loaded from %s\033[0m\n", lib_search.path);
+    }
+    if (free_path) {
+        free(lib_search.path);
+    }
     return res;
 }
 
