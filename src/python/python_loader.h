@@ -10,7 +10,7 @@ void on_python_slash_execute_pre_hook(const char *line);
 void on_python_slash_execute_post_hook(const char *line, struct slash_command *command);
 
 extern void py_init_interpreter(void);
-extern int py_apm_load_cmd(struct slash *slash);
+extern int py_apm_load_cmd(struct slash *slash, unsigned int *loaded_count);
 
 extern bool exception_allowed;
 
