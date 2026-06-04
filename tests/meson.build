@@ -36,3 +36,13 @@ set_array_tests = executable(
     dependencies: [csp_dep, slash_dep, param_dep, utils_lib_dep],
 )
 test('set_array_tests', set_array_tests)
+
+# Regression for the hk_param_sniffer() data_len underflow segfault (short sport-13
+# DIPP RPC replies). Compiles the real hk_param_sniffer.c; crash is caught via fork().
+hk_sniffer_tests = executable(
+    'hk_sniffer_tests',
+    sources: ['hk_sniffer_host.c', '../src/hk_param_sniffer.c'],
+    include_directories: ['../src'],
+    dependencies: [csp_dep, slash_dep, param_dep, utils_lib_dep],
+)
+test('hk_sniffer_tests', hk_sniffer_tests)
