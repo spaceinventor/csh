@@ -34,7 +34,12 @@
 #include <vmem/vmem_client.h>
 
 #include <apm/environment.h>
+#include <ossi/sitime.h>
 #include "slash_env_var_completion.h"
+
+#ifdef HAVE_PYTHON
+#include <pycsh/utils.h>
+#endif
 
 extern const char *version_string;
 extern param_queue_t param_queue;
@@ -42,15 +47,6 @@ extern param_queue_t param_queue;
 #define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    512
 #define HISTORY_SIZE		2048
-
-VMEM_DEFINE_FILE(col, "col", "colcnf.vmem", 120);
-#ifdef PARAM_HAVE_COMMANDS
-VMEM_DEFINE_FILE(commands, "cmd", "commands.vmem", 2048);
-#endif
-#ifdef PARAM_HAVE_SCHEDULER
-VMEM_DEFINE_FILE(schedule, "sch", "schedule.vmem", 2048);
-#endif
-
 
 void csp_router_set_running(bool is_running);
 
@@ -149,15 +145,9 @@ int slash_prompt(struct slash * slash) {
 	}
 }
 
-uint64_t clock_get_nsec(void) {
-	struct timespec ts;
-	clock_gettime(CLOCK_MONOTONIC, &ts);
-	return ts.tv_sec * 1E9 + ts.tv_nsec;
-}
-
-void usage(void) {
+static void usage(void) {
 	printf("usage: csh -i init.csh [command]\n");
-	printf("Type 'manual' to open CSH manual\n");
+	printf("In CSH, type 'manual' to open CSH manual\n");
 	printf("\n");
 	printf("Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>\n");
 	printf("\n");
@@ -221,13 +211,14 @@ static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
     return expansion;
 }
 
-void * router_task(void * param) {
+static void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
 	}
+	return NULL;
 }
 
-void * vmem_server_task(void * param) {
+static void * vmem_server_task(void * param) {
 	vmem_server_loop(param);
 	return NULL;
 }
@@ -327,8 +318,9 @@ int main(int argc, char **argv) {
     pthread_create(&router_handle, NULL, &router_task, NULL);
 	static pthread_t vmem_server_handle;
     pthread_create(&vmem_server_handle, NULL, &vmem_server_task, NULL);
+#ifdef HAVE_PYTHON
 	csp_router_set_running(true);
-
+#endif
 	csp_rdp_set_opt(3, 10000, 5000, 1, 2000, 2);
 
 #ifdef PARAM_HAVE_COMMANDS

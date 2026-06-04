@@ -1,7 +1,7 @@
 Environment variables in CSH
 -----------------------------
 
-From version 2.5 onwards, CSH provides handling of environment variables, making it easier to perform repetitive tasks where only parameter values differ.
+CSH provides handling of environment variables, making it easier to perform repetitive tasks where only parameter values differ.
 The environment variable related commands all start with the ``var`` prefix and are:
 
 * ``var set``: define or update an environment variable
@@ -10,8 +10,6 @@ The environment variable related commands all start with the ``var`` prefix and 
 * ``var get``: print the value of a particular variable
 * ``var show``: show all the variables currently defined in the environment
 * ``var expand``: perform variable expansion in a string
-
-See the `Built-in commands`_ section for a description of these commands.
 
 Environment variables examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,6 +51,6 @@ Environment variables examples
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>6> watch -n 5 "ping $(MY_VARIABLE)"
+      .. csh-prompt:: host>6> watch -n 5 ping $(MY_VARIABLE)
 
 

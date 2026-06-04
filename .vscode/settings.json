@@ -1,6 +1,7 @@
 {
 	"mesonbuild.buildFolder": "builddir",
 	"mesonbuild.configureOnOpen": false,
+	"mesonbuild.modifySettings": false,
 	"files.associations": {
 		"*.h": "c",
 		"*.c": "c",

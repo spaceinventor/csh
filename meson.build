@@ -1,26 +1,31 @@
-project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
-	'csp_ippc:slash=true',
-	'csp_proc:slash=true',
-	'csp_proc:RESERVED_PROC_SLOTS=10',
-	'buildtype=debug', 
-	'optimization=2',
-	'warning_level=0',
-	'c_std=gnu11', 
-	'b_lto=false',
-	'default_library=static',
-	'slash:builtins=true',
-	'csp:packet_padding_bytes=42', 
-	'csp:buffer_count=1000',
-	'csp:buffer_size=2048',
-	'csp:conn_max=20',
-	'csp:conn_rxqueue_len=1000',
-	'csp:qfifo_len=1000',
-	'csp:rdp_max_window=1000',
-	'csp:port_max_bind=16',
-	'csp:use_rtable=true',
-	'param:have_fopen=true', 
-	'param:collector=false', 
-	'param:list_dynamic=true'])
+project('csh',
+	['c', 'cpp'],
+	subproject_dir: 'lib',
+	default_options: [
+		'buildtype=debug',
+		'optimization=2',
+		'warning_level=0',
+		'c_std=gnu11',
+		'b_lto=false',
+		'default_library=static',
+		'slash:builtins=true',
+		'csp:packet_padding_bytes=42',
+		'csp:buffer_count=1000',
+		'csp:buffer_size=2048',
+		'csp:conn_max=20',
+		'csp:conn_rxqueue_len=1000',
+		'csp:qfifo_len=1000',
+		'csp:rdp_max_window=1000',
+		'csp:port_max_bind=16',
+		'csp:use_rtable=true',
+		'param:have_fopen=true',
+		'param:have_timestamp=true',
+		'param:collector=false',
+		'param:list_dynamic=true'
+	],
+	meson_version: '>= 1.6',
+	version: run_command('git', 'describe',  '--long', '--always', '--dirty', check: true).stdout().strip()
+)
 
 # Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
 # 'Consider using the built-in warning_level option instead of using "-Wall"'
@@ -31,11 +36,11 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 # they want.
 # As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
 # accept the Meson warnings given the flexibilty we gain
-add_project_arguments(['-Wall', '-Wextra', '-Wno-unused-parameter'], language: 'c')
+add_project_arguments(['-Wall', '-Wextra', '-Wstrict-prototypes', '-Wmissing-prototypes', '-Wno-unused-parameter'], language: 'c')
 # add_project_arguments(['-fanalyzer'], language: 'c')
 
 curl_dep = dependency(
-	'libcurl', 
+	'libcurl',
 	not_found_message: 'libcurl not found! Please install libcurl4-openssl-dev or the appropriate package for your system.'
 )
 
@@ -47,9 +52,7 @@ zmq_dep = dependency(
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
-lua_dep = dependency('lua5.4', required: false)
-csp_ippc_dep = dependency('csp_ippc', fallback: ['csp_ippc', 'csp_ippc_dep'], required: true).as_link_whole()
-csp_proc_dep = dependency('csp_proc', fallback: ['csp_proc', 'csp_proc_dep'], required: true).as_link_whole()
+ossi_dep = dependency('ossi', version: ['>=0.0.2'],fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
 	fallback:
@@ -74,7 +77,6 @@ csh_sources = [
 	'src/prometheus.c',
 	'src/resbuf_dump.c',
 	'src/stdbuf_client.c',
-	'src/randombytes.c',
 	'src/csp_scan.c',
 	'src/sleep_slash.c',
 	'src/spaceboot_slash.c',
@@ -91,10 +93,10 @@ csh_sources = [
     'src/slash_nodes_cmds.c',
     'src/slash_run_environment.c',
     'src/require_version_cmd.c',
-	'src/param_list_slash.c',
-	'src/param_slash.c',
-	'src/vmem_client_slash.c',
-	'src/vmem_client_slash_ftp.c',
+    'src/param_list_slash.c',
+    'src/param_slash.c',
+    'src/vmem_client_slash.c',
+    'src/vmem_client_slash_ftp.c',
 ]
 
 python_dep = dependency('python3', version : '>=3.10', required: false)
@@ -134,18 +136,15 @@ if meson.is_subproject() == false
 	subdir('tests')
 endif
 
-# Include csp_ippc_dep for DIPP configuration commands (requires: libprotobuf-c libjxl libbrotlienc)
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
 		apm_api_dep,
 		slash_dep,
-		csp_dep,
 		param_dep,
-		lua_dep,
+		ossi_dep,
+		csp_dep,
 		curl_dep,
-		csp_proc_dep,
-		csp_ippc_dep,
 		utils_lib_dep.as_link_whole(),
 		pycsh_dep
 	],

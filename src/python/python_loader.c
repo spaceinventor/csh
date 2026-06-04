@@ -106,7 +106,9 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
     snprintf(init_func_name, init_func_name_len, "PyInit_%s", filename);
 
     typedef PyObject* (*PyInitFunc)(void);
-    PyInitFunc init_func = (PyInitFunc)dlsym(handle, init_func_name);
+    PyInitFunc init_func;
+	/* Fix for: ISO C forbids conversion of object pointer to function pointer type [-Werror=pedantic] */
+	*(void **)(&init_func) = dlsym(handle, init_func_name);
 
     if (!init_func) {
         fprintf(stderr, "Error finding initialization function: %s\n", dlerror());
@@ -143,7 +145,7 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
     return module;
 }
 
-PyObject * pycsh_load_pymod(const char * const _filepath, const char * const init_function_name, int verbose) {
+static PyObject * pycsh_load_pymod(const char * const _filepath, const char * const init_function_name, int verbose) {
 
 	if (_filepath == NULL) {
 		return NULL;
@@ -395,7 +397,7 @@ void py_init_interpreter(void) {
 	return;
 }
 
-static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *path, char *search_str)) {
+static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *path, char *search_str, unsigned int *loaded_count), unsigned int *loaded_count) {
 	size_t pathlist_len = strlen(pathlist);
 	char *runner = pathlist;
 	char *start = pathlist;
@@ -403,16 +405,16 @@ static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *pa
 	while (runner++ < end) {
 		if(*runner == ';') {
 			*runner = '\0';
-			cb(start, search_str);
+			cb(start, search_str, loaded_count);
 			start = ++runner;
 		} else if(*runner == '\0') {
-			cb(start, search_str);
+			cb(start, search_str, loaded_count);
 			start = ++runner;
 		}
 	}
 }
 
-static void load_py(char *path, char *search_str) {
+static void load_py(char *path, char *search_str, unsigned int *loaded_count) {
 	struct dirent *entry;
 	DIR *dir CLEANUP_DIR = opendir(path);
 	if (dir == NULL) {
@@ -434,27 +436,34 @@ static void load_py(char *path, char *search_str) {
 					PyErr_Print();
 					continue;
 				}
-				apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
-				if (!e) {
-					printf("Memory allocation error.\n");
+				apm_entry_t *e = apm_get_entry(entry->d_name);
+				if(e) {
+					fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", entry->d_name);
+					continue;
 				} else {
-					e->apm_init_version = APM_INIT_VERSION;
-					strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
-					size_t i = strlen(e->path);
-					while ((i > 0) && (e->path[i-1] != '/')) {
-						i--;
+					e = calloc(1, sizeof(apm_entry_t));
+					if (!e) {
+						printf("Memory allocation error.\n");
+						continue;
 					}
-					e->file = &(e->path[i]);
-					// TODO Kevin: Verbose argument?
-					printf("\033[32mLoaded: %s\033[0m\n", fullpath);
-					apm_queue_add(e);
 				}
+				e->apm_init_version = APM_INIT_VERSION;
+				strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
+				size_t i = strlen(e->path);
+				while ((i > 0) && (e->path[i-1] != '/')) {
+					i--;
+				}
+				e->file = &(e->path[i]);
+				// TODO Kevin: Verbose argument?
+				printf("\033[32mLoaded: %s\033[0m\n", fullpath);
+				*loaded_count = *loaded_count + 1;
+				apm_queue_add(e);
 			}
 		}
 	}
 }
 
-int py_apm_load_cmd(struct slash *slash) {
+int py_apm_load_cmd(struct slash *slash, unsigned int *loaded_count) {
 
     char * path = NULL;
     char * search_str = NULL;
@@ -496,7 +505,7 @@ int py_apm_load_cmd(struct slash *slash) {
 			fprintf(stderr, "main_thread_state is NULL\n");
 			return SLASH_EINVAL;
 		}
-		walk_path_list(path, search_str, load_py);
+		walk_path_list(path, search_str, load_py, loaded_count);
 	}
 	if(free_path) {
 		free(path);
@@ -506,7 +515,7 @@ int py_apm_load_cmd(struct slash *slash) {
 }
 
 static wchar_t **handle_py_argv(char **args, int argc) {
-	wchar_t **res = calloc(sizeof(wchar_t *), argc);
+	wchar_t **res = calloc(argc, sizeof(wchar_t *));
 	if (res) {
 		for (int i = 0; i < argc; i++) {
 			res[i] = Py_DecodeLocale(args[i], NULL);
@@ -515,13 +524,30 @@ static wchar_t **handle_py_argv(char **args, int argc) {
 	return res;
 }
 
+
+/* NOTE: It appears that `PySys_SetArgv(argc, w_argv);` copies `wchar_t **w_argv`,
+	as freeing it doesn't give any Valgrind warnings. */
+static void py_argv_free(wchar_t **w_argv, int argc) {
+
+	if (!w_argv || !*w_argv) {
+		return;
+	}
+
+	for (int i = 0; i < argc; i++) {
+		PyMem_RawFree(w_argv[i]);
+	}
+	free(w_argv);
+}
+
 int csh_python_exec_string(const char *string, int argc, char **argv) {
 	wchar_t **w_argv = handle_py_argv(argv, argc);
 	#pragma GCC diagnostic push
 	#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	PySys_SetArgv(argc, w_argv);
 	#pragma GCC diagnostic pop  /* -Wdeprecated-declarations */
-	return PyRun_SimpleString(string);
+	const int res = PyRun_SimpleString(string);
+	py_argv_free(w_argv, argc);
+	return res;
 }
 int csh_python_exec_file(const char *filename, int argc, char **argv) {
 	FILE *fp = fopen(filename, "rb");
@@ -541,7 +567,9 @@ int csh_python_exec_file(const char *filename, int argc, char **argv) {
 			Py_DECREF(file_str);
 		}
 
-		return PyRun_AnyFileEx(fp, filename, 1);
+		const int res = PyRun_AnyFileEx(fp, filename, 1);
+		py_argv_free(w_argv, argc);
+		return res;
 	} else {
 		return -1;
 	}
@@ -595,6 +623,8 @@ static int python_slash(struct slash *slash) {
 		PyRun_SimpleString("import rlcompleter");
 		PyRun_SimpleString("import readline");
 		PyRun_SimpleString("readline.parse_and_bind(\"tab: complete\")");
+		PyRun_SimpleString("import sys");
+		PyRun_SimpleString("if sys.base_prefix != sys.prefix or hasattr(sys, \"real_prefix\"): sys.ps1 = '(venv) >>> '");
 		res = PyRun_InteractiveLoop(stdin, "<stdin>");
 	}
 
@@ -617,5 +647,5 @@ static int python_slash(struct slash *slash) {
 	"or execute the script in given file.\n"\
 	"This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting\n"\
 	"with CSP nodes.\n\nUse \"Control-D\" to exit the interpreter and return to CSH."
-slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);
-slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP);  // Alias
+slash_command_completer(python, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP)
+slash_command_completer(python3, python_slash, slash_path_completer, _PYTHON_ARGS, _PYTHON_HELP)  // Alias

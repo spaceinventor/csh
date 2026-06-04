@@ -11,13 +11,14 @@ CSH runs a simple command line interface. After starting CSH you will see a prom
       .. csh-prompt:: >>$ csh
       .. csh-prompt:: host>>node 212
       .. csh-prompt:: host>212>ping
-         |Ping node 212 size 0 timeout 1000: Reply in 14...
-      .. csh-prompt:: host>obc@212> ident
+         |Ping node 212 size 0 timeout 1000: Reply in 14 [ms]
+      .. csh-prompt:: host>212> ident
          |IDENT 212
          | obc-hk
          | FLASH-1
          | v1.2-1-gd958d8e+
          | Mar 17 2023 12:18:08
+      .. csh-prompt:: host>obc@212>
 
 .. class:: centered
 

@@ -9,12 +9,9 @@ cmd add,<param>[offset] [value],Add a new parameter to a command
 cmd done,-,Exit cmd edit mode
 cmd new,<get/set> <cmd name>,Create a new command
 cmd run,-,-
-cmd server download,<name>,-
-cmd server list,-,-
-cmd server rm,<name>,-
-cmd server upload,-,-
 confirm,-,Block until user confirmation
 crc32,<address> <length>,Calculate CRC32 on a VMEM area
+csp add alias,-,Add a new Alias address
 csp add can,-,Add a new CAN interface
 csp add eth,-,Add a new Ethernet interface
 csp add kiss,-,Add a new KISS/UART interface
@@ -25,6 +22,7 @@ csp add zmq,-,Add a new ZMQ interface
 csp init,-,Initialize CSP
 csp scan,-,-
 download,<address> <length> <file>,Download from VMEM to FILE
+echo,[string],Display a line of text
 eth debug,-,Toggle ethernet debugging
 eth info,-,List devices
 exit,-,Exit application
@@ -44,7 +42,7 @@ list save,-,Save parameters
 loki start,-,Start Loki log push thread
 ls,[path],list files
 manual,[manual pdf],"Show CSH documentation, use with no parameter to get the list of available manuals."
-node,[node],Set global default node
+node,node,Set global default node
 node add,-,-
 node list,-,Save or print known nodes
 node save,-,Save or print known nodes
@@ -53,9 +51,15 @@ ping,[node],Ping a system
 poke,<address> <data>,Poke
 program,<slot>,Upload new firmware
 prometheus start,-,Start prometheus webserver
-pull,[OPTIONS],Pull all metrics from given CSP node(s)
+pull,-,Pull all metrics from given CSP node(s)
 pwd,-,Print current working directory
 python,[(-c <python_string>|<filename>) [args...]],"Starts an interactive Python interpreter in the current CSH process
+or execute the script in given file.
+This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting
+with CSP nodes.
+
+Use ""Control-D"" to exit the interpreter and return to CSH."
+python3,[(-c <python_string>|<filename>) [args...]],"Starts an interactive Python interpreter in the current CSH process
 or execute the script in given file.
 This allows you to run pretty much any Python code, particularly code using PyCSH which allows for interacting
 with CSP nodes.
@@ -80,12 +84,6 @@ Sets the following environment variables during execution:
 
 - __FILE__ to the path and name of the executed file
 - __FILE_DIR__ to the directory containing the executed file, useful for running other files located relative to __FILE__"
-schedule cmd,-,-
-schedule list,-,-
-schedule push,-,-
-schedule reset,<server> <last id> [timeout],-
-schedule rm,<server> <id> [timeout],-
-schedule show,-,-
 set,<param> <value>,Set
 shutdown,[node],Shutdown a node
 sleep,<sleep ms>,Sleep the specified amount of milliseconds
@@ -107,5 +105,7 @@ version,-,Print CSH version (and date if verbose)
 vm start,-,Start Victoria Metrics push thread
 vm stop,-,Stop Victoria Metrics push thread
 vmem,-,List virtual memory
+vmem compress,<src_address> <dst_address> <length>,Perform compression from src into dst
+vmem decompress,<src_address> <dst_address> <length>,Perform decompression from src into dst
 vts init,-,Push data to VTS
 watch,<command...>,Repeat a command

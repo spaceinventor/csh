@@ -4,6 +4,8 @@
 #include "python/python_loader.h"
 #endif
 
+#include <slash/slash.h>
+
 void slash_on_execute_hook(const char *line) {
 	on_loki_slash_execute_hook(line);
 #ifdef HAVE_PYTHON

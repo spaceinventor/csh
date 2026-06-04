@@ -15,7 +15,7 @@ Print out list of commands
 
 **csp init**
 
-Initialize CSP in CSH. Optionally select CSP version.
+Initialize CSP in CSH using CSP v1 or custom username. CSP is automatically initialized using default settings when starting CSH.
 
 .. class:: table
 
@@ -75,9 +75,11 @@ Add new routes to the CSP routing table in CSH.
       .. csh-prompt:: host>> csp add route 64/8 CAN0
          | Added route 64/8 CAN0
 
-**csp scan**
+**ident 16383**
 
-Scan all nodes for devices.
+**ident**
+
+Request nodes to reply with some system info. Hostname, Vendor, Revisions and Timestamp of build. Using ident on a broadcast node or global broadcast (16383) can be used to find all devices within the local network.
 
 .. class:: table
 
@@ -86,15 +88,12 @@ Scan all nodes for devices.
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>> csp scan
-         | CSP SCAN [0:16382]
-         | Found something on addr 0...
+      .. csh-prompt:: host>> ident 16383
          | lenovo
          | #36~22.04.1-Ubuntu SMP PREEMP
          | 5.19.0-35-generic
          | Mar 22 2023 14:17:59
          |
-         | Found something on addr 212...
          | obc-hk
          | FLASH-1
          | v1.2-1-gd958d8e+
@@ -140,7 +139,7 @@ Use the hk timeoffset command to set the node of hk server for the housekeeping 
 
 **info**
 
-Provides CSP info for the local node. First the routing table, then the connection table and finally interface statistics.
+Provides CSP info for the local node, including interface configuration and statistics.
 
 
 .. class:: table
@@ -424,40 +423,7 @@ Remotely request interface statistics. For a combined overview of all interfaces
          | CAN0   tx: 75840 rx: 81818 txe: 00000 rxe: 00000
          |        drop: 00000 autherr: 00000 frame: 06176
          |        txb: 3265270 rxb: 3321911  
-    
-       	 
 
-**ident**
-
-Responds with some system info. Hostname, Vendor, Revisions and Timestamp of build. Using ident on a broadcast node or global broadcast (16383) can be used as a csp scan to find all devices within the local network.
-
-
-.. class:: table
-
-.. list-table::
-   :widths: 100
-   :header-rows: 0
-   
-   * - 
-      .. csh-prompt:: host>6> ident
-         | IDENT 6
-         |    obc-hk
-         |    FLASH-1
-         |    v1.2-1-gd958d8e+
-         |    Mar 17 2023 12:18:08    
-       	 
-      .. csh-prompt:: host>obc-hk@6> ident 127
-         | IDENT 107
-         |    lenovo
-         |    #36-22.04.1-Ubuntu SMP PREEMP
-         |    5.19.0-35-generic
-         |    Mar 22 2023 14:17:59   
-
-         | IDENT 89
-         |    lab
-         |    #66-Ubuntu SMP Fri Jan 20 14:
-         |    5.15.0-60-generic
-         |    Oct 26 2022 16:23:29 
 
 **uptime**
 
@@ -621,7 +587,9 @@ Program a slot, with automatic search for valid binaries in the current working 
          | ................................ - 81 K
          | Downloaded 82664 bytes in 4.551 s at 18163 Bps
 
-The normal operation of the program command is to upload the entire firmware image to the module and then download it back to the CSH terminal, for bitwise comparison. This can in some circumstances prove to be very time consuming. For this reason, the system can be instructed to use a different approach using a simple CRC-32 checksum calculation on “both sides” of the communication channel. Specifying the -c option on the command line will instruct the CSH client to do a CRC-32 calculation on the firmware file prior to uploading it to the module. When the upload process has completed, the module is instructed to do the same CRC-32 calculation on all the data received and send back the result (only 32-bits) to the CSH client for verification. For this option to succeed, the module has to support the CRC-32 calculation feature, otherwise the program operation will end with a communication error.
+The normal operation of the program command is to upload the entire firmware image to the module and then download it back to the CSH terminal, for bitwise comparison, which can in some circumstances prove to be very time consuming. 
+
+For this reason, the system can be instructed to use a different approach using a simple CRC-32 checksum calculation on “both sides” of the communication channel. Specifying the -C option on the command line will instruct the CSH client to do a CRC-32 calculation on the firmware file prior to uploading it to the module. When the upload process has completed, the module is instructed to do the same CRC-32 calculation on all the data received and send back the result to the CSH client for verification. For this option to succeed, the module has to support the CRC-32 calculation feature, otherwise the program operation will end with a communication error.
 
 
 **sps**
@@ -684,7 +652,7 @@ Here we are running sps while in slot 1, then rebooting into slot 0, programming
 
 
 
-**stdbuf2**
+**stdbuf**
 
 Retrieve the stdout buffer of node and clear it.
 
@@ -695,7 +663,7 @@ Retrieve the stdout buffer of node and clear it.
    :header-rows: 0
    
    * - 
-      .. csh-prompt:: host>6> stdbuf2
+      .. csh-prompt:: host>6> stdbuf
          | bootmsg: obc-hk Feb 15 2023 08:29:19 slot: 0, cause: SOFT
          | |Feb 15 2023 08:29:18   
 

@@ -27,6 +27,7 @@
 
 #include <param/param_wildcard.h>
 #include "time.h"
+#include "csh_internals.h"
 
 static char queue_buf[PARAM_SERVER_MTU];
 param_queue_t param_queue = { .buffer = queue_buf, .buffer_size = PARAM_SERVER_MTU, .type = PARAM_QUEUE_TYPE_EMPTY, .version = 2 };
@@ -536,7 +537,7 @@ static int cmd_get(struct slash *slash) {
 			continue;
 		}
 
-		if ((param->mask & mask) == 0) {
+		if (mask != 0xFFFFFFFF && (param->mask & mask) == 0) {
 			continue;
 		}
 
@@ -810,7 +811,7 @@ static int cmd_set(struct slash *slash) {
 
 	/* Local parameters are set directly */
 	if (*param->node == 0) {
-		param_queue_apply(&queue, 0);
+		param_queue_apply(&queue, 0, 3);
 
 		// if (offset < 0 && param->type != PARAM_TYPE_STRING && param->type != PARAM_TYPE_DATA) {
 		// 	for (int i = 0; i < param->array_size; i++)
@@ -945,7 +946,7 @@ static int cmd_add(struct slash *slash) {
 				continue;
 			}
 
-			if ((param->mask & include_mask) == 0) {
+			if (include_mask != 0xFFFFFFFF && (param->mask & include_mask) == 0) {
 				continue;
 			}
 
@@ -1143,13 +1144,10 @@ static int cmd_new(struct slash *slash) {
 	name = slash->argv[argi];
 	strncpy(param_queue.name, name, sizeof(param_queue.name)-1);  // -1 to fit NULL byte
 
-	csp_timestamp_t time_now;
-	csp_clock_get_time(&time_now);
 	param_queue.used = 0;
 	param_queue.version = paramver;
 	param_queue.last_timestamp.tv_sec = 0;
 	param_queue.last_timestamp.tv_nsec = 0;
-	param_queue.client_timestamp = time_now;
 
 	printf("Initialized new command: %s\n", name);
 

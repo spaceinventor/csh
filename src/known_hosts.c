@@ -24,7 +24,7 @@ struct host_s {
 };
 
 static uint32_t known_host_storage_size = sizeof(host_t);
-SLIST_HEAD(known_host_s, host_s) known_hosts = {};
+SLIST_HEAD(known_host_s, host_s) known_hosts = {0};
 
 /** Private (CSH-only API) */
 void node_save(const char * filename) {
@@ -56,13 +56,13 @@ void known_host_set_storage_size(uint32_t new_size){
     known_host_storage_size = new_size;
 }
 
-uint32_t known_host_get_storage_size() {
+uint32_t known_host_get_storage_size(void) {
     return known_host_storage_size;
 }
 
 
 void host_name_completer(struct slash *slash, char * token) {
-    SLIST_HEAD(known_host_s, host_s) matching_hosts = {};
+    SLIST_HEAD(known_host_s, host_s) matching_hosts = {0};
     char *part_to_complete = token + strnlen(token, slash->length);
     /* Rewind to a potential whitespace */
     while(part_to_complete > token) {
@@ -138,7 +138,7 @@ void host_name_completer(struct slash *slash, char * token) {
 
 }
 
-void known_hosts_del(int host) {
+static void known_hosts_del(int host) {
 
     // SLIST_FOREACH(host_t host, &known_hosts, next) {
     for (host_t* element = SLIST_FIRST(&known_hosts); element != NULL; element = SLIST_NEXT(element, next)) {

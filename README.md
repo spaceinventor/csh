@@ -17,22 +17,18 @@ Preferrably, you should use the provided Ubuntu Packages from Github's [Release 
 
 ## Build
 
-Requirements: libcurl4-openssl-dev build-essential, libsocketcan-dev, can-utils, libzmq3-dev, libyaml-dev, meson, ninja, pkg-config, fonts-powerline, python3-pip, libelf-dev, libbsd-dev libprotobuf-c-dev
+![build.yml status](https://github.com/spaceinventor/csh/actions/workflows/build.yml/badge.svg)
+
+Requirements: libcurl4-openssl-dev build-essential, libsocketcan-dev, can-utils, libzmq3-dev, libyaml-dev, meson, ninja, pkg-config, fonts-powerline, python3-pip, libelf-dev, libbsd-dev
 
 ```
-sudo apt install libcurl4-openssl-dev git build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config fonts-powerline python3-pip libelf-dev libbsd-dev libprotobuf-c-dev
-sudo pip3 install meson ninja
-```
-
-Sometimes needed:
-```
-link /usr/sbin/ninja /usr/local/lib/python3.5/dist-packages/ninja
-export PATH=~/.local/bin:$PATH
+sudo apt install libcurl4-openssl-dev git build-essential libsocketcan-dev can-utils libzmq3-dev libyaml-dev pkg-config fonts-powerline pipx libelf-dev libbsd-dev python3-dev
+pipx install meson
 ```
 
 Build:
 ```
-git clone --recurse-submodules https://github.com/discosat/csh.git
+git clone --recurse-submodules https://github.com/spaceinventor/csh.git
 cd csh
 ./configure
 ./install

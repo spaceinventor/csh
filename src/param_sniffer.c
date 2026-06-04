@@ -16,6 +16,7 @@
 #include <csp/csp_hooks.h>
 #include <csp/csp_crc32.h>
 
+#include "param_sniffer.h"
 #include "hk_param_sniffer.h"
 #include "prometheus.h"
 #include "victoria_metrics.h"
@@ -151,7 +152,7 @@ static void * param_sniffer(void * param) {
             continue;
         }
 
-        if (packet->id.sport != PARAM_PORT_SERVER) {
+        if (packet->id.sport != PARAM_PORT_SERVER && packet->id.dport != PARAM_PORT_SERVER) {
             csp_buffer_free(packet);
             continue;
         }
@@ -181,7 +182,6 @@ static void * param_sniffer(void * param) {
         csp_timestamp_t time_now;
         csp_clock_get_time(&time_now);
         queue.last_timestamp = time_now;
-        queue.client_timestamp = time_now;
 
         mpack_reader_t reader;
         mpack_reader_init_data(&reader, queue.buffer, queue.used);

@@ -11,14 +11,11 @@ In order to launch in shell / interactive mode, start csh without a command. Run
    * -
 
       .. csh-prompt:: >>$ csh -h
-         | usage: csh -i init.csh[command]
+         | usage: csh -i init.csh
+         | In CSH, type 'manual' to access CSH manuals
+         | 
+         | Copyright (c) 2016-2025 Space Inventor A/S <info@space-inventor.com>
       .. csh-prompt:: >>$ csh 
-      .. csh-prompt:: host>> csp init
-         | Version 2
-         | Hostname: lenovo
-         | Model: #36~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Fri   Feb 17 15:17:25 UTC 2
-         | Revision: 5.19.0-35-generic
-         | Deduplication: 3
       .. csh-prompt:: host>>csp add zmq -d 8 localhost
          | ZMQ init ZMQO: addr: 8, pub(tx): [tcp://localhost:6000], sub(rx): [tcp://localhost:7000]
 

@@ -11,7 +11,7 @@
 #include <csp/drivers/can_socketcan.h>
 
 
-void usage(void)
+static void usage(void)
 {
 	printf("usage: spacebridge\n");
 	printf("\n");

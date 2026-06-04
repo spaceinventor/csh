@@ -1,0 +1,1 @@
+A new APM shall based on a fork of the repository https://github.com/spaceinventor/csh_example. This repository contains a simple APM that registers a custom slash command and a few example parameters, allowing the APM functionality to be remotely operated from other CSP nodes.

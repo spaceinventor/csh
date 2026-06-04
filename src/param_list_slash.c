@@ -19,7 +19,9 @@
 #include <param/param.h>
 #include <param/param_list.h>
 #include <param/param_string.h>
+#ifdef HAVE_PYTHON
 #include <pycsh/param_list_py.h>
+#endif
 
 #include <endian.h>
 
@@ -60,7 +62,7 @@ Shows cached/known values. Use -v to include parameter type and help text.");
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_completer(list, list, param_completer, "[OPTIONS...] [name wildcard=*]", "List parameters");
+slash_command(list, list, "[OPTIONS...] [name wildcard=*]", "List parameters");
 
 
 static int list_download(struct slash *slash)
