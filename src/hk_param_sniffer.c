@@ -212,7 +212,17 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 
 	/* Protocol has a header size of 5, and RDP adds 5 bytes to the end of the packet if activated */
 	size_t header_size = 5;
-	size_t data_len = packet->length - header_size - ((packet->id.flags & CSP_FRDP) ? 5 : 0);
+	size_t overhead = header_size + ((packet->id.flags & CSP_FRDP) ? 5 : 0);
+	/* data_len is unsigned, so subtracting the overhead from a packet that is shorter
+	 * than the overhead does not go negative -- it wraps around to a huge value
+	 * (~SIZE_MAX). The mpack reader below would then read far past the end of the packet
+	 * and crash. This can happen because we handle *any* packet on source port 13, but
+	 * other, shorter traffic uses that port too and carries no param payload. So: if the
+	 * packet is too short to hold a payload, skip it. */
+	if (packet->length < overhead) {
+		return false;
+	}
+	size_t data_len = packet->length - overhead;
 	param_queue_t queue;
 	param_queue_init(&queue, &packet->data[header_size], data_len, data_len, PARAM_QUEUE_TYPE_SET, 2);
 	queue.last_node = packet->id.src;
