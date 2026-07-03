@@ -213,10 +213,10 @@ static int list_add(struct slash *slash)
     }
 
 
-	uint32_t mask = 0;
+	uint32_t mask = PM_REMOTE;
 
 	if (maskstr)
-		mask = param_maskstr_to_mask(maskstr);
+		mask |= param_maskstr_to_mask(maskstr);
 
 	if (umaskstr)
 		mask |= param_umaskstr_to_mask(umaskstr);
