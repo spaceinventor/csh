@@ -13,7 +13,7 @@ But the software will be called `csh` (pronounced 'seashell') from now on.
 
 ## Installing
 
-Preferrably, you should use the provided Ubuntu Packages from Github's [Release Pages](https://github.com/spaceinventor/csh/releases)
+Preferably, you should use the provided Ubuntu Packages from Github's [Release Pages](https://github.com/spaceinventor/csh/releases)
 
 ## Build
 
