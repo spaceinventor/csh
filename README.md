@@ -99,8 +99,7 @@ See https://github.com/spaceinventor/csh_example for example usage.
 
 The following APMs were implemented as a more thorough test of the APM implementation.
 
-`csh_hk`: `hk retrieve` For retrieving historical telemetry stored on an OBC.
-`csh_cortex`: `csp add cortex` cortex CSP interface implementation.
+`csh_obc`: `hk retrieve` For retrieving historical telemetry stored on an OBC.
 `csh_cspftp`: FTP client over CSP.
 `cping`: Concurrent, hence faster, ping and scan in one command `cping`.
 
