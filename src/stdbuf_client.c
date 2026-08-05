@@ -196,13 +196,16 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
 
     #define LF '\n' /* ASCII 10d */
     #define CR '\r' /* ASCII 13d */
+    bool lf_missing = false;
+    int ignore __attribute__((unused));
     while ((packet = csp_read(conn, timeout))) {
         int again = packet->data[0];
-        int ignore __attribute__((unused));
-        ignore = write(fileno(stdout), &packet->data[1], packet->length - 1);
-        if (again == 0 && packet->data[packet->length - 1] != LF) {
-            /* If this was the last packet and there was no LF we will add one here to flush the stdout file */
-            ignore = write(fileno(stdout), "\n", 1);
+        if (packet->length > 1) {
+            ignore = write(fileno(stdout), &packet->data[1], packet->length - 1);
+            lf_missing = false;
+            if (packet->data[packet->length - 1] != LF) {
+                lf_missing = true;
+            }
         }
         if (log_f) {
             int i = 1;
@@ -228,6 +231,16 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
         if (again == 0) {
             break;
         }
+    }
+
+    /**
+     * We might have something lingering in the stdout due to a missing Line Feed.
+     * This could be caused if we experienced a time out during reception of stdbuf
+     * packets in the while-loop, or if the last packet did not contain a Line Feed
+     * as its last character. We then need to flush the stdout by injecting a LF.
+     */
+    if (lf_missing) {
+        ignore = write(fileno(stdout), "\n", 1);
     }
 
     csp_close(conn);
