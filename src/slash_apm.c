@@ -24,7 +24,7 @@
 #include "python/python_loader.h"
 #endif
 
-slash_command_group(apm, "apm");
+slash_command_group(apm, "apm")
 
 /**
  * Load and create list of libraries 
@@ -99,9 +99,16 @@ static apm_entry_t * load_apm(const char * path) {
     }
     e->file = &(e->path[i]);
 
-    /* Get references to APM API functions */
-    e->libmain_f = dlsym(handle, "libmain");
-    e->libinfo_f = dlsym(handle, "libinfo");
+    /* Get references to APM API functions
+     * Use memcpy to void casting void pointer to function pointer
+     * which is forbidden in ISO */
+    void *sym;
+    sym = dlsym(handle, "libmain");
+    memcpy(&e->libmain_f, &sym, sizeof(sym));
+
+    sym = dlsym(handle, "libinfo");
+    memcpy(&e->libinfo_f, &sym, sizeof(sym));
+
     e->apm_init_version = *(int *)dlsym(handle, "apm_init_version");
 
     e->handle = handle;
@@ -379,7 +386,7 @@ static int apm_load_cmd(struct slash *slash) {
     return res;
 }
 
-slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM");
+slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM")
 
 static int apm_info_cmd(struct slash *slash) {
 
@@ -415,7 +422,7 @@ static int apm_info_cmd(struct slash *slash) {
     return SLASH_SUCCESS;
 
 }
-slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
+slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs")
 
 static char doc_folder[256] = "/usr/share/si-csh";
 
@@ -477,7 +484,7 @@ static void manual_cb(const char *a, const char *b, void *ctx) {
             b[len - 2] == 'd' && 
             b[len - 3] == 'p' && 
             b[len - 4] == '.') {
-            struct manual_entry *manual = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            struct manual_entry *manual = (struct manual_entry *)calloc(1, sizeof(struct manual_entry));
             if(manual) {
                 manual->pdf = strdup(b);
                 if(manual->pdf) {
@@ -517,7 +524,7 @@ static void manual_cmd_completer(struct slash *slash, char *arg) {
         match = strncmp(arg, cur_manual->pdf, slash_min(len_to_compare_to, (int)len));
         /* Do we have an exact match on the buffer ?*/
         if (match == 0) {
-            completion = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            completion = (struct manual_entry *)calloc(1, sizeof(struct manual_entry));
             if(completion) {
                 completion->pdf = strdup(cur_manual->pdf);
                 if(completion->pdf) {
@@ -590,4 +597,4 @@ static void manual_cmd_completer(struct slash *slash, char *arg) {
 
 }
 
-slash_command_completer(manual, doc_cmd, manual_cmd_completer, "[manual pdf]", "Show CSH documentation, use with no parameter to get the list of available manuals.");
+slash_command_completer(manual, doc_cmd, manual_cmd_completer, "[manual pdf]", "Show CSH documentation, use with no parameter to get the list of available manuals.")

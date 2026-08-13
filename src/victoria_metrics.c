@@ -215,8 +215,8 @@ void vm_add_param(param_t * param) {
     if(param->type == PARAM_TYPE_STRING || param->type == PARAM_TYPE_DATA){
         return;
     }
-    static char outstr[1000] = {};
-    static char valstr[100] = {};
+    static char outstr[1000] = {0};
+    static char valstr[100] = {0};
     int arr_cnt = param->array_size;
     if (arr_cnt < 0)
         arr_cnt = 1;
@@ -350,7 +350,7 @@ static int vm_start_cmd(struct slash * slash) {
     }
     return SLASH_SUCCESS;
 }
-slash_command_sub(vm, start, vm_start_cmd, "", "Start Victoria Metrics push thread");
+slash_command_sub(vm, start, vm_start_cmd, "", "Start Victoria Metrics push thread")
 
 static int vm_stop_cmd(struct slash * slash) {
 
@@ -378,4 +378,4 @@ static int vm_stop_cmd(struct slash * slash) {
 
     return SLASH_SUCCESS;
 }
-slash_command_sub(vm, stop, vm_stop_cmd, "", "Stop Victoria Metrics push thread");
+slash_command_sub(vm, stop, vm_stop_cmd, "", "Stop Victoria Metrics push thread")

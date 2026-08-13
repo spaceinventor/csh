@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <vmem/vmem.h>
 // #include "param_slash.c"
+#include "../src/csh_internals.h"
 
 vmem_t dummy;
 
-int serial_get(void) {
+uint32_t serial_get(void) {
     return 1234;
 }
 

@@ -25,7 +25,7 @@
 
 
 static vmem_list_t resbuf_get_base(int node, int timeout) {
-	vmem_list_t ret = {};
+	vmem_list_t ret = {0};
 
 	csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, CSP_O_CRC32);
 	if (conn == NULL)
@@ -145,4 +145,4 @@ static int resbuf_dump_slash(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(resbuf, resbuf_dump_slash, NULL, "Monitor stdbuf");
+slash_command(resbuf, resbuf_dump_slash, NULL, "Monitor stdbuf")

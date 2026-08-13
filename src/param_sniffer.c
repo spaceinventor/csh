@@ -31,9 +31,9 @@ int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, const param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
 
-    char tmp[1000] = {};
+    char tmp[1000] = {0};
 
     if (offset < 0)
         offset = 0;
@@ -149,7 +149,7 @@ int param_sniffer_crc(csp_packet_t * packet) {
     return 0;
 }
 
-static void * param_sniffer(void * param) {
+static void * param_sniffer(void * arg) {
     csp_promisc_enable(100);
     while(1) {
         csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
@@ -204,7 +204,7 @@ static void * param_sniffer(void * param) {
                 timestamp.tv_sec = packet->timestamp_rx;
                 timestamp.tv_nsec = 0;
             }
-            param_t * param = param_list_find_id(node, id);
+            const param_t * param = param_list_find_id(node, id);
             if (param) {
                 param_sniffer_log(NULL, &queue, param, offset, &reader, &timestamp);
             } else {

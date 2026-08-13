@@ -89,7 +89,7 @@ static int hk_utcparam(struct slash * slash) {
 		/* Node is not included, so we fake a semicolon before the string */
 		semicolon = slash->argv[argi] - 1;
 	}
-	param_t * utcparam = param_list_find_name(node, semicolon + 1);
+	const param_t * utcparam = param_list_find_name(node, semicolon + 1);
 
 	if (utcparam == NULL) {
 		printf("Parameter is not known by CSH\n");
@@ -101,7 +101,7 @@ static int hk_utcparam(struct slash * slash) {
 
 	return SLASH_SUCCESS;
 }
-slash_command_sub(hk, utcparam, hk_utcparam, NULL, NULL);
+slash_command_sub(hk, utcparam, hk_utcparam, NULL, NULL)
 
 void hk_set_epoch(time_t epoch, uint16_t node, bool auto_sync) {
 
@@ -186,7 +186,7 @@ static int hk_timeoffset(struct slash * slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL);
+slash_command_sub(hk, timeoffset, hk_timeoffset, NULL, NULL)
 
 bool hk_get_epoch(time_t * local_epoch, uint16_t node) {
 
@@ -227,7 +227,7 @@ bool hk_param_sniffer(csp_packet_t * packet) {
 		if (node == 0) {
 			node = packet->id.src;
 		}
-		param_t * param = param_list_find_id(node, id);
+		const param_t * param = param_list_find_id(node, id);
 		if (param) {
 			*param->timestamp = timestamp;
 			if (param->timestamp->tv_sec == 0) {

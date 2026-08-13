@@ -5,7 +5,7 @@ project('csh',
 		'buildtype=debug',
 		'optimization=2',
 		'warning_level=0',
-		'c_std=gnu11',
+		'c_std=gnu18',
 		'b_lto=false',
 		'default_library=static',
 		'slash:builtins=true',
@@ -21,23 +21,15 @@ project('csh',
 		'param:have_fopen=true',
 		'param:have_timestamp=true',
 		'param:collector=false',
-		'param:list_dynamic=true'
+		'param:list_dynamic=true',
+		'warning_level=3', 
+		'werror=true'
 	],
 	meson_version: '>= 1.6',
 	version: run_command('git', 'describe',  '--long', '--always', '--dirty', check: true).stdout().strip()
 )
 
-# Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
-# 'Consider using the built-in warning_level option instead of using "-Wall"'
-# 'Consider using the built-in warning_level option instead of using "-Wextra"'
-# which would be fine *IF* doing so didn't automatically propagate these options to this project's dependencies.
-# As we would like (at least for now) to only care about the warnings in this project's source code,
-# we don't want to propagate our warning settings to them, these dependencies can use whatever warning settings
-# they want.
-# As Meson doesn't propagate the arguments in add_project_arguments() to the dependencies, we can
-# accept the Meson warnings given the flexibilty we gain
-add_project_arguments(['-Wall', '-Wextra', '-Wstrict-prototypes', '-Wmissing-prototypes', '-Wno-unused-parameter'], language: 'c')
-# add_project_arguments(['-fanalyzer'], language: 'c')
+add_project_arguments(['-Wstrict-prototypes', '-Wmissing-prototypes', '-Wmissing-declarations', '-Wcast-align', '-Wpointer-arith', '-Wshadow', '-Wno-unused-parameter'], language: 'c')
 
 curl_dep = dependency(
 	'libcurl',
@@ -52,7 +44,6 @@ zmq_dep = dependency(
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
-ossi_dep = dependency('ossi', version: ['>=0.0.2'],fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
 	fallback:
@@ -89,6 +80,7 @@ csh_sources = [
 	'src/walkdir.c',
     'src/victoria_metrics.c',
     'src/loki.c',
+	'src/message_queue.c',
     'src/slash_env_var_cmds.c',
     'src/slash_nodes_cmds.c',
     'src/slash_run_environment.c',
@@ -97,6 +89,7 @@ csh_sources = [
     'src/param_slash.c',
     'src/vmem_client_slash.c',
     'src/vmem_client_slash_ftp.c',
+	'src/vmem_codec.c',
 ]
 
 python_dep = dependency('python3', version : '>=3.10', required: false)
@@ -136,22 +129,24 @@ if meson.is_subproject() == false
 	subdir('tests')
 endif
 
+linker_script = meson.current_source_dir() / 'linux.ld'
+
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
 		apm_api_dep,
 		slash_dep,
 		param_dep,
-		ossi_dep,
 		csp_dep,
 		curl_dep,
 		utils_lib_dep.as_link_whole(),
 		pycsh_dep
 	],
 	include_directories: include_directories('include'),
-	# Posix Message Queues (see libossi) are accessible through the "rt" library, so add it
-	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl', '-lrt'],
+	# Posix Message Queues are accessible through the "rt" library
+	link_args : python_ldflags + ['-Wl,-Map=csh.map', '-lm', '-Wl,--export-dynamic', '-ldl', '-lrt', '-Wl,--script=' + linker_script],
 	install : true,
+	link_depends: linker_script
 )
 
 custom_target('size', output: ['dummy.txt'], command: [find_program('size'), csh.full_path()], depends: csh, build_by_default: true)

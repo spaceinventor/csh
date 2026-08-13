@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
@@ -34,10 +35,10 @@
 #include "base16.h"
 
 
-slash_command_group(csp, "Cubesat Space Protocol");
+slash_command_group(csp, "Cubesat Space Protocol")
 
-static int slash_csp_info(struct slash *slash)
-{
+static int slash_csp_info(struct slash *slash) {
+	(void) slash;
 #if (CSP_HAVE_STDIO)
 #if (CSP_USE_RTABLE)
 	csp_rtable_print();
@@ -48,7 +49,7 @@ static int slash_csp_info(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(info, slash_csp_info, NULL, "Show CSP info");
+slash_command(info, slash_csp_info, NULL, "Show CSP info")
 
 static int slash_csp_ping(struct slash *slash)
 {
@@ -91,7 +92,7 @@ static int slash_csp_ping(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command_completer(ping, slash_csp_ping, host_name_completer, "[node]", "Ping a system");
+slash_command_completer(ping, slash_csp_ping, host_name_completer, "[node]", "Ping a system")
 
 static int slash_csp_reboot(struct slash *slash)
 {
@@ -123,7 +124,7 @@ static int slash_csp_reboot(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(reboot, slash_csp_reboot, "[node]", "Reboot a node");
+slash_command(reboot, slash_csp_reboot, "[node]", "Reboot a node")
 
 static int slash_csp_shutdown(struct slash *slash)
 {
@@ -155,7 +156,7 @@ static int slash_csp_shutdown(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(shutdown, slash_csp_shutdown, "[node]", "Shutdown a node");
+slash_command(shutdown, slash_csp_shutdown, "[node]", "Shutdown a node")
 
 static int slash_csp_buffree(struct slash *slash)
 {
@@ -189,7 +190,7 @@ static int slash_csp_buffree(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(buffree, slash_csp_buffree, "[node]", "");
+slash_command(buffree, slash_csp_buffree, "[node]", "")
 
 static int slash_csp_uptime(struct slash *slash)
 {
@@ -223,7 +224,7 @@ static int slash_csp_uptime(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(uptime, slash_csp_uptime, "[node]", "");
+slash_command(uptime, slash_csp_uptime, "[node]", "")
 
 static int slash_csp_cmp_ident(struct slash *slash)
 {
@@ -293,7 +294,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command_completer(ident, slash_csp_cmp_ident, host_name_completer, "[node]", "Ident");
+slash_command_completer(ident, slash_csp_cmp_ident, host_name_completer, "[node]", "Ident")
 
 
 static int slash_csp_cmp_ifstat(struct slash *slash)
@@ -362,7 +363,7 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(ifstat, slash_csp_cmp_ifstat, "<node> <interface> [timeout]", "Ident");
+slash_command(ifstat, slash_csp_cmp_ifstat, "<node> <interface> [timeout]", "Ident")
 
 static int slash_csp_cmp_peek(struct slash *slash)
 {
@@ -476,7 +477,7 @@ static int slash_csp_cmp_peek(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(peek, slash_csp_cmp_peek, "<address> <len>", "Peek");
+slash_command(peek, slash_csp_cmp_peek, "<address> <len>", "Peek")
 
 static int slash_csp_cmp_poke(struct slash *slash)
 {
@@ -590,7 +591,7 @@ static int slash_csp_cmp_poke(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(poke, slash_csp_cmp_poke, "<address> <data>", "Poke");
+slash_command(poke, slash_csp_cmp_poke, "<address> <data>", "Poke")
 
 const struct slash_command slash_cmd_time;
 static int slash_csp_cmp_time(struct slash *slash)
@@ -672,4 +673,4 @@ static int slash_csp_cmp_time(struct slash *slash)
 	return SLASH_SUCCESS;
 }
 
-slash_command(time, slash_csp_cmp_time, NULL, "Get or synchronize timestamp");
+slash_command(time, slash_csp_cmp_time, NULL, "Get or synchronize timestamp")

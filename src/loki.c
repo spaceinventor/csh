@@ -17,7 +17,7 @@
 #include <csp/csp_types.h>
 #include <csp/arch/csp_queue.h>
 
-#include <ossi/message_queue.h>
+#include "message_queue.h"
 #include "url_utils.h"
 
 #include "known_hosts.h"
@@ -469,4 +469,4 @@ static int loki_start_cmd(struct slash * slash) {
 
     return SLASH_SUCCESS;
 }
-slash_command_sub(loki, start, loki_start_cmd, "", "Start Loki log push thread");
+slash_command_sub(loki, start, loki_start_cmd, "", "Start Loki log push thread")

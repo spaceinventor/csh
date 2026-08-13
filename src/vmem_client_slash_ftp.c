@@ -186,7 +186,7 @@ static int vmem_client_slash_download(struct slash *slash)
 
 	return res;
 }
-slash_command(download, vmem_client_slash_download, "<address> <length> <file>", "Download from VMEM to FILE");
+slash_command(download, vmem_client_slash_download, "<address> <length> <file>", "Download from VMEM to FILE")
 
 static int vmem_client_slash_upload(struct slash *slash)
 {
@@ -308,7 +308,7 @@ static int vmem_client_slash_upload(struct slash *slash)
 
 	return res;
 }
-slash_command_completer(upload, vmem_client_slash_upload, slash_path_completer, "<file> <address>", "Upload from FILE to VMEM");
+slash_command_completer(upload, vmem_client_slash_upload, slash_path_completer, "<file> <address>", "Upload from FILE to VMEM")
 
 static int vmem_client_slash_crc32(struct slash *slash) {
 
@@ -427,7 +427,7 @@ static int vmem_client_slash_crc32(struct slash *slash) {
 
 	return SLASH_SUCCESS;
 }
-slash_command(crc32, vmem_client_slash_crc32, "<address> <length>", "Calculate CRC32 on a VMEM area");
+slash_command(crc32, vmem_client_slash_crc32, "<address> <length>", "Calculate CRC32 on a VMEM area")
 
 static int vmem_client_rdp_options(struct slash *slash) {
 
@@ -458,7 +458,7 @@ static int vmem_client_rdp_options(struct slash *slash) {
 
 	return SLASH_SUCCESS;
 }
-slash_command_sub(rdp, opt, vmem_client_rdp_options, NULL, "Set RDP options to use in stream and file transfers");
+slash_command_sub(rdp, opt, vmem_client_rdp_options, NULL, "Set RDP options to use in stream and file transfers")
 
 extern unsigned int rdp_tmp_window;
 extern unsigned int rdp_tmp_conn_timeout;
