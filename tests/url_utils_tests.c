@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include "url_utils.h"
 
-static void is_http_url_tests() {
+static void is_http_url_tests(void) {
     const char *vector_1 = "I am not an URL";
     assert(is_http_url(vector_1) == false);
 

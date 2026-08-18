@@ -16,7 +16,7 @@ TEST(require_version, require_version_tests) {
     
     {   /* Testing parse_version(), while also using it to generate the version_t for compare_version. */
 
-        version_t version = {0};
+        version_t version = {};
 
         /* Here are some things that are not valid version specifiers */
         ASSERT_FALSE(parse_version("vv3.4.5", &version, false));

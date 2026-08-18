@@ -25,6 +25,8 @@ TEST(environment, environment_tests) {
 
     static auto callback_count = 0;
     auto cb = [](const char *name, void *ctx) {
+        (void)name;
+        (void)ctx;
         callback_count++;
     };
     ASSERT_EQ(0, csh_putvar("JB", "SPACEINVENTOR"));

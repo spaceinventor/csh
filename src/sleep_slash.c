@@ -10,4 +10,4 @@ static int cmd_sleep(struct slash *slash) {
 	usleep(atoi(slash->argv[1]) * 1000);
 	return SLASH_SUCCESS;
 }
-slash_command(sleep, cmd_sleep, "<sleep ms>", "Sleep the specified amount of milliseconds");
+slash_command(sleep, cmd_sleep, "<sleep ms>", "Sleep the specified amount of milliseconds")

@@ -24,7 +24,7 @@
 #include "python/python_loader.h"
 #endif
 
-slash_command_group(apm, "apm");
+slash_command_group(apm, "apm")
 
 /**
  * Load and create list of libraries 
@@ -38,6 +38,17 @@ static const int apm_init_version = APM_INIT_VERSION;
 
 static apm_entry_t * apm_queue = 0; 
 typedef void (*info_t) (void);
+
+apm_entry_t *apm_get_entry(const char *needle) {
+    apm_entry_t *res = NULL;
+    for (apm_entry_t * e = apm_queue; e; e = e->next) {
+        if (strcmp(e->file, needle) == 0) {
+            res = e;
+            break;
+        }
+    }
+    return res;    
+}
 
 void apm_queue_add(apm_entry_t * e) {
 
@@ -88,9 +99,16 @@ static apm_entry_t * load_apm(const char * path) {
     }
     e->file = &(e->path[i]);
 
-    /* Get references to APM API functions */
-    e->libmain_f = dlsym(handle, "libmain");
-    e->libinfo_f = dlsym(handle, "libinfo");
+    /* Get references to APM API functions
+     * Use memcpy to void casting void pointer to function pointer
+     * which is forbidden in ISO */
+    void *sym;
+    sym = dlsym(handle, "libmain");
+    memcpy(&e->libmain_f, &sym, sizeof(sym));
+
+    sym = dlsym(handle, "libinfo");
+    memcpy(&e->libinfo_f, &sym, sizeof(sym));
+
     e->apm_init_version = *(int *)dlsym(handle, "apm_init_version");
 
     e->handle = handle;
@@ -214,7 +232,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
     /* Verify not already loaded */
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (strcmp(e->file, last_entry) == 0) {
-            fprintf(stderr, "\033[33mWarn skipping %s already loaded\033[0m\n", last_entry);
+            fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", last_entry);
             return;
         }
     }
@@ -268,7 +286,10 @@ static void build_apm_list(lib_search_t* lib_search) {
 
 static int apm_load_search(lib_search_t *lib_search) {
 
-    char path[WALKDIR_MAX_PATH_SIZE] = {0};
+    char *path = calloc(1, WALKDIR_MAX_PATH_SIZE);
+    if(!path) {
+        return SLASH_ENOMEM;
+    }
     int search_bin_path = 0;
 
     if (lib_search->path == NULL) {
@@ -293,7 +314,6 @@ static int apm_load_search(lib_search_t *lib_search) {
 
         if (count == -1) {
             perror("readlink");
-            lib_search->path = NULL;
             return SLASH_EUSAGE;
         }
 
@@ -307,10 +327,6 @@ static int apm_load_search(lib_search_t *lib_search) {
     strncat(path, "/usr/lib/csh", WALKDIR_MAX_PATH_SIZE-strnlen(path, WALKDIR_MAX_PATH_SIZE));
 
     build_apm_list(lib_search);
-
-    if (lib_search->lib_count == 0) {
-        printf("\033[31mNo APMs found in %s\033[0m\n", lib_search->path);
-    }
 
     for (unsigned i = 0; i < lib_search->lib_count; i++) {
         apm_entry_t * e = load_apm(lib_search->libs[i].path);
@@ -331,7 +347,6 @@ static int apm_load_search(lib_search_t *lib_search) {
         apm_queue_add(e);
         printf("\033[32mLoaded: %s\033[0m\n", e->path);
     }
-    lib_search->path = NULL;
     return SLASH_SUCCESS;
 }
 
@@ -358,13 +373,20 @@ static int apm_load_cmd(struct slash *slash) {
 
     int res = apm_load_search(&lib_search);
     optparse_del(parser);
+    bool free_path = lib_search.path == NULL;
 #ifdef HAVE_PYTHON
-    res = py_apm_load_cmd(slash);
+    res = py_apm_load_cmd(slash, &lib_search.lib_count);
 #endif
+    if (lib_search.lib_count == 0) {
+        printf("\033[31mNo new APMs loaded from %s\033[0m\n", lib_search.path);
+    }
+    if (free_path) {
+        free(lib_search.path);
+    }
     return res;
 }
 
-slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM");
+slash_command_sub(apm, load, apm_load_cmd, "", "Load an APM")
 
 static int apm_info_cmd(struct slash *slash) {
 
@@ -400,7 +422,7 @@ static int apm_info_cmd(struct slash *slash) {
     return SLASH_SUCCESS;
 
 }
-slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs");
+slash_command_sub(apm, info, apm_info_cmd, "", "Information on APMs")
 
 static char doc_folder[256] = "/usr/share/si-csh";
 
@@ -462,7 +484,7 @@ static void manual_cb(const char *a, const char *b, void *ctx) {
             b[len - 2] == 'd' && 
             b[len - 3] == 'p' && 
             b[len - 4] == '.') {
-            struct manual_entry *manual = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            struct manual_entry *manual = (struct manual_entry *)calloc(1, sizeof(struct manual_entry));
             if(manual) {
                 manual->pdf = strdup(b);
                 if(manual->pdf) {
@@ -502,7 +524,7 @@ static void manual_cmd_completer(struct slash *slash, char *arg) {
         match = strncmp(arg, cur_manual->pdf, slash_min(len_to_compare_to, (int)len));
         /* Do we have an exact match on the buffer ?*/
         if (match == 0) {
-            completion = (struct manual_entry *)calloc(sizeof(struct manual_entry), 1);
+            completion = (struct manual_entry *)calloc(1, sizeof(struct manual_entry));
             if(completion) {
                 completion->pdf = strdup(cur_manual->pdf);
                 if(completion->pdf) {
@@ -575,4 +597,4 @@ static void manual_cmd_completer(struct slash *slash, char *arg) {
 
 }
 
-slash_command_completer(manual, doc_cmd, manual_cmd_completer, "[manual pdf]", "Show CSH documentation, use with no parameter to get the list of available manuals.");
+slash_command_completer(manual, doc_cmd, manual_cmd_completer, "[manual pdf]", "Show CSH documentation, use with no parameter to get the list of available manuals.")

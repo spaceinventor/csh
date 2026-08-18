@@ -15,7 +15,9 @@
 #include <csp/csp.h>
 #include <csp/csp_hooks.h>
 #include <csp/csp_crc32.h>
+#include <apm/csh_api.h>
 
+#include "known_hosts.h"
 #include "param_sniffer.h"
 #include "hk_param_sniffer.h"
 #include "prometheus.h"
@@ -29,9 +31,9 @@ int sniffer_running = 0;
 pthread_t param_sniffer_thread;
 FILE *logfile;
 
-int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
+int param_sniffer_log(void * ctx, param_queue_t *queue, const param_t *param, int offset, void *reader, csp_timestamp_t *timestamp) {
 
-    char tmp[1000] = {};
+    char tmp[1000] = {0};
 
     if (offset < 0)
         offset = 0;
@@ -56,6 +58,11 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
         time_ms = ((uint64_t) tv.tv_sec * 1000000 + tv.tv_usec) / 1000;
     }
 
+    /* If no hostname is found, `hostname_buf` remains an empty string,
+        which seems to be discarded by Victoria Metrics. */
+    char hostname_buf[HOSTNAME_MAXLEN] = {0};
+    known_hosts_get_name(*param->node, hostname_buf, HOSTNAME_MAXLEN);
+
     for (int i = offset; i < offset + count; i++) {
 
         switch (param->type) {
@@ -65,26 +72,26 @@ int param_sniffer_log(void * ctx, param_queue_t *queue, param_t *param, int offs
             case PARAM_TYPE_XINT16:
             case PARAM_TYPE_UINT32:
             case PARAM_TYPE_XINT32:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %u %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_uint(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\", hostname=\"%s\"} %u %"PRIu64"\n", param->name, *(param->node), i, hostname_buf, mpack_expect_uint(reader), time_ms);
                 break;
             case PARAM_TYPE_UINT64:
             case PARAM_TYPE_XINT64:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIu64" %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_u64(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\", hostname=\"%s\"} %"PRIu64" %"PRIu64"\n", param->name, *(param->node), i, hostname_buf, mpack_expect_u64(reader), time_ms);
                 break;
             case PARAM_TYPE_INT8:
             case PARAM_TYPE_INT16:
             case PARAM_TYPE_INT32:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %d %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_int(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\", hostname=\"%s\"} %d %"PRIu64"\n", param->name, *(param->node), i, hostname_buf, mpack_expect_int(reader), time_ms);
                 break;
             case PARAM_TYPE_INT64:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %"PRIi64" %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_i64(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\", hostname=\"%s\"} %"PRIi64" %"PRIu64"\n", param->name, *(param->node), i, hostname_buf, mpack_expect_i64(reader), time_ms);
                 break;
             case PARAM_TYPE_FLOAT:
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %e %"PRIu64"\n", param->name, *(param->node), i, mpack_expect_float(reader), time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\", hostname=\"%s\"} %e %"PRIu64"\n", param->name, *(param->node), i, hostname_buf, mpack_expect_float(reader), time_ms);
                 break;
             case PARAM_TYPE_DOUBLE: {
                 double tmp_dbl = mpack_expect_double(reader);
-                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\"} %.12e %"PRIu64"\n", param->name, *(param->node), i, tmp_dbl, time_ms);
+                sprintf(tmp, "%s{node=\"%u\", idx=\"%u\", hostname=\"%s\"} %.12e %"PRIu64"\n", param->name, *(param->node), i, hostname_buf, tmp_dbl, time_ms);
                 if(vts){
                     vts_arr[i] = tmp_dbl;
                 }
@@ -142,7 +149,7 @@ int param_sniffer_crc(csp_packet_t * packet) {
     return 0;
 }
 
-static void * param_sniffer(void * param) {
+static void * param_sniffer(void * arg) {
     csp_promisc_enable(100);
     while(1) {
         csp_packet_t * packet = csp_promisc_read(CSP_MAX_DELAY);
@@ -197,7 +204,7 @@ static void * param_sniffer(void * param) {
                 timestamp.tv_sec = packet->timestamp_rx;
                 timestamp.tv_nsec = 0;
             }
-            param_t * param = param_list_find_id(node, id);
+            const param_t * param = param_list_find_id(node, id);
             if (param) {
                 param_sniffer_log(NULL, &queue, param, offset, &reader, &timestamp);
             } else {

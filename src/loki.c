@@ -1,3 +1,5 @@
+#include "loki.h"
+
 #include <stddef.h>
 #include <unistd.h>
 #include <string.h>
@@ -15,10 +17,13 @@
 #include <csp/csp_types.h>
 #include <csp/arch/csp_queue.h>
 
-#include <ossi/message_queue.h>
+#include "message_queue.h"
 #include "url_utils.h"
 #include "loki.h"
 #include <slash/statusline.h>
+
+#include "known_hosts.h"
+
 
 static int loki_running = 0;
 
@@ -99,9 +104,11 @@ static int strip_str(char *str) {
             while (*read_p && (*read_p < 32) && *read_p != 27) {
                 read_p++;
             }
-            *write_p = '\0';
-            write_p++;
-            str_counter++;
+            if(write_p > str && *(write_p - 1) != '\0')  {
+                *write_p = '\0';
+                write_p++;
+                str_counter++;
+            }
         } else if (*read_p == '\t'){
             *write_p = ' ';
             read_p++;
@@ -189,6 +196,7 @@ next:
     "\"streams\": [{"
     "\"stream\": {"
     "\"instance\": \"%s\","
+    "\"hostname\": \"%s\","
     "\"node\": \"%u\","
     "\"type\": \"%s\""
     "},"
@@ -196,7 +204,7 @@ next:
     "}]"
     "}";
 
-    const size_t json_str_max = format_len + CSP_HOSTNAME_LEN + sizeof(json_format_str) + 11; // 11 for type & node
+    const size_t json_str_max = format_len + CSP_HOSTNAME_LEN + HOSTNAME_MAXLEN + sizeof(json_format_str) + 11; // 11 for type & node
     char * json_str_buf = malloc(json_str_max);
     if(!json_str_buf){
         const char err_str[] = "\033[1;31mLOKI CURL: Out of memory! Log skipped\033[0m\n";
@@ -206,7 +214,12 @@ next:
         return;
     }
 
-    int written = snprintf(json_str_buf, json_str_max, json_format_str, csp_get_conf()->hostname, slash_dfl_node, iscmd ? "cmd" : "stdout", formatted_log);
+    /* If no hostname is found, `hostname_buf` remains an empty string,
+        which seems to be discarded by Victoria Metrics. */
+    char hostname_buf[HOSTNAME_MAXLEN] = {0};
+    known_hosts_get_name(slash_dfl_node, hostname_buf, HOSTNAME_MAXLEN);
+
+    int written = snprintf(json_str_buf, json_str_max, json_format_str, csp_get_conf()->hostname, hostname_buf, slash_dfl_node, iscmd ? "cmd" : "stdout", formatted_log);
 
     pthread_mutex_unlock(&buffer_mutex);
     json_str_t json_str = {.data = json_str_buf, .len = written};
@@ -460,4 +473,4 @@ static int loki_start_cmd(struct slash * slash) {
 
     return SLASH_SUCCESS;
 }
-slash_command_sub(loki, start, loki_start_cmd, "", "Start Loki log push thread");
+slash_command_sub(loki, start, loki_start_cmd, "", "Start Loki log push thread")

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <csp/csp.h>
@@ -79,7 +80,7 @@ static int csp_init_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_sub(csp, init, csp_init_cmd, NULL, "Initialize CSP");
+slash_command_sub(csp, init, csp_init_cmd, NULL, "Initialize CSP")
 
 
 static int csp_ifadd_zmq_cmd(struct slash *slash) {
@@ -203,7 +204,7 @@ static int csp_ifadd_zmq_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, zmq, csp_ifadd_zmq_cmd, NULL, "Add a new ZMQ interface");
+slash_command_subsub(csp, add, zmq, csp_ifadd_zmq_cmd, NULL, "Add a new ZMQ interface")
 
 static int csp_ifadd_kiss_cmd(struct slash *slash) {
 
@@ -271,7 +272,7 @@ static int csp_ifadd_kiss_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, kiss, csp_ifadd_kiss_cmd, NULL, "Add a new KISS/UART interface");
+slash_command_subsub(csp, add, kiss, csp_ifadd_kiss_cmd, NULL, "Add a new KISS/UART interface")
 
 #if (CSP_HAVE_LIBSOCKETCAN)
 
@@ -335,7 +336,7 @@ static int csp_ifadd_can_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, can, csp_ifadd_can_cmd, NULL, "Add a new CAN interface");
+slash_command_subsub(csp, add, can, csp_ifadd_can_cmd, NULL, "Add a new CAN interface")
 
 #endif
 
@@ -434,7 +435,7 @@ static int csp_ifadd_eth_cmd(struct slash *slash) {
     return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, eth, csp_ifadd_eth_cmd, NULL, "Add a new Ethernet interface");
+slash_command_subsub(csp, add, eth, csp_ifadd_eth_cmd, NULL, "Add a new Ethernet interface")
 
 static int csp_ifadd_udp_cmd(struct slash *slash) {
 
@@ -516,7 +517,7 @@ static int csp_ifadd_udp_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, udp, csp_ifadd_udp_cmd, NULL, "Add a new UDP interface");
+slash_command_subsub(csp, add, udp, csp_ifadd_udp_cmd, NULL, "Add a new UDP interface")
 
 static int csp_ifadd_tun_cmd(struct slash *slash) {
 
@@ -598,7 +599,7 @@ static int csp_ifadd_tun_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface");
+slash_command_subsub(csp, add, tun, csp_ifadd_tun_cmd, NULL, "Add a new TUN interface")
 
 static int csp_ifadd_alias_cmd(struct slash *slash) {
 
@@ -641,7 +642,7 @@ static int csp_ifadd_alias_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_subsub(csp, add, alias, csp_ifadd_alias_cmd, NULL, "Add a new Alias address");
+slash_command_subsub(csp, add, alias, csp_ifadd_alias_cmd, NULL, "Add a new Alias address")
 
 #if CSP_USE_RTABLE
 static int csp_routeadd_cmd(struct slash *slash) {
@@ -687,5 +688,5 @@ static int csp_routeadd_cmd(struct slash *slash) {
     }
 }
 
-slash_command_subsub(csp, add, route, csp_routeadd_cmd, NULL, "Add a new route");
+slash_command_subsub(csp, add, route, csp_routeadd_cmd, NULL, "Add a new route")
 #endif

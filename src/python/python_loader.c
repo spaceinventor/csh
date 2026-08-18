@@ -397,7 +397,7 @@ void py_init_interpreter(void) {
 	return;
 }
 
-static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *path, char *search_str)) {
+static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *path, char *search_str, unsigned int *loaded_count), unsigned int *loaded_count) {
 	size_t pathlist_len = strlen(pathlist);
 	char *runner = pathlist;
 	char *start = pathlist;
@@ -405,16 +405,16 @@ static void walk_path_list(char *pathlist, char *search_str, void (*cb)(char *pa
 	while (runner++ < end) {
 		if(*runner == ';') {
 			*runner = '\0';
-			cb(start, search_str);
+			cb(start, search_str, loaded_count);
 			start = ++runner;
 		} else if(*runner == '\0') {
-			cb(start, search_str);
+			cb(start, search_str, loaded_count);
 			start = ++runner;
 		}
 	}
 }
 
-static void load_py(char *path, char *search_str) {
+static void load_py(char *path, char *search_str, unsigned int *loaded_count) {
 	struct dirent *entry;
 	DIR *dir CLEANUP_DIR = opendir(path);
 	if (dir == NULL) {
@@ -436,27 +436,34 @@ static void load_py(char *path, char *search_str) {
 					PyErr_Print();
 					continue;
 				}
-				apm_entry_t * e = calloc(1, sizeof(apm_entry_t));
-				if (!e) {
-					printf("Memory allocation error.\n");
+				apm_entry_t *e = apm_get_entry(entry->d_name);
+				if(e) {
+					fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", entry->d_name);
+					continue;
 				} else {
-					e->apm_init_version = APM_INIT_VERSION;
-					strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
-					size_t i = strlen(e->path);
-					while ((i > 0) && (e->path[i-1] != '/')) {
-						i--;
+					e = calloc(1, sizeof(apm_entry_t));
+					if (!e) {
+						printf("Memory allocation error.\n");
+						continue;
 					}
-					e->file = &(e->path[i]);
-					// TODO Kevin: Verbose argument?
-					printf("\033[32mLoaded: %s\033[0m\n", fullpath);
-					apm_queue_add(e);
 				}
+				e->apm_init_version = APM_INIT_VERSION;
+				strncpy(e->path, fullpath, WALKDIR_MAX_PATH_SIZE - 1);
+				size_t i = strlen(e->path);
+				while ((i > 0) && (e->path[i-1] != '/')) {
+					i--;
+				}
+				e->file = &(e->path[i]);
+				// TODO Kevin: Verbose argument?
+				printf("\033[32mLoaded: %s\033[0m\n", fullpath);
+				*loaded_count = *loaded_count + 1;
+				apm_queue_add(e);
 			}
 		}
 	}
 }
 
-int py_apm_load_cmd(struct slash *slash) {
+int py_apm_load_cmd(struct slash *slash, unsigned int *loaded_count) {
 
     char * path = NULL;
     char * search_str = NULL;
@@ -498,7 +505,7 @@ int py_apm_load_cmd(struct slash *slash) {
 			fprintf(stderr, "main_thread_state is NULL\n");
 			return SLASH_EINVAL;
 		}
-		walk_path_list(path, search_str, load_py);
+		walk_path_list(path, search_str, load_py, loaded_count);
 	}
 	if(free_path) {
 		free(path);

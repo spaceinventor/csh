@@ -694,7 +694,7 @@ Load a csh apm for extended functionality. Will automatically search in $HOME/.l
    
    * - 
       .. csh-prompt:: host>6> apm load
-         | Loaded: /home/user/.local/lib/csh/libcsh_hk.so
+         | Loaded: /home/user/.local/lib/csh/libcsh_obc.so
 
 
 

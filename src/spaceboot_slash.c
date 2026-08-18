@@ -30,7 +30,7 @@
 
 static int ping(int node) {
 
-	struct csp_cmp_message message = {};
+	struct csp_cmp_message message = {0};
 	if (csp_cmp_ident(node, 3000, &message) != CSP_ERR_NONE) {
 		printf("Cannot ping system\n");
 		return 0;
@@ -43,7 +43,7 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 
 #define NUM_SLOTS 4
 
-	param_t * boot_img[NUM_SLOTS];
+	const param_t * boot_img[NUM_SLOTS];
 	bool boot_img_exist[NUM_SLOTS];
 	int param_id[NUM_SLOTS] = {21, 20, 22, 23};
 	char param_name[NUM_SLOTS][10];
@@ -54,8 +54,9 @@ static void reset_to_flash(int node, int flash, int times, int ms) {
 			boot_img_exist[i] = 1;
 		} else {
 			snprintf(param_name[i], sizeof(param_name[i]), "boot_img%u", i);
-			boot_img[i] = param_list_create_remote(param_id[i], node, PARAM_TYPE_UINT8, PM_CONF, 0, param_name[i], NULL, NULL, -1);
-			boot_img_exist[i] = param_list_add(boot_img[i]);
+			param_t * newparam = param_list_create_remote(param_id[i], node, PARAM_TYPE_UINT8, PM_CONF, 0, param_name[i], NULL, NULL, -1);
+			boot_img[i] = (const param_t *) newparam;
+			boot_img_exist[i] = param_list_add(newparam);
 		}
 	}
 
@@ -130,7 +131,7 @@ static int slash_csp_switch(struct slash * slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command(switch, slash_csp_switch, "<slot>", "switch");
+slash_command(switch, slash_csp_switch, "<slot>", "switch")
 
 static int image_get(char * filename, char ** data, int * len) {
 
@@ -522,7 +523,7 @@ static int slash_csp_program(struct slash * slash) {
 	return result;
 }
 
-slash_command(program, slash_csp_program, "<slot>", "Upload new firmware");
+slash_command(program, slash_csp_program, "<slot>", "Upload new firmware")
 
 
 static int slash_sps(struct slash * slash) {
@@ -706,4 +707,4 @@ static int slash_sps(struct slash * slash) {
 	return result;
 }
 
-slash_command(sps, slash_sps, "<node> <from> <to> [filename]", "switch program switch");
+slash_command(sps, slash_sps, "<node> <from> <to> [filename]", "switch program switch")

@@ -62,7 +62,7 @@ Shows cached/known values. Use -v to include parameter type and help text.");
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command(list, list, "[OPTIONS...] [name wildcard=*]", "List parameters");
+slash_command(list, list, "[OPTIONS...] [name wildcard=*]", "List parameters")
 
 
 static int list_download(struct slash *slash)
@@ -108,7 +108,7 @@ Parameters can be manually added with 'list add'.");
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub_completer(list, download, list_download, host_name_completer, "[OPTIONS...] [node]", "Download a list of remote parameters");
+slash_command_sub_completer(list, download, list_download, host_name_completer, "[OPTIONS...] [node]", "Download a list of remote parameters")
 
 static int list_forget(struct slash *slash)
 {
@@ -150,7 +150,7 @@ This makes it possible to download them again, in cases where they've changed.")
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub_completer(list, forget, list_forget, host_name_completer, "[node]", "Forget remote parameters. Omit or set node to -1 to include all.");
+slash_command_sub_completer(list, forget, list_forget, host_name_completer, "[node]", "Forget remote parameters. Omit or set node to -1 to include all.")
 
 
 static int list_add(struct slash *slash)
@@ -213,10 +213,10 @@ static int list_add(struct slash *slash)
     }
 
 
-	uint32_t mask = 0;
+	uint32_t mask = PM_REMOTE;
 
 	if (maskstr)
-		mask = param_maskstr_to_mask(maskstr);
+		mask |= param_maskstr_to_mask(maskstr);
 
 	if (umaskstr)
 		mask |= param_umaskstr_to_mask(umaskstr);
@@ -236,7 +236,7 @@ static int list_add(struct slash *slash)
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(list, add, list_add, "<name> <id> <type>", NULL);
+slash_command_sub(list, add, list_add, "<name> <id> <type>", NULL)
 
 
 static int list_save_cmd(struct slash *slash) {
@@ -267,4 +267,4 @@ static int list_save_cmd(struct slash *slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub_completer(list, save, list_save_cmd, param_completer, "", "Save parameters");
+slash_command_sub_completer(list, save, list_save_cmd, param_completer, "", "Save parameters")

@@ -131,5 +131,5 @@ static int vts_init(struct slash * slash) {
     optparse_del(parser);
     return SLASH_SUCCESS;
 }
-slash_command_sub(vts, init, vts_init, "", "Push data to VTS");
+slash_command_sub(vts, init, vts_init, "", "Push data to VTS")
 

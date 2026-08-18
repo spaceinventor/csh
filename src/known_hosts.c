@@ -15,8 +15,6 @@
 #include <slash/optparse.h>
 #include <apm/csh_api.h>
 
-#define HOSTNAME_MAXLEN 50
-
 struct host_s {
     int node;
     char name[HOSTNAME_MAXLEN];

@@ -139,4 +139,4 @@ static int prometheus_start_cmd(struct slash *slash) {
 	return SLASH_SUCCESS;
 }
 
-slash_command_sub(prometheus, start, prometheus_start_cmd, NULL, "Start prometheus webserver");
+slash_command_sub(prometheus, start, prometheus_start_cmd, NULL, "Start prometheus webserver")

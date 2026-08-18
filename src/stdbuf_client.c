@@ -13,7 +13,7 @@
 #include <unistd.h>
 
 static vmem_list_t stdbuf_get_base(int node, int timeout) {
-    vmem_list_t ret = {};
+    vmem_list_t ret = {0};
 
     csp_conn_t * conn = csp_connect(CSP_PRIO_HIGH, node, VMEM_PORT_SERVER, timeout, CSP_O_CRC32);
     if (conn == NULL)
@@ -91,16 +91,16 @@ static int stdbuf_v1(struct slash *slash, unsigned int node, unsigned int timeou
         return SLASH_EINVAL;
     }
 
-    param_t * stdbuf_in = param_list_find_id(node, 28);
+    const param_t * stdbuf_in = param_list_find_id(node, 28);
     if (stdbuf_in == NULL) {
-        stdbuf_in = param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", NULL, NULL, -1);
-        param_list_add(stdbuf_in);
+        param_list_add(param_list_create_remote(28, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_in", NULL, NULL, -1));
+        stdbuf_in = param_list_find_id(node, 28);
     }
 
-    param_t * stdbuf_out = param_list_find_id(node, 29);
+    const param_t * stdbuf_out = param_list_find_id(node, 29);
     if (stdbuf_out == NULL) {
-        stdbuf_out = param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", NULL, NULL, -1);
-        param_list_add(stdbuf_out);
+        param_list_add(param_list_create_remote(29, node, PARAM_TYPE_UINT16, PM_DEBUG, 0, "stdbuf_out", NULL, NULL, -1));
+        stdbuf_out = param_list_find_id(node, 29);
     }
 
     param_queue_add(&pull_q, stdbuf_in, 0, NULL);
@@ -194,18 +194,25 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
     packet->length = 1;
     csp_send(conn, packet);
 
+    #define LF '\n' /* ASCII 10d */
+    #define CR '\r' /* ASCII 13d */
     while ((packet = csp_read(conn, timeout))) {
-        //csp_hex_dump("stdbuf", &packet->data[1], packet->length - 1);
-        int ignore __attribute__((unused)) = write(fileno(stdout), &packet->data[1], packet->length - 1);
+        int again = packet->data[0];
+        int ignore __attribute__((unused));
+        ignore = write(fileno(stdout), &packet->data[1], packet->length - 1);
+        if (again == 0 && packet->data[packet->length - 1] != LF) {
+            /* If this was the last packet and there was no LF we will add one here to flush the stdout file */
+            ignore = write(fileno(stdout), "\n", 1);
+        }
         if (log_f) {
             int i = 1;
             while (i < packet->length) {
                 if (isprint(packet->data[i])) {
                     fprintf(log_f, "%c", packet->data[i]);
                     i++;
-                } else if ((packet->data[i] == '\r') || (packet->data[i] == '\n')) {
-                    fprintf(log_f, "\n");
-                    while ((i < packet->length) && ((packet->data[i] == '\r') || (packet->data[i] == '\n'))) {
+                } else if ((packet->data[i] == CR) || (packet->data[i] == LF)) {
+                    fprintf(log_f, "%c", LF);
+                    while ((i < packet->length) && ((packet->data[i] == CR) || (packet->data[i] == LF))) {
                         i++;
                     }
                 } else  {
@@ -216,7 +223,6 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
             }
         }
 
-        int again = packet->data[0];
         csp_buffer_free(packet);
 
         if (again == 0) {
@@ -264,5 +270,5 @@ static int stdbuf_slash(struct slash *slash) {
     return result;
 }
 
-slash_command(stdbuf, stdbuf_slash, NULL, "Monitor stdbuf");
-slash_command(stdbuf2, stdbuf_slash, NULL, "Monitor stdbuf");
+slash_command(stdbuf, stdbuf_slash, NULL, "Monitor stdbuf")
+slash_command(stdbuf2, stdbuf_slash, NULL, "Monitor stdbuf")
