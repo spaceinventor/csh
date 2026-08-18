@@ -146,7 +146,7 @@ int slash_prompt(struct slash * slash) {
 
 		int remote_count = 0;
 		param_list_iterator pi = { .phase = 1 };
-		param_t * p;
+		const param_t * p;
 		while ((p = param_list_iterate(&pi)) != NULL) {
 			if (*p->node == slash_dfl_node && slash_dfl_node != 0){
 				remote_count++; // TODO this might be slow :(
