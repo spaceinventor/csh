@@ -229,7 +229,9 @@ static int stdbuf_v2(unsigned int node, unsigned int timeout, char * logfile) {
             break;
         }
     }
-
+    if (log_f) {
+        fflush(log_f);
+    }
     csp_close(conn);
 
     return SLASH_SUCCESS;
