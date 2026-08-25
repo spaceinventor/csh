@@ -445,7 +445,7 @@ static int doc_cmd(struct slash *slash) {
             return SLASH_SUCCESS;
         }
         char cmd_line[256];
-        if (access("/proc/sys/fs/binfmt_misc/WSLInterop", F_OK) == 0) {
+        if (access("/proc/sys/fs/binfmt_misc/WSLInterop", F_OK) == 0 || access("/proc/sys/fs/binfmt_misc/WSLInterop-late", F_OK) == 0) {
             /* WSL detected */
             snprintf(cmd_line, sizeof(cmd_line) - 1, "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe Start \"\\\\\\\\wsl$\\Ubuntu\\usr\\share\\si-csh\\%s\"", slash->argv[1]);
         } else {
