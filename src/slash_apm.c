@@ -232,7 +232,7 @@ static void file_callback(const char * path_and_file, const char * last_entry, v
     /* Verify not already loaded */
     for (apm_entry_t * e = apm_queue; e; e = e->next) {
         if (strcmp(e->file, last_entry) == 0) {
-            fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", last_entry);
+            fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", e->path);
             return;
         }
     }
