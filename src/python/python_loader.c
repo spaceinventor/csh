@@ -436,7 +436,7 @@ static void load_py(char *path, char *search_str, unsigned int *loaded_count) {
 				}
 				apm_entry_t *e = apm_get_entry(entry->d_name);
 				if(e) {
-					fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", entry->d_name);
+					fprintf(stderr, "\033[33mSkipping %s already loaded\033[0m\n", fullpath);
 					continue;
 				} else {
 					e = calloc(1, sizeof(apm_entry_t));
