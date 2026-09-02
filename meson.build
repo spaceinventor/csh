@@ -18,7 +18,7 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'param:have_fopen=true',
 	'param:collector=false',
 	'param:list_dynamic=true'],
-	version: '2.10-rc2'
+	version: run_command('git', 'describe', '--always', '--dirty=+').stdout().strip(),
 )
 
 # Adding -Wall and -Wextra generate harmless (or senseless if you ask me) Meson warnings:
