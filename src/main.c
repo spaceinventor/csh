@@ -276,7 +276,7 @@ int main(int argc, char **argv) {
 		printf("  CSP shell batch: ");
 		printf("\033[0m");
 		printf("\n");
-		
+
 	}
 	srand(time(NULL));
 
@@ -288,8 +288,8 @@ int main(int argc, char **argv) {
 	void serial_init(void);
 	serial_init();
 
-	/* 
-	 * Configure "slash_process_cmd_line_hook" with 
+	/*
+	 * Configure "slash_process_cmd_line_hook" with
 	 * our function that expands environment variables
 	 */
 	slash_process_cmd_line_hook = csh_environ_slash_process_cmd_line_hook;
