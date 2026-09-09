@@ -44,6 +44,7 @@ zmq_dep = dependency(
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
 slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
+obc_client_dep = dependency('obc-client', fallback: ['obc-client', 'obc_client_dep'], version: ['>=0.0.2'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
 	fallback:
@@ -134,6 +135,7 @@ linker_script = meson.current_source_dir() / 'linux.ld'
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
+		obc_client_dep,
 		apm_api_dep,
 		slash_dep,
 		param_dep,
