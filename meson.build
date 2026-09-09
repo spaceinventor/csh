@@ -52,6 +52,7 @@ slash_dep = dependency('slash', version: ['>=0.0.1'], fallback: ['slash', 'slash
 slash_builtins_dep = dependency('slash_builtins', version: ['>=0.0.1'], fallback: ['slash', 'slash_builtins_dep'], required: true)
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 ossi_dep = dependency('ossi', version: ['>=0.0.2'],fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
+obc_client_dep = dependency('obc-client', fallback: ['obc-client', 'obc_client_dep'], version: ['>=0.0.2'], required: true).as_link_whole()
 apm_api_dep = dependency(
 	'apm_csh',
 	fallback:
@@ -138,6 +139,7 @@ endif
 csh = executable('csh', csh_sources,
 	dependencies : [
 		python_dep,
+		obc_client_dep,
 		apm_api_dep,
 		slash_dep,
 		slash_builtins_dep,
