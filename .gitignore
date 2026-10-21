@@ -22,3 +22,4 @@ build-doc
 sysroot*/
 lib/googletest-1.14.0
 lib/packagecache
+lib/.wraplock
