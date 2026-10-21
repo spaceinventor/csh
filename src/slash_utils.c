@@ -4,13 +4,21 @@
 #include <slash/slash.h>
 #include <apm/csh_api.h>
 
+static int handle_csp_node_option(void * res_ptr, const char * arg) {
+	int res = get_host_by_addr_or_name(res_ptr, arg);
+	if (0 == res) {
+		printf("Couldn't find CSP address for node '%s'\n", arg);
+	}
+	return res;
+}
+
 optparse_opt_t *csh_add_node_option(optparse_t * parser, unsigned int *node) {
 	static char help[64];
 	*node = slash_dfl_node;
 	snprintf(help, sizeof(help), "node address in decimal or name (default = %d)", *node);
 	return optparse_add_custom(parser,
 		'n', "node", "NUM", help,
-		get_host_by_addr_or_name, node);
+		handle_csp_node_option, node);
 }
 
 int parse_vmem_address(struct slash *slash, int *argi, uint64_t *address) {
