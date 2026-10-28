@@ -182,7 +182,7 @@ static void csh_cleanup(void) {
 	/* Clear the environment, freeing up memory */
 	csh_clearenv();
 	slash_destroy(slash);  // Restores terminal
-	curl_global_cleanup();
+/* 	curl_global_cleanup(); */
 }
 
 sighandler_t old_handler = NULL;
