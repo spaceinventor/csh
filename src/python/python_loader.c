@@ -513,7 +513,7 @@ int py_apm_load_cmd(struct slash *slash, unsigned int *loaded_count) {
 }
 
 static wchar_t **handle_py_argv(char **args, int argc) {
-	wchar_t **res = calloc(sizeof(wchar_t *), argc);
+	wchar_t **res = calloc(argc, sizeof(wchar_t *));
 	if (res) {
 		for (int i = 0; i < argc; i++) {
 			res[i] = Py_DecodeLocale(args[i], NULL);
