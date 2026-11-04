@@ -34,6 +34,7 @@
 #include <csp/interfaces/csp_if_eth.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 #include <linux/netdevice.h>
 #include <slash/slash.h>
 #include <slash/optparse.h>

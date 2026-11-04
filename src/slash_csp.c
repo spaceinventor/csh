@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include <csp/csp.h>
 #include <csp/csp_cmp.h>
 #include <csp/csp_hooks.h>

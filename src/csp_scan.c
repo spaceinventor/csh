@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include <slash/slash.h>
 #include <slash/optparse.h>
