@@ -210,6 +210,11 @@ static char *csh_environ_slash_process_cmd_line_hook(const char *line) {
     return expansion;
 }
 
+int csp_cmp_memcpy(csp_memptr_t to, csp_const_memptr_t from, size_t size) {
+	vmem_memcpy(to, from, size);
+	return CSP_ERR_NONE;
+}
+
 void * router_task(void * param) {
 	while(1) {
 		csp_route_work();
