@@ -99,7 +99,7 @@ static int eth_init_check(char * device) {
         ((uint8_t *)&if_mac.ifr_hwaddr.sa_data)[5]);
 
     /* Allow the socket to be reused - incase connection is closed prematurely */
-    int sockopt;
+    int sockopt = 0;
 	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &sockopt, sizeof sockopt) == -1) {
 		printf("setsockopt error (device '%s')\n", device);
 		close(sockfd);
@@ -152,7 +152,7 @@ static void eth_list_interfaces(void)
     }
 
     int i = 0;
-    char ap[100] = {};
+    char ap[100] = {0};
     struct ifaddrs *address = addresses;
     for( ; address; address = address->ifa_next)
     {
@@ -162,7 +162,7 @@ static void eth_list_interfaces(void)
 
             int family = address->ifa_addr->sa_family;
 
-            printf("%d %p", i, address);
+            printf("%d %p", i, (void *) address);
             printf(" Name: %s", address->ifa_name);
             printf(" Flags: 0x%x", address->ifa_flags);
             printf(" Family: 0x%x", family);

@@ -99,9 +99,16 @@ static apm_entry_t * load_apm(const char * path) {
     }
     e->file = &(e->path[i]);
 
-    /* Get references to APM API functions */
-    e->libmain_f = dlsym(handle, "libmain");
-    e->libinfo_f = dlsym(handle, "libinfo");
+    /* Get references to APM API functions
+     * Use memcpy to void casting void pointer to function pointer
+     * which is forbidden in ISO */
+    void *sym;
+    sym = dlsym(handle, "libmain");
+    memcpy(&e->libmain_f, &sym, sizeof(sym));
+
+    sym = dlsym(handle, "libinfo");
+    memcpy(&e->libinfo_f, &sym, sizeof(sym));
+
     e->apm_init_version = *(int *)dlsym(handle, "apm_init_version");
 
     e->handle = handle;

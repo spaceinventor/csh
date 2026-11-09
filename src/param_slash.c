@@ -411,7 +411,7 @@ void param_completer(struct slash *slash, char * token) {
 	size_t tokenlen = strlen(token);
 
 	param_t * param;
-	param_list_iterator i = { };
+	param_list_iterator i = {0};
 	bool found_completion = false;
 	if (has_wildcard(token, strlen(token))) {
 		// Only print parameters when globbing is involved.
@@ -524,7 +524,7 @@ static int cmd_get(struct slash *slash) {
     }
 
 	/* Go through the list of parameters */
-	param_list_iterator i = {};
+	param_list_iterator i = {0};
 	while ((param = param_list_iterate(&i)) != NULL) {
 
 		/* Name match (with wildcard) */
@@ -721,7 +721,7 @@ static int cmd_set(struct slash *slash) {
 	int iterations = 0;
 	int single_value_flag = 0;
 	for (int i = argi; should_break == 1; i++) {
-		char valuebuf[128] __attribute__((aligned(16))) = { };
+		char valuebuf[128] __attribute__((aligned(16))) = {0};
 
 		char *arg = slash->argv[i];
 		if (!arg) {
@@ -908,7 +908,7 @@ static int cmd_add(struct slash *slash) {
 			return SLASH_EINVAL;
 		}
 
-		char valuebuf[128] __attribute__((aligned(16))) = { };
+		char valuebuf[128] __attribute__((aligned(16))) = {0};
 		if (param_str_to_value(param->type, slash->argv[argi], valuebuf) < 0) {
 			printf("invalid parameter value\n");
 			optparse_del(parser);
@@ -929,7 +929,7 @@ static int cmd_add(struct slash *slash) {
 		param_t * param = NULL;
 
 		/* Go through the list of parameters */
-		param_list_iterator i = {};
+		param_list_iterator i = {0};
 		while ((param = param_list_iterate(&i)) != NULL) {
 
 			/* Name match (with wildcard) */

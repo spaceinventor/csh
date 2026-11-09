@@ -423,7 +423,7 @@ int main(int argc, char **argv) {
 
 	/* Interactive or one-shot mode */
 	if (ret != SLASH_EXIT && remain > 0) {
-		char ex[LINE_SIZE] = {};
+		char ex[LINE_SIZE] = {0};
 
 		/* Build command string */
 		for (i = 0; i < remain; i++) {
