@@ -135,4 +135,4 @@ static int slash_version_cmd(struct slash *slash) {
 
     return SLASH_SUCCESS;
 }
-slash_command(version, slash_version_cmd, NULL, "Print CSH version (and date if verbose)")
+slash_command(version, slash_version_cmd, NULL, "Print CSH version (and date if verbose)");
