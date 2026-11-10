@@ -122,7 +122,19 @@ static int slash_csp_switch(struct slash * slash) {
 		return SLASH_EINVAL;
 	}
 
-	unsigned int slot = atoi(slash->argv[argi]);
+	char *end = NULL;
+	long int slot = strtol(slash->argv[argi], &end, 10);
+    if (*end != '\0') {
+		printf("Cannot interpret '%s' as a valid slot number\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+	if (slot < 0 || slot > 3) {
+		printf("'slot' must be between 0 and 3\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
 
 	reset_to_flash(node, slot, times, reboot_delay);
 
@@ -379,10 +391,22 @@ static int slash_csp_program(struct slash * slash) {
 		return SLASH_EINVAL;
 	}
 
-	unsigned int slot = atoi(slash->argv[argi]);
+	char *end = NULL;
+	long int slot = strtol(slash->argv[argi], &end, 10);
+    if (*end != '\0') {
+		printf("Cannot interpret '%s' as a valid slot number\n", slash->argv[argi]);
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
+
+	if (slot < 0 || slot > 3) {
+		printf("'slot' must be between 0 and 3\n");
+        optparse_del(parser);
+		return SLASH_EINVAL;
+	}
 
 	char vmem_name[5];
-	snprintf(vmem_name, 5, "fl%u", slot);
+	snprintf(vmem_name, 5, "fl%u", (unsigned)slot);
 
 	printf("  Requesting VMEM name: %s...\n", vmem_name);
 
@@ -434,7 +458,7 @@ static int slash_csp_program(struct slash * slash) {
 		}
 	}
 
-	int index = 0;
+	long int index = 0;
 	if (bin_info.count > 1) {
 		printf("Type number to select file:\n");
 		char * c = slash_readline(slash);
@@ -444,7 +468,21 @@ static int slash_csp_program(struct slash * slash) {
 			rdp_opt_reset();
 	        return SLASH_EUSAGE;
 		}
-		index = atoi(c);
+		char *end = NULL;
+		index = strtol(c, &end, 10);
+		if (*end != '\0') {
+			printf("Cannot interpret '%s' as a valid number, aborting\n", c);
+			rdp_opt_reset();
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
+
+		if (index < 0 || index >= bin_info.count) {
+			printf("%s is not valid, aborting\n", c);
+			optparse_del(parser);
+			rdp_opt_reset();
+			return SLASH_EINVAL;
+		}
 	}
 
 	char * path = bin_info.files[index];
@@ -558,7 +596,21 @@ static int slash_sps(struct slash * slash) {
 		return SLASH_EINVAL;
 	}
 
-	unsigned int from = atoi(slash->argv[argi]);
+	char *end = NULL;
+	long int from = strtol(slash->argv[argi], &end, 10);
+    if (*end != '\0') {
+		printf("Cannot interpret '%s' as a valid slot number\n", slash->argv[argi]);
+        optparse_del(parser);
+        rdp_opt_reset();
+		return SLASH_EINVAL;
+	}
+
+	if (from < 0 || from > 3) {
+		printf("'from' must be between 0 and 3\n");
+        optparse_del(parser);
+        rdp_opt_reset();
+		return SLASH_EINVAL;
+	}
 
 	/* Expect to slot */
 	if (++argi >= slash->argc) {
@@ -568,12 +620,25 @@ static int slash_sps(struct slash * slash) {
 		return SLASH_EINVAL;
 	}
 
-	unsigned int to = atoi(slash->argv[argi]);
+	long int to = strtol(slash->argv[argi], &end, 10);
+    if (*end != '\0') {
+		printf("Cannot interpret '%s' as a valid slot number\n", slash->argv[argi]);
+        optparse_del(parser);
+        rdp_opt_reset();
+		return SLASH_EINVAL;
+	}
+
+	if (to < 0 || to > 3) {
+		printf("'to' must be between 0 and 3\n");
+        optparse_del(parser);
+        rdp_opt_reset();
+		return SLASH_EINVAL;
+	}
 
 	reset_to_flash(node, from, 1, reboot_delay);
 
 	char vmem_name[5];
-	snprintf(vmem_name, 5, "fl%u", to);
+	snprintf(vmem_name, 5, "fl%u", (unsigned)to);
 	printf("  Requesting VMEM name: %s...\n", vmem_name);
 
 	vmem_list_t vmem = {0};
@@ -625,7 +690,7 @@ static int slash_sps(struct slash * slash) {
 
     }
 
-	int index = 0;
+	long int index = 0;
 	if (bin_info.count > 1) {
 		printf("Type number to select file: ");
 		char * c = slash_readline(slash);
@@ -635,7 +700,21 @@ static int slash_sps(struct slash * slash) {
             rdp_opt_reset();
 	        return SLASH_EUSAGE;
 		}
-		index = atoi(c);
+		char *end = NULL;
+		index = strtol(c, &end, 10);
+		if (*end != '\0') {
+			printf("Cannot interpret '%s' as a valid number, aborting\n", c);
+			rdp_opt_reset();
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
+
+		if (index < 0 || index >= bin_info.count) {
+			printf("%s is not valid, aborting\n", c);
+			optparse_del(parser);
+			rdp_opt_reset();
+			return SLASH_EINVAL;
+		}
 	}
 
 	char * path = bin_info.files[index];
