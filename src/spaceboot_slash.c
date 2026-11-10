@@ -343,6 +343,7 @@ static int slash_csp_program(struct slash * slash) {
 	char * filename = NULL;
 	int force = 0;
 	int do_crc32 = 0;
+	int pl = 0;
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
@@ -350,6 +351,7 @@ static int slash_csp_program(struct slash * slash) {
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
     optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated");
+    optparse_add_set(parser, 'P', "pl", 1, &pl, "Upload PL image to Z7 devices");
 
 	rdp_opt_add(parser);
 
@@ -386,7 +388,7 @@ static int slash_csp_program(struct slash * slash) {
 	}
 
 	char vmem_name[5];
-	snprintf(vmem_name, 5, "fl%u", (unsigned)slot);
+	snprintf(vmem_name, 5, pl ? "pl%u" : "fl%u", (unsigned)slot);
 
 	printf("  Requesting VMEM name: %s...\n", vmem_name);
 
@@ -406,6 +408,27 @@ static int slash_csp_program(struct slash * slash) {
 	if (filename) {
 		strncpy(bin_info.files[0], filename, WALKDIR_MAX_PATH_SIZE-1);  // -1 to fit NULL byte
 		bin_info.count = 0;
+	} else if (pl) {
+		printf("  Searching for valid PL binaries\n");
+		const char * pl_files[] = {"partition.bin", "prep/partition.bin"};
+		bin_info.count = 0;
+		for (size_t i = 0; i < sizeof(pl_files) / sizeof(pl_files[0]); i++) {
+			struct stat file_stat;
+			if (stat(pl_files[i], &file_stat) == 0 && S_ISREG(file_stat.st_mode)) {
+				strncpy(bin_info.files[bin_info.count], pl_files[i], WALKDIR_MAX_PATH_SIZE - 1);
+				bin_info.files[bin_info.count][WALKDIR_MAX_PATH_SIZE - 1] = '\0';
+				printf("  %u: %s\n", bin_info.count, bin_info.files[bin_info.count]);
+				bin_info.count++;
+			}
+		}
+		if (bin_info.count == 0) {
+			printf("\033[31m\n");
+			printf("  Found no PL binaries (partition.bin or prep/partition.bin).\n");
+			printf("\033[0m\n");
+			optparse_del(parser);
+			rdp_opt_reset();
+			return SLASH_EINVAL;
+		}
 	} else {
 		printf("  Searching for valid binaries\n");
 		strcpy(wpath, ".");
