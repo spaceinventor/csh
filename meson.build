@@ -5,7 +5,6 @@ project('csh', ['c', 'cpp'], subproject_dir: 'lib', default_options: [
 	'c_std=gnu11',
 	'b_lto=false',
 	'default_library=static',
-	'slash:builtins=true',
 	'csp:packet_padding_bytes=42',
 	'csp:buffer_count=1000',
 	'csp:buffer_size=2048',
@@ -44,7 +43,8 @@ zmq_dep = dependency(
 )
 
 csp_dep = dependency('csp', fallback: ['csp', 'csp_dep'], required: true).as_link_whole()
-slash_dep = dependency('slash', fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
+slash_dep = dependency('slash', version: ['>=0.0.1'], fallback: ['slash', 'slash_dep'], required: true).as_link_whole()
+slash_builtins_dep = dependency('slash_builtins', version: ['>=0.0.1'], fallback: ['slash', 'slash_builtins_dep'], required: true)
 param_dep = dependency('param', fallback: ['param', 'param_dep'], required: true).as_link_whole()
 ossi_dep = dependency('ossi', version: ['>=0.0.2'],fallback: ['ossi', 'ossi_dep'], required: true).as_link_whole()
 apm_api_dep = dependency(
@@ -135,6 +135,7 @@ csh = executable('csh', csh_sources,
 		python_dep,
 		apm_api_dep,
 		slash_dep,
+		slash_builtins_dep,
 		param_dep,
 		ossi_dep,
 		csp_dep,
