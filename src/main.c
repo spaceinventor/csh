@@ -67,10 +67,8 @@ int slash_prompt(struct slash * slash) {
 		printf("\033[0;38;5;%u;48;5;%u;1m ", fore, back);
 		len += 1;
 
-		struct utsname info;
-		uname(&info);
-		printf("%s", info.nodename);
-		len += strlen(info.nodename);
+		printf("%s", csp_conf.hostname);
+		len += strlen(csp_conf.hostname);
 
 		if (slash_dfl_node != 0) {
 
