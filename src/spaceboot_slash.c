@@ -518,7 +518,7 @@ static int slash_csp_program(struct slash * slash) {
 			printf("\033[0m\n");
 		} else {
 			printf("\033[31m\n");
-			printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+			printf("  CRC verification failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
 			printf("\033[0m\n");
 			result = SLASH_ENOSPC;
 		}
@@ -739,7 +739,7 @@ static int slash_sps(struct slash * slash) {
 			printf("\033[0m\n");
 		} else {
 			printf("\033[31m\n");
-			printf("  Failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
+			printf("  CRC verification failure: %"PRIX32" != %"PRIX32"\n", crc, crc_node);
 			printf("\033[0m\n");
 			result = SLASH_ENOSPC;
 		}
