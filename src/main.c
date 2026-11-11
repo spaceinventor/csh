@@ -44,7 +44,6 @@
 extern const char *version_string;
 extern param_queue_t param_queue;
 
-#define PROMPT_BAD		    "\x1b[0;38;5;231;48;5;31;1m csh \x1b[0;38;5;31;48;5;236;22m! \x1b[0m "
 #define LINE_SIZE		    512
 #define HISTORY_SIZE		2048
 
@@ -131,11 +130,15 @@ int slash_prompt(struct slash * slash) {
 		}
 		/* End of breadcrumb */
 		fore = back;
-		printf(" \033[0m\033[0;38;5;%um \033[0m", fore);
-		len += 3;
-
-
-
+		if (slash->last_result != SLASH_SUCCESS) {
+			printf(" \033[0;38;5;%u;48;5;226;22m"
+			       "\033[0;38;5;196;48;5;226;1m ! "
+			       "\033[0;38;5;226m \033[0m", fore);
+			len += 7;
+		} else {
+			printf(" \033[0m\033[0;38;5;%um \033[0m", fore);
+			len += 3;
+		}
 
 		fflush(stdout);
 
