@@ -462,6 +462,7 @@ static int doc_cmd(struct slash *slash) {
         int res = system(cmd_line);
         if(res) {
             printf("Could not open %s manual\n", slash->argv[1]);
+            return SLASH_EINVAL;
         } else {
             printf("The %s manual is now open in PDF viewer, if available\n", slash->argv[1]);
         }

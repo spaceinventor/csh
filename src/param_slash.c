@@ -525,6 +525,7 @@ static int cmd_get(struct slash *slash) {
 
 	/* Go through the list of parameters */
 	param_list_iterator i = {0};
+	bool param_found = false;
 	while ((param = param_list_iterate(&i)) != NULL) {
 
 		/* Name match (with wildcard) */
@@ -552,6 +553,7 @@ static int cmd_get(struct slash *slash) {
 		if (server > 0)
 			dest = server;
 
+		param_found = true;
 		if (param_pull_single(param, offset, prio, 1, dest, slash_dfl_timeout, paramver) < 0) {
 			printf("No response\n");
 			optparse_del(parser);
@@ -561,8 +563,12 @@ static int cmd_get(struct slash *slash) {
 	}
 
 	optparse_del(parser);
-	return SLASH_SUCCESS;
 
+	if (!param_found) {
+		printf("Unknown parameter, request not executed\n");
+		return SLASH_EINVAL;
+	}
+	return SLASH_SUCCESS;
 }
 static void param_get_cmd_completer(struct slash *slash, char * token) {
 	param_completer(slash, token);
@@ -917,8 +923,11 @@ static int cmd_add(struct slash *slash) {
 		/* clear param timestamp so we dont set timestamp flag when serialized*/
 		param->timestamp->tv_sec = 0;
 
-		if (param_queue_add(&param_queue, param, offset, valuebuf) < 0)
-			printf("Queue full\n");
+		if (param_queue_add(&param_queue, param, offset, valuebuf) < 0) {
+			printf("Queue full, cannot add parameter\n");
+			optparse_del(parser);
+			return SLASH_EINVAL;
+		}
 
 	}
 
@@ -951,8 +960,11 @@ static int cmd_add(struct slash *slash) {
 			}
 
 			/* Queue */
-			if (param_queue_add(&param_queue, param, offset, NULL) < 0)
-				printf("Queue full\n");
+			if (param_queue_add(&param_queue, param, offset, NULL) < 0) {
+				printf("Queue full, cannot add parameter\n");
+				optparse_del(parser);
+				return SLASH_EINVAL;
+			}
 			continue;
 
 		}

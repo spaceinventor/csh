@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <sys/wait.h>
 #include <slash/slash.h>
 #include <slash/completer.h>
 
@@ -26,8 +27,10 @@ static int slash_ls(struct slash *slash) {
         printf("%s:\n", cwd);
     }
    
-    int ret = system(cmd);
-    (void) ret;
+    int status = system(cmd);
+    if (status == -1 || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        return SLASH_ENOENT;
+    }
 
 	return SLASH_SUCCESS;
 }

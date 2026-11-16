@@ -168,8 +168,10 @@ static int vmem_client_slash_download(struct slash *slash)
 					fprintf(fd_status, "%u", count + offset);
 					fclose(fd_status);
 					printf("Download didn't finish,  creating stat file %s. \nTo resume download rerun download cmd\n", file_status);
+					res = SLASH_EIO;
 				} else {
 					printf("Error creating stat file %s.\nTo resume download rerun download cmd\n", file_status);
+					res = SLASH_EIO;
 				}
 			} else {
 				remove(file_status);
