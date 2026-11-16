@@ -26,6 +26,8 @@ static int cmd_node(struct slash *slash) {
 
 		if (0 == get_host_by_addr_or_name(&slash_dfl_node, slash->argv[1])) {
 			fprintf(stderr, "'%s' does not resolve to a valid CSP address\n", slash->argv[1]);
+            optparse_del(parser);
+            return SLASH_EINVAL;
 		}
 	}
 	optparse_del(parser);

@@ -350,7 +350,7 @@ static int slash_csp_program(struct slash * slash) {
     csh_add_node_option(parser, &node);
     optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
-    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated");
+    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated, enabled by default");
     optparse_add_set(parser, 'P', "pl", 1, &pl, "Upload PL image to Z7 devices");
 
 	rdp_opt_add(parser);
@@ -574,7 +574,7 @@ static int slash_sps(struct slash * slash) {
     csh_add_node_option(parser, &node);
 	optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
-    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated");
+    optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated, enabled by default");
 
 	rdp_opt_add(parser);
 

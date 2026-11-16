@@ -126,8 +126,8 @@ static int prometheus_start_cmd(struct slash *slash) {
     int argi = optparse_parse(parser, slash->argc - 1, (const char **) slash->argv + 1);
 
     if (argi < 0) {
-        return SLASH_EINVAL;
         optparse_del(parser);
+        return SLASH_EINVAL;
     }
 
     prometheus_init();

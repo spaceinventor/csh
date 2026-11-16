@@ -89,7 +89,7 @@ static int slash_csp_ping(struct slash *slash)
 	}
 
     optparse_del(parser);
-	return SLASH_SUCCESS;
+	return result >= 0 ? SLASH_SUCCESS : SLASH_EIO;
 }
 
 slash_command_completer(ping, slash_csp_ping, host_name_completer, "[node]", "Ping a system");
@@ -278,12 +278,14 @@ static int slash_csp_cmp_ident(struct slash *slash)
 
 	csp_send(conn, packet);
 
+	int num_replies = 0;
 	while((packet = csp_read(conn, timeout)) != NULL) {
 		memcpy(&msg, packet->data, packet->length < size ? packet->length : size);
 		if (msg.code == CSP_CMP_IDENT) {
 			printf("\nIDENT %hu\n", packet->id.src);
 			printf("  %s\n  %s\n  %s\n  %s %s\n", msg.ident.hostname, msg.ident.model, msg.ident.revision, msg.ident.date, msg.ident.time);
 			known_hosts_add(packet->id.src, msg.ident.hostname, override);
+			num_replies++;
 		}
 		csp_buffer_free(packet);
 	}
@@ -291,7 +293,7 @@ static int slash_csp_cmp_ident(struct slash *slash)
 	csp_close(conn);
 
     optparse_del(parser);
-	return SLASH_SUCCESS;
+	return num_replies > 0 ? SLASH_SUCCESS : SLASH_EIO;
 }
 
 slash_command_completer(ident, slash_csp_cmp_ident, host_name_completer, "[node]", "Ident");
@@ -328,7 +330,7 @@ static int slash_csp_cmp_ifstat(struct slash *slash)
 	strncpy(message.if_stats.interface, interface, CSP_CMP_ROUTE_IFACE_LEN - 1);
 
 	if (csp_cmp_if_stats(node, timeout, &message) != CSP_ERR_NONE) {
-		printf("No response\n");
+		printf("No response, interface might not exist\n");
         optparse_del(parser);
 		return SLASH_EINVAL;
 	}
