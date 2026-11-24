@@ -1060,10 +1060,13 @@ static int cmd_pull(struct slash *slash) {
 	uint32_t include_mask = 0xFFFFFFFF;
 	uint32_t exclude_mask = PM_REMOTE | PM_HWREG;
 
-	if (include_mask_str)
+	if (include_mask_str) {
 		include_mask = param_maskstr_to_mask(include_mask_str);
-	if (exclude_mask_str)
+		exclude_mask &= ~include_mask;
+	}
+	if (exclude_mask_str) {
 		exclude_mask = param_maskstr_to_mask(exclude_mask_str);
+	}
 
 	int result = SLASH_SUCCESS;
 	uint8_t num_nodes = 0;
