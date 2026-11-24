@@ -300,10 +300,15 @@ static void file_callback(const char * path, const char * last_entry, void * cus
 	}
 }
 
-static int do_upload(int node, unsigned int timeout, int address, char * data, int len) {
+static int do_upload(int node, int address, char * data, int len, unsigned int mtu) {
 	int res = SLASH_SUCCESS;
 	uint32_t time_begin = csp_get_ms();
-	int count = vmem_upload(node, timeout, address, data, len, 1);
+
+	vmem_client_config_t config = { .node = node, .cb = vmem_progress_cb, .mtu = mtu };
+	if (mtu == VMEM_SERVER_MTU) {
+		config.version = 1; /* VMEM version 2 (default) is required for custom MTU sizes */
+	}
+	int count = vmem_client_upload(&config, address, data, len);
 	uint32_t time_total = csp_get_ms() - time_begin;
 
 	printf(" - %.0f K\n", (count / 1024.0));
@@ -344,6 +349,7 @@ static int slash_csp_program(struct slash * slash) {
 	int force = 0;
 	int do_crc32 = 0;
 	int pl = 0;
+	unsigned int mtu = VMEM_SERVER_MTU;
 
     optparse_t * parser = optparse_new("program", "<slot>");
     optparse_add_help(parser);
@@ -352,6 +358,7 @@ static int slash_csp_program(struct slash * slash) {
     optparse_add_set(parser, 'F', "force", 1, &force, "Do not ask for confirmation before programming");
     optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated, enabled by default");
     optparse_add_set(parser, 'P', "pl", 1, &pl, "Upload PL image to Z7 devices");
+	optparse_add_unsigned(parser, 'm', "mtu", "NUM", 0, &mtu, "maximum transfer unit (default = 192)");
 
 	rdp_opt_add(parser);
 
@@ -528,7 +535,7 @@ static int slash_csp_program(struct slash * slash) {
 	crc = csp_crc32_memory((const uint8_t *)data, len);
 	printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 	printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
-	result = do_upload(node, 10000, vmem.vaddr, data, len);
+	result = do_upload(node, vmem.vaddr, data, len, mtu);
 	if(result < 0){
 		return result;
 	}
@@ -568,6 +575,7 @@ static int slash_sps(struct slash * slash) {
 	unsigned int reboot_delay = 1000;
 	int do_crc32 = 0;
 	char * filename = NULL;
+	unsigned int mtu = VMEM_SERVER_MTU;
 
     optparse_t * parser = optparse_new("sps", "<switch-to-slot> <slot-to-program>");
     optparse_add_help(parser);
@@ -575,6 +583,7 @@ static int slash_sps(struct slash * slash) {
 	optparse_add_string(parser, 'f', "file", "FILENAME", &filename, "File to upload (Searches recursively by default)");
 	optparse_add_unsigned(parser, 'd', "delay", "NUM", 0, &reboot_delay, "Delay to allow module to boot (default = 1000 ms)");
     optparse_add_set(parser, 'C', "crc32", 1, &do_crc32, "Deprecated, enabled by default");
+	optparse_add_unsigned(parser, 'm', "mtu", "NUM", 0, &mtu, "maximum transfer unit (default = 192)");
 
 	rdp_opt_add(parser);
 
@@ -748,7 +757,7 @@ static int slash_sps(struct slash * slash) {
 	crc = csp_crc32_memory((const uint8_t *)data, len);
 	printf("  File CRC32: 0x%08"PRIX32"\n", crc);
 	printf("  Upload %u bytes to node %u addr 0x%"PRIX32"\n", len, node, vmem.vaddr);
-	result = do_upload(node, 10000, vmem.vaddr, data, len);
+	result = do_upload(node, vmem.vaddr, data, len, mtu);
 	if(result < 0){
 		return result;
 	}
