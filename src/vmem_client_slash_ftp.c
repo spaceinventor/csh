@@ -30,7 +30,7 @@ static int vmem_client_slash_download(struct slash *slash)
     unsigned int timeout = slash_dfl_timeout;
     unsigned int version = 1;
 	// unsigned int offset = 0;
-	unsigned int use_rdp = 1;
+	unsigned int mtu = VMEM_SERVER_MTU;
 
     optparse_t * parser = optparse_new("download", "<address> <length base10 or base16> <file>");
     optparse_add_help(parser);
@@ -38,7 +38,7 @@ static int vmem_client_slash_download(struct slash *slash)
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	// optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
-	optparse_add_unsigned(parser, 'r', "use_rdp", "NUM", 0, &use_rdp, "rdp enable (default = 1)");
+	optparse_add_unsigned(parser, 'm', "mtu", "NUM", 0, &mtu, "maximum transfer unit (default = 192)");
 
 	rdp_opt_add(parser);
 
@@ -133,7 +133,8 @@ static int vmem_client_slash_download(struct slash *slash)
 	/* Allocate memory for reply */
 	char * data = malloc(length - offset);
 
-	int count = vmem_download(node, timeout, address + offset, length - offset, data, version, use_rdp);
+	vmem_client_config_t config = { .mtu = mtu, .cb = vmem_progress_cb, .node = node };
+	int count = vmem_client_download(&config, address + offset, length - offset, data);
 	if(count < 0){
 		printf("Connection failed\n");
 		fclose(fd);
@@ -142,7 +143,6 @@ static int vmem_client_slash_download(struct slash *slash)
 		return SLASH_EINVAL;
 	}
 	int res = SLASH_SUCCESS;
-	printf(" - %.0f K\n", (count / 1024.0));
 
 	/* Write data */
 	int written = fwrite(data, 1, count, fd);
@@ -197,6 +197,7 @@ static int vmem_client_slash_upload(struct slash *slash)
     unsigned int timeout = slash_dfl_timeout;
     unsigned int version = 1;
 	unsigned int offset = 0;
+	unsigned int mtu = VMEM_SERVER_MTU;
 
     optparse_t * parser = optparse_new("upload", "<file> <address>");
     optparse_add_help(parser);
@@ -204,6 +205,7 @@ static int vmem_client_slash_upload(struct slash *slash)
     optparse_add_unsigned(parser, 't', "timeout", "NUM", 0, &timeout, "timeout (default = <env>)");
     optparse_add_unsigned(parser, 'v', "version", "NUM", 0, &version, "version (default = 1)");
 	optparse_add_unsigned(parser, 'o', "offset", "NUM", 0, &offset, "byte offset in file (default = 0)");
+	optparse_add_unsigned(parser, 'm', "mtu", "NUM", 0, &mtu, "maximum transfer unit (default = 192)");
 
 	rdp_opt_add(parser);
 
@@ -271,10 +273,10 @@ static int vmem_client_slash_upload(struct slash *slash)
 	printf("Size %zu\n", size);
 
 	uint32_t time_begin = csp_get_ms();
-	int count = vmem_upload(node, timeout, address, data, size, version);
+	vmem_client_config_t config = { .cb = vmem_progress_cb, .node = node, .mtu = mtu };
+	int count = vmem_client_upload(&config, address, data, size);
 	uint32_t time_total = csp_get_ms() - time_begin;
 
-	printf(" - %.0f K\n", (count / 1024.0));
 	switch (count) {
 	case CSP_ERR_TIMEDOUT:
 		printf("Connection timeout\n");
