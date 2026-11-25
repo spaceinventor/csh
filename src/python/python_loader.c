@@ -145,6 +145,41 @@ static PyObject * pycsh_integrate_pymod(const char * const _filepath) {
     return module;
 }
 
+static int add_script_directory_to_sys_path(const char *filepath) {
+	const char *last_slash = strrchr(filepath, '/');
+	const char *directory = ".";
+	Py_ssize_t directory_len = 1;
+	if (last_slash != NULL) {
+		directory = filepath;
+		directory_len = last_slash - filepath;
+		if (directory_len == 0) {
+			directory = "/";
+			directory_len = 1;
+		}
+	}
+
+	PyObject *directory_path AUTO_DECREF = PyUnicode_DecodeFSDefaultAndSize(directory, directory_len);
+	if (directory_path == NULL) {
+		return -1;
+	}
+
+	PyObject *sys_path = PySys_GetObject("path");
+	if (sys_path == NULL || !PyList_Check(sys_path)) {
+		PyErr_SetString(PyExc_RuntimeError, "sys.path is unavailable or is not a list");
+		return -1;
+	}
+
+	int contains_path = PySequence_Contains(sys_path, directory_path);
+	if (contains_path < 0) {
+		return -1;
+	}
+	if (!contains_path && PyList_Insert(sys_path, 0, directory_path) < 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
 static PyObject * pycsh_load_pymod(const char * const _filepath, const char * const init_function_name, int verbose) {
 
 	if (_filepath == NULL) {
@@ -206,6 +241,10 @@ static PyObject * pycsh_load_pymod(const char * const _filepath, const char * co
 				then is should've been imported with a normal Python "import" ya dummy :) */
 			pModule = pycsh_integrate_pymod(_filepath);
 		} else {
+			if (add_script_directory_to_sys_path(_filepath) < 0) {
+				PyErr_Print();
+				return NULL;
+			}
 			pModule = PyImport_Import(pName);
 		}
 
