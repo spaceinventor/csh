@@ -300,7 +300,7 @@ static void file_callback(const char * path, const char * last_entry, void * cus
 	}
 }
 
-static int do_upload(int node, int address, char * data, int len, unsigned int mtu) {
+static int do_upload(int node, uint64_t address, char * data, int len, unsigned int mtu) {
 	int res = SLASH_SUCCESS;
 	uint32_t time_begin = csp_get_ms();
 
